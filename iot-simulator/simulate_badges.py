@@ -11,10 +11,26 @@ API_URL = "http://localhost:8000/api/access/request"
 
 # Example known users and access points. Update to match your seeded data.
 USERS = [
-    {"badge_id": "BADGE-1001", "department": "Engineering", "role": "employee", "clearance": 2},
-    {"badge_id": "BADGE-1002", "department": "Security", "role": "security", "clearance": 4},
-    {"badge_id": "BADGE-1003", "department": "HR", "role": "manager", "clearance": 3},
-    {"badge_id": "BADGE-1004", "department": "IT", "role": "admin", "clearance": 5},
+    {"badge_id": "B001", "department": "IT", "role": "admin", "clearance": 5},
+    {"badge_id": "B002", "department": "Engineering", "role": "manager", "clearance": 4},
+    {"badge_id": "B003", "department": "Engineering", "role": "employee", "clearance": 2},
+    {"badge_id": "B004", "department": "Engineering", "role": "employee", "clearance": 2},
+    {"badge_id": "B005", "department": "Security", "role": "security", "clearance": 3},
+    {"badge_id": "B006", "department": "Security", "role": "security", "clearance": 3},
+    {"badge_id": "B007", "department": "HR", "role": "manager", "clearance": 4},
+    {"badge_id": "B008", "department": "HR", "role": "employee", "clearance": 1},
+    {"badge_id": "B009", "department": "Finance", "role": "employee", "clearance": 2},
+    {"badge_id": "B010", "department": "Finance", "role": "manager", "clearance": 4},
+    {"badge_id": "B011", "department": "Marketing", "role": "employee", "clearance": 1},
+    {"badge_id": "B012", "department": "Marketing", "role": "employee", "clearance": 1},
+    {"badge_id": "B013", "department": "Engineering", "role": "contractor", "clearance": 2},
+    {"badge_id": "B014", "department": "IT", "role": "contractor", "clearance": 2},
+    {"badge_id": "B015", "department": "Logistics", "role": "employee", "clearance": 1},
+    {"badge_id": "B016", "department": "Logistics", "role": "employee", "clearance": 1},
+    {"badge_id": "B017", "department": "IT", "role": "admin", "clearance": 5},
+    {"badge_id": "B018", "department": "Engineering", "role": "employee", "clearance": 3},
+    {"badge_id": "B019", "department": None, "role": "visitor", "clearance": 1},
+    {"badge_id": "B020", "department": "IT", "role": "manager", "clearance": 4},
 ]
 
 ACCESS_POINTS = [
