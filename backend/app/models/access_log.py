@@ -23,6 +23,11 @@ class AccessLog(Base):
     location_match = Column(Boolean, nullable=True)
     role_level = Column(Integer, nullable=True)
     is_restricted_area = Column(Boolean, nullable=True)
+    is_first_access_today = Column(Boolean, nullable=True)
+    sequential_zone_violation = Column(Boolean, nullable=True)
+    access_attempt_count = Column(Integer, nullable=True)
+    time_of_week = Column(Integer, nullable=True)
+    hour_deviation_from_norm = Column(Float, nullable=True)
     badge_id_used = Column(String, nullable=True)
     context = Column(JSONB, nullable=True)
 

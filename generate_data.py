@@ -3,13 +3,10 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import os
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
-TOTAL_RECORDS   = 30000   # change to 10000-50000 as needed
-ANOMALY_RATIO   = 0.08    # 8% anomalous (between 5-10%)
-RANDOM_SEED     = 42
-OUTPUT_DIR      = "data/raw"
+TOTAL_RECORDS = 50000
+ANOMALY_RATIO = 0.07
+RANDOM_SEED   = 42
+OUTPUT_DIR    = "data/raw"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 np.random.seed(RANDOM_SEED)
@@ -17,53 +14,116 @@ np.random.seed(RANDOM_SEED)
 normal_count  = int(TOTAL_RECORDS * (1 - ANOMALY_RATIO))
 anomaly_count = TOTAL_RECORDS - normal_count
 
-print(f"Generating {normal_count} normal records and {anomaly_count} anomalous records...")
+print(f"Generating {normal_count} normal + {anomaly_count} anomalous records...")
 
 # ============================================================
-# GENERATE NORMAL RECORDS (90-95%)
+# SIMULATE 100 USERS with individual behavioral profiles
+# ============================================================
+NUM_USERS = 100
+user_profiles = []
+
+for user_id in range(NUM_USERS):
+    role = np.random.choice([1, 2, 3], p=[0.60, 0.30, 0.10])
+
+    # Each user has their OWN usual hour (some come early, some late)
+    if role == 3:   # admin — can come anytime
+        usual_hour = np.random.randint(7, 18)
+    elif role == 2: # manager — business hours
+        usual_hour = np.random.randint(8, 10)
+    else:           # employee — varied
+        usual_hour = np.random.randint(7, 12)
+
+    # Each user has their OWN usual days
+    if role == 3:
+        usual_days = [0, 1, 2, 3, 4, 5, 6]  # admin works any day
+    else:
+        usual_days = [0, 1, 2, 3, 4]         # employee weekdays only
+
+    # Each user has their OWN usual zone
+    zone = np.random.choice(
+        ["engineering", "hr", "finance", "marketing", "logistics", "it"],
+        p=[0.25, 0.15, 0.15, 0.15, 0.15, 0.15]
+    )
+
+    user_profiles.append({
+        "user_id":         user_id,
+        "role_level":      role,
+        "usual_hour_mean": usual_hour,
+        "usual_hour_std":  1.5,
+        "usual_days":      usual_days,
+        "usual_zone":      zone,
+        "days_since_created": np.random.randint(30, 1000)
+    })
+
+# ============================================================
+# GENERATE NORMAL RECORDS
 # ============================================================
 def generate_normal(n):
     records = []
     for _ in range(n):
-        role_level    = np.random.choice([1, 1, 1, 2, 2, 3], p=[0.5, 0.0, 0.0, 0.3, 0.0, 0.2])
-        # Working hours: 8AM-6PM with peak at 9AM and 2PM
-        hour          = int(np.clip(np.random.normal(loc=np.random.choice([10, 14]), scale=2), 8, 18))
-        # Weekdays mostly
-        day_of_week   = np.random.choice([0,1,2,3,4,5,6], p=[0.22, 0.22, 0.22, 0.22, 0.10, 0.01, 0.01])
-        is_weekend    = 1 if day_of_week >= 5 else 0
-        # Normal frequency: 2-8 times per day
-        access_frequency_24h        = int(np.clip(np.random.normal(loc=4, scale=2), 1, 8))
-        # Normal time since last access: 30-480 minutes
-        time_since_last_access_min  = int(np.clip(np.random.normal(loc=120, scale=60), 30, 480))
-        # Usually in correct location
-        location_match              = np.random.choice([1, 0], p=[0.95, 0.05])
-        # Restricted area access only for high role levels
-        if role_level == 3:
-            is_restricted_area = np.random.choice([1, 0], p=[0.4, 0.6])
-        elif role_level == 2:
-            is_restricted_area = np.random.choice([1, 0], p=[0.1, 0.9])
+        # Pick a random user
+        user    = user_profiles[np.random.randint(0, NUM_USERS)]
+        role    = user["role_level"]
+
+        # Access hour close to THIS user's usual hour
+        hour    = int(np.clip(
+            np.random.normal(user["usual_hour_mean"], user["usual_hour_std"]),
+            6, 20
+        ))
+
+        # Access day from THIS user's usual days
+        day     = np.random.choice(user["usual_days"])
+        is_wknd = 1 if day >= 5 else 0
+
+        # Normal frequency for this user
+        freq    = int(np.clip(np.random.normal(3, 1.2), 1, 8))
+
+        # Normal time since last access
+        time_s  = int(np.clip(np.random.normal(150, 60), 30, 480))
+
+        # Almost always in correct zone
+        loc     = np.random.choice([1, 0], p=[0.97, 0.03])
+
+        # Restricted only for high roles
+        if role == 3:
+            restr = np.random.choice([1, 0], p=[0.30, 0.70])
+        elif role == 2:
+            restr = np.random.choice([1, 0], p=[0.07, 0.93])
         else:
-            is_restricted_area = 0
+            restr = 0
+
+        # New features
+        is_first       = np.random.choice([1, 0], p=[0.30, 0.70])
+        seq_violation  = 0  # normal users don't violate zone sequences
+        attempt_count  = np.random.choice([0, 1], p=[0.95, 0.05])
+        time_of_week   = day * 24 + hour  # 0-167
+
+        # Per-user deviation
+        hour_deviation = abs(hour - user["usual_hour_mean"]) / max(user["usual_hour_std"], 1)
 
         records.append({
             "hour":                       hour,
-            "day_of_week":                day_of_week,
-            "is_weekend":                 is_weekend,
-            "access_frequency_24h":       access_frequency_24h,
-            "time_since_last_access_min": time_since_last_access_min,
-            "location_match":             location_match,
-            "role_level":                 role_level,
-            "is_restricted_area":         is_restricted_area,
-            "label":                      0  # normal
+            "day_of_week":                day,
+            "is_weekend":                 is_wknd,
+            "access_frequency_24h":       freq,
+            "time_since_last_access_min": time_s,
+            "location_match":             loc,
+            "role_level":                 role,
+            "is_restricted_area":         restr,
+            "is_first_access_today":      is_first,
+            "sequential_zone_violation":  seq_violation,
+            "access_attempt_count":       attempt_count,
+            "time_of_week":               time_of_week,
+            "hour_deviation_from_norm":   round(hour_deviation, 3),
+            "label":                      0
         })
     return records
 
 # ============================================================
-# GENERATE ANOMALOUS RECORDS (5-10%)
+# GENERATE ANOMALOUS RECORDS
 # ============================================================
 def generate_anomalous(n):
-    records = []
-    # 6 anomaly types — distribute evenly
+    records      = []
     anomaly_types = [
         "unusual_hour",
         "weekend_access",
@@ -74,99 +134,133 @@ def generate_anomalous(n):
     ]
 
     for i in range(n):
-        anomaly_type = anomaly_types[i % len(anomaly_types)]
-        role_level   = np.random.choice([1, 2, 3], p=[0.6, 0.3, 0.1])
+        atype   = anomaly_types[i % len(anomaly_types)]
+        user    = user_profiles[np.random.randint(0, NUM_USERS)]
 
-        # Default normal-ish values first
-        hour                       = np.random.randint(8, 18)
-        day_of_week                = np.random.randint(0, 5)
-        is_weekend                 = 0
-        access_frequency_24h       = np.random.randint(2, 8)
-        time_since_last_access_min = np.random.randint(30, 480)
-        location_match             = 1
-        is_restricted_area         = 0
+        # Every anomaly ALWAYS violates at least 3 features simultaneously
+        # This is the key change — no more single-feature anomalies
 
-        # Now override based on anomaly type
-        if anomaly_type == "unusual_hour":
-            # Access between midnight and 5AM
-            hour = np.random.randint(0, 5)
+        if atype == "unusual_hour":
+            hour       = np.random.choice(list(range(0, 4)))  # strictly 0-3AM
+            day        = np.random.randint(0, 7)
+            is_wknd    = 1 if day >= 5 else 0
+            freq       = np.random.randint(8, 20)             # also high freq
+            time_s     = np.random.randint(2, 20)             # also short gaps
+            loc        = 0                                     # also wrong zone
+            restr      = np.random.choice([0, 1], p=[0.3, 0.7])  # often restricted
+            role       = 1
+            is_first   = 0
+            seq_viol   = 1
+            attempts   = np.random.randint(2, 5)
 
-        elif anomaly_type == "weekend_access":
-            # Weekend access for employee/contractor
-            role_level  = np.random.choice([1, 2], p=[0.7, 0.3])
-            day_of_week = np.random.choice([5, 6])
-            is_weekend  = 1
-            hour        = np.random.randint(0, 23)
+        elif atype == "weekend_access":
+            hour       = np.random.choice(list(range(0, 6)))  # very late/early
+            day        = np.random.choice([5, 6])
+            is_wknd    = 1
+            freq       = np.random.randint(10, 25)            # high freq
+            time_s     = np.random.randint(2, 15)
+            loc        = 0                                     # wrong zone
+            restr      = 1                                     # always restricted
+            role       = 1
+            is_first   = 0
+            seq_viol   = 1
+            attempts   = np.random.randint(2, 6)
 
-        elif anomaly_type == "restricted_area":
-            # Low clearance user accessing restricted area
-            role_level         = 1
-            is_restricted_area = 1
-            hour               = np.random.randint(8, 18)
+        elif atype == "restricted_area":
+            hour       = np.random.choice(list(range(0, 5)) + list(range(22, 24)))
+            day        = np.random.randint(0, 7)
+            is_wknd    = 1 if day >= 5 else 0
+            freq       = np.random.randint(5, 15)
+            time_s     = np.random.randint(2, 20)
+            loc        = 0                                     # wrong zone
+            restr      = 1                                     # restricted
+            role       = 1                                     # low clearance
+            is_first   = 0
+            seq_viol   = 1
+            attempts   = np.random.randint(3, 8)              # many attempts
 
-        elif anomaly_type == "high_frequency":
-            # Too many accesses in 24h
-            access_frequency_24h = np.random.randint(15, 30)
+        elif atype == "high_frequency":
+            hour       = np.random.randint(8, 18)             # normal hour
+            day        = np.random.randint(0, 5)
+            is_wknd    = 0
+            freq       = np.random.randint(25, 40)            # extremely high
+            time_s     = np.random.randint(1, 5)              # very short gaps
+            loc        = np.random.choice([0, 1], p=[0.7, 0.3])
+            restr      = np.random.choice([0, 1], p=[0.4, 0.6])
+            role       = 1
+            is_first   = 0
+            seq_viol   = 1
+            attempts   = np.random.randint(3, 8)
 
-        elif anomaly_type == "badge_cloning":
-            # Very short time since last access at different location
-            time_since_last_access_min = np.random.randint(1, 5)
-            location_match             = 0
+        elif atype == "badge_cloning":
+            hour       = np.random.randint(8, 18)             # normal hour
+            day        = np.random.randint(0, 5)
+            is_wknd    = 0
+            freq       = np.random.randint(10, 20)            # high freq
+            time_s     = np.random.randint(1, 3)              # under 3 minutes!
+            loc        = 0                                     # different location
+            restr      = np.random.choice([0, 1], p=[0.5, 0.5])
+            role       = 1
+            is_first   = 0
+            seq_viol   = 1
+            attempts   = np.random.randint(2, 5)
 
-        elif anomaly_type == "location_mismatch":
-            # User in wrong department zone
-            location_match     = 0
-            is_restricted_area = np.random.choice([0, 1], p=[0.5, 0.5])
+        elif atype == "location_mismatch":
+            hour       = np.random.choice(list(range(0, 6)) + list(range(21, 24)))
+            day        = np.random.randint(0, 7)
+            is_wknd    = 1 if day >= 5 else 0
+            freq       = np.random.randint(8, 18)
+            time_s     = np.random.randint(2, 15)
+            loc        = 0                                     # wrong zone
+            restr      = 1                                     # restricted
+            role       = 1
+            is_first   = 0
+            seq_viol   = 1
+            attempts   = np.random.randint(2, 5)
+
+        time_of_week   = day * 24 + hour
+        hour_deviation = abs(hour - user["usual_hour_mean"]) / max(user["usual_hour_std"], 1)
+        # Anomalies always deviate a lot from user's norm
+        hour_deviation = max(hour_deviation, 3.0)
 
         records.append({
             "hour":                       hour,
-            "day_of_week":                day_of_week,
-            "is_weekend":                 is_weekend,
-            "access_frequency_24h":       access_frequency_24h,
-            "time_since_last_access_min": time_since_last_access_min,
-            "location_match":             location_match,
-            "role_level":                 role_level,
-            "is_restricted_area":         is_restricted_area,
-            "label":                      1  # anomalous
+            "day_of_week":                day,
+            "is_weekend":                 is_wknd,
+            "access_frequency_24h":       freq,
+            "time_since_last_access_min": time_s,
+            "location_match":             loc,
+            "role_level":                 role,
+            "is_restricted_area":         restr,
+            "is_first_access_today":      is_first,
+            "sequential_zone_violation":  seq_viol,
+            "access_attempt_count":       attempts,
+            "time_of_week":               time_of_week,
+            "hour_deviation_from_norm":   round(hour_deviation, 3),
+            "label":                      1
         })
     return records
 
 # ============================================================
-# BUILD FULL DATASET
+# BUILD + SAVE
 # ============================================================
-normal_records   = generate_normal(normal_count)
-anomaly_records  = generate_anomalous(anomaly_count)
-all_records      = normal_records + anomaly_records
+normal_records  = generate_normal(normal_count)
+anomaly_records = generate_anomalous(anomaly_count)
+all_records     = normal_records + anomaly_records
 
 df = pd.DataFrame(all_records)
-df = df.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)  # shuffle
+df = df.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
 
-# ============================================================
-# SAVE FULL DATASET
-# ============================================================
-full_path = os.path.join(OUTPUT_DIR, "access_data.csv")
-df.to_csv(full_path, index=False)
-print(f"\n Full dataset saved: {full_path}")
-print(f"   Total records : {len(df)}")
-print(f"   Normal        : {len(df[df.label == 0])}")
-print(f"   Anomalous     : {len(df[df.label == 1])}")
+df.to_csv(os.path.join(OUTPUT_DIR, "access_data.csv"), index=False)
 
-# ============================================================
-# SPLIT 80% TRAIN / 20% TEST
-# ============================================================
 train_df, test_df = train_test_split(
-    df,
-    test_size=0.2,
-    random_state=RANDOM_SEED,
-    stratify=df["label"]  # keep same ratio in both splits
+    df, test_size=0.2, random_state=RANDOM_SEED, stratify=df["label"]
 )
+train_df.to_csv(os.path.join(OUTPUT_DIR, "train.csv"), index=False)
+test_df.to_csv(os.path.join(OUTPUT_DIR,  "test.csv"),  index=False)
 
-train_path = os.path.join(OUTPUT_DIR, "train.csv")
-test_path  = os.path.join(OUTPUT_DIR, "test.csv")
-
-train_df.to_csv(train_path, index=False)
-test_df.to_csv(test_path,  index=False)
-
-print(f"\n Train set saved : {train_path}  ({len(train_df)} records)")
-print(f" Test set saved  : {test_path}   ({len(test_df)} records)")
-print("\n Phase 4.1 DONE!")
+print(f"✅ Total    : {len(df)}")
+print(f"✅ Normal   : {len(df[df.label==0])}")
+print(f"✅ Anomalous: {len(df[df.label==1])}")
+print(f"✅ Features : {len(df.columns)-1}")
+print(f"\n🎉 Done!")

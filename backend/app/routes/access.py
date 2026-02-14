@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -6,44 +6,312 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
-from ..models import AccessLog
-from ..services import AccessService
+from ..models import AccessLog, AccessPoint, AnomalyAlert, User
+from ..services import AccessDecisionEngine, create_alert, extract_features
+from ..services.ml_service import FEATURE_COLS
 
 
 router = APIRouter(prefix="/access", tags=["access"])
+ml_router = APIRouter(prefix="/ml", tags=["ml"])
 
 
 class AccessRequest(BaseModel):
     badge_id: str
     access_point_id: int
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
+    method: Optional[str] = "badge"
 
 
 class AccessDecisionResponse(BaseModel):
     decision: str
     risk_score: float
+    if_score: Optional[float] = None
+    ae_score: Optional[float] = None
     log_id: Optional[int]
-    reason: str
+    user_name: Optional[str] = None
+    access_point_name: Optional[str] = None
+    mode: Optional[str] = None
+    reasoning: Optional[str] = None
+    alert_created: bool
+
+
+_ENGINE: Optional[AccessDecisionEngine] = None
+
+
+def get_engine() -> AccessDecisionEngine:
+    global _ENGINE
+    if _ENGINE is None:
+        _ENGINE = AccessDecisionEngine()
+    return _ENGINE
+
+
+def _rule_based_score(features: list) -> float:
+    (
+        hour,
+        day_of_week,
+        is_weekend,
+        access_frequency_24h,
+        time_since_last_access_min,
+        location_match,
+        role_level,
+        is_restricted_area,
+        is_first_access_today,
+        sequential_zone_violation,
+        access_attempt_count,
+        time_of_week,
+        hour_deviation_from_norm,
+    ) = features
+
+    score = 0.0
+
+    if hour < 6 or hour > 22:
+        score += 0.35
+    if is_weekend and role_level == 1:
+        score += 0.20
+    if not location_match:
+        score += 0.20
+    if is_restricted_area and role_level < 3:
+        score += 0.30
+    if access_frequency_24h > 10:
+        score += 0.25
+    if time_since_last_access_min and time_since_last_access_min < 5:
+        score += 0.30
+    if sequential_zone_violation:
+        score += 0.20
+    if access_attempt_count > 2:
+        score += 0.15
+
+    return float(min(max(score, 0.0), 1.0))
 
 
 @router.post("/request", response_model=AccessDecisionResponse, status_code=status.HTTP_200_OK)
 def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
     """Process an access request and return a decision."""
     try:
-        service = AccessService(db)
-        decision, risk_score, log_id, reason = service.process_access_request(
-            badge_id=payload.badge_id,
-            access_point_id=payload.access_point_id,
-            timestamp=payload.timestamp,
+        timestamp = payload.timestamp or datetime.now(timezone.utc)
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+
+        user = db.query(User).filter(User.badge_id == payload.badge_id).first()
+        if not user:
+            return AccessDecisionResponse(
+                decision="denied",
+                risk_score=1.0,
+                log_id=None,
+                user_name=None,
+                access_point_name=None,
+                mode="rule_based",
+                reasoning="unknown_badge",
+                alert_created=False,
+            )
+
+        if not user.is_active:
+            access_point = (
+                db.query(AccessPoint)
+                .filter(AccessPoint.id == payload.access_point_id)
+                .first()
+            )
+            access_log_id = None
+            if access_point:
+                access_log = AccessLog(
+                    user_id=user.id,
+                    access_point_id=access_point.id,
+                    timestamp=timestamp,
+                    decision="denied",
+                    risk_score=1.0,
+                    method=payload.method or "badge",
+                    badge_id_used=payload.badge_id,
+                )
+                db.add(access_log)
+                db.commit()
+                db.refresh(access_log)
+                access_log_id = access_log.id
+            return AccessDecisionResponse(
+                decision="denied",
+                risk_score=1.0,
+                log_id=access_log_id,
+                user_name=f"{user.first_name} {user.last_name}",
+                access_point_name=access_point.name if access_point else None,
+                mode="rule_based",
+                reasoning="deactivated_user",
+                alert_created=False,
+            )
+
+        access_point = (
+            db.query(AccessPoint)
+            .filter(AccessPoint.id == payload.access_point_id)
+            .first()
         )
+        if not access_point:
+            return AccessDecisionResponse(
+                decision="denied",
+                risk_score=1.0,
+                log_id=None,
+                user_name=f"{user.first_name} {user.last_name}",
+                access_point_name=None,
+                mode="rule_based",
+                reasoning="invalid_access_point",
+                alert_created=False,
+            )
+        if access_point.status != "active":
+            return AccessDecisionResponse(
+                decision="denied",
+                risk_score=1.0,
+                log_id=None,
+                user_name=f"{user.first_name} {user.last_name}",
+                access_point_name=access_point.name,
+                mode="rule_based",
+                reasoning="access_point_inactive",
+                alert_created=False,
+            )
+
+        if user.clearance_level < access_point.required_clearance:
+            features = extract_features(user, access_point, timestamp, db)
+            access_log = AccessLog(
+                user_id=user.id,
+                access_point_id=access_point.id,
+                timestamp=timestamp,
+                decision="denied",
+                risk_score=0.95,
+                method=payload.method or "badge",
+                hour=features["raw"]["hour"],
+                day_of_week=features["raw"]["day_of_week"],
+                is_weekend=bool(features["raw"]["is_weekend"]),
+                access_frequency_24h=features["raw"]["access_frequency_24h"],
+                time_since_last_access_min=features["raw"]["time_since_last_access_min"],
+                location_match=bool(features["raw"]["location_match"]),
+                role_level=features["raw"]["role_level"],
+                is_restricted_area=bool(features["raw"]["is_restricted_area"]),
+                is_first_access_today=bool(features["raw"]["is_first_access_today"]),
+                sequential_zone_violation=bool(
+                    features["raw"]["sequential_zone_violation"]
+                ),
+                access_attempt_count=features["raw"]["access_attempt_count"],
+                time_of_week=features["raw"]["time_of_week"],
+                hour_deviation_from_norm=features["raw"]["hour_deviation_from_norm"],
+                badge_id_used=payload.badge_id,
+                context={
+                    "features_raw": features["raw"],
+                    "features_scaled": features["scaled"],
+                },
+            )
+            db.add(access_log)
+            db.flush()
+
+            alert = AnomalyAlert(
+                log_id=access_log.id,
+                alert_type="unauthorized_zone",
+                severity="high",
+                status="open",
+                is_resolved=False,
+                description="Insufficient clearance for access point",
+                confidence=0.95,
+                triggered_by="rule_engine",
+            )
+            db.add(alert)
+
+            user.last_seen_at = timestamp
+            db.commit()
+            db.refresh(access_log)
+
+            return AccessDecisionResponse(
+                decision="denied",
+                risk_score=0.95,
+                log_id=access_log.id,
+                user_name=f"{user.first_name} {user.last_name}",
+                access_point_name=access_point.name,
+                mode="rule_based",
+                reasoning="insufficient_clearance",
+                alert_created=True,
+            )
+
+        features = extract_features(user, access_point, timestamp, db)
+
+        engine = get_engine()
+        try:
+            ml_result = engine.decide(features["list"])
+        except Exception as exc:
+            print(f"ML scoring failed, falling back to rule-based: {exc}")
+            raw_list = [features["raw"][name] for name in FEATURE_COLS]
+            risk_score = _rule_based_score(raw_list)
+            if risk_score < engine.GRANT_THRESHOLD:
+                decision = "granted"
+                reasoning = (
+                    f"Risk score {risk_score:.4f} below grant threshold {engine.GRANT_THRESHOLD}"
+                )
+            elif risk_score < engine.DENY_THRESHOLD:
+                decision = "delayed"
+                reasoning = f"Risk score {risk_score:.4f} in delay zone - guard notified"
+            else:
+                decision = "denied"
+                reasoning = (
+                    f"Risk score {risk_score:.4f} above deny threshold {engine.DENY_THRESHOLD}"
+                )
+            ml_result = {
+                "decision": decision,
+                "risk_score": round(risk_score, 4),
+                "if_score": None,
+                "ae_score": None,
+                "reasoning": reasoning,
+                "mode": "rule_based",
+            }
+
+        access_log = AccessLog(
+            user_id=user.id,
+            access_point_id=access_point.id,
+            timestamp=timestamp,
+            decision=ml_result["decision"],
+            risk_score=ml_result["risk_score"],
+            method=payload.method or "badge",
+            hour=features["raw"]["hour"],
+            day_of_week=features["raw"]["day_of_week"],
+            is_weekend=bool(features["raw"]["is_weekend"]),
+            access_frequency_24h=features["raw"]["access_frequency_24h"],
+            time_since_last_access_min=features["raw"]["time_since_last_access_min"],
+            location_match=bool(features["raw"]["location_match"]),
+            role_level=features["raw"]["role_level"],
+            is_restricted_area=bool(features["raw"]["is_restricted_area"]),
+            is_first_access_today=bool(features["raw"]["is_first_access_today"]),
+            sequential_zone_violation=bool(features["raw"]["sequential_zone_violation"]),
+            access_attempt_count=features["raw"]["access_attempt_count"],
+            time_of_week=features["raw"]["time_of_week"],
+            hour_deviation_from_norm=features["raw"]["hour_deviation_from_norm"],
+            badge_id_used=payload.badge_id,
+            context={"features_raw": features["raw"], "features_scaled": features["scaled"]},
+        )
+        db.add(access_log)
+
+        user.last_seen_at = timestamp
+        db.commit()
+        db.refresh(access_log)
+
+        alert_created = False
+        if ml_result["decision"] == "denied" or (
+            ml_result["decision"] == "delayed" and ml_result["risk_score"] >= 0.50
+        ):
+            create_alert(db, access_log.id, ml_result, features["raw"])
+            alert_created = True
+
         return AccessDecisionResponse(
-            decision=decision,
-            risk_score=risk_score,
-            log_id=log_id,
-            reason=reason,
+            decision=ml_result["decision"],
+            risk_score=ml_result["risk_score"],
+            if_score=ml_result.get("if_score"),
+            ae_score=ml_result.get("ae_score"),
+            log_id=access_log.id,
+            user_name=f"{user.first_name} {user.last_name}",
+            access_point_name=access_point.name,
+            mode=ml_result.get("mode"),
+            reasoning=ml_result.get("reasoning"),
+            alert_created=alert_created,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@ml_router.get("/status", status_code=status.HTTP_200_OK)
+def ml_status():
+    engine = get_engine()
+    return engine.status()
 
 
 @router.get("/logs", status_code=status.HTTP_200_OK)

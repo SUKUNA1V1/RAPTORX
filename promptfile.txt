@@ -1,0 +1,579 @@
+You are helping me complete Phase 4.7 of an AI-Powered Contextual Access Control System (PFE project).
+
+## PROJECT CONTEXT
+- Backend: FastAPI (Python) — already built in Phase 3.2 + 3.3
+- Database: PostgreSQL (already set up)
+- DB URL: postgresql://postgres:YOUR_PASSWORD@localhost:5432/access_control_db
+- Project root: E:/RAPTORX/
+- Backend folder: E:/RAPTORX/backend/
+- ML models folder: E:/RAPTORX/ml/models/
+
+## EXISTING ML MODELS (already trained and saved)
+- E:/RAPTORX/ml/models/isolation_forest.pkl   ← trained Isolation Forest
+- E:/RAPTORX/ml/models/autoencoder.keras      ← trained Autoencoder
+- E:/RAPTORX/ml/models/autoencoder_config.pkl ← threshold + config
+- E:/RAPTORX/ml/models/scaler.pkl             ← fitted MinMaxScaler
+- E:/RAPTORX/ml/models/ensemble_config.pkl    ← ensemble weights config
+
+## EXISTING DECISION ENGINE (already built and tested)
+File: E:/RAPTORX/decision_engine.py
+Class: AccessDecisionEngine
+- Loads both models on startup
+- decide(features: list) → returns decision, risk_score, if_score, ae_score, reasoning
+- status() → returns model loading status
+- Ensemble: 30% Isolation Forest + 70% Autoencoder
+- Thresholds: GRANT < 0.30, DELAY 0.30-0.60, DENY >= 0.60
+- Fallback to rule-based if models unavailable
+
+## EXISTING 13 ML FEATURES (in exact order)
+FEATURE_COLS = [
+    "hour",                        # 0-23
+    "day_of_week",                 # 0=Monday to 6=Sunday
+    "is_weekend",                  # 0 or 1
+    "access_frequency_24h",        # count of accesses in last 24h
+    "time_since_last_access_min",  # minutes since last access
+    "location_match",              # 1 if zone matches department
+    "role_level",                  # 1=employee/contractor/visitor, 2=security/manager, 3=admin
+    "is_restricted_area",          # 1 if access point is restricted
+    "is_first_access_today",       # 1 if first access of the day
+    "sequential_zone_violation",   # 1 if accessed different zone < 5 min ago
+    "access_attempt_count",        # failed attempts before this one
+    "time_of_week",                # day_of_week * 24 + hour (0-167)
+    "hour_deviation_from_norm"     # how much hour deviates from user's usual pattern
+]
+
+## EXISTING DATABASE TABLES
+1. users: id, badge_id(UNIQUE), first_name, last_name, email, phone, role(ENUM), department, clearance_level(1-5), is_active, pin_hash, created_at, updated_at, last_seen_at
+2. access_points: id, name, type(ENUM), building, floor, room, zone, status(ENUM: active/maintenance/disabled), required_clearance(1-5), is_restricted(BOOL), ip_address, installed_at, description
+3. access_logs: id, user_id(FK), access_point_id(FK), timestamp, decision(ENUM: granted/denied/delayed), risk_score(0-1), method, hour, day_of_week, is_weekend, access_frequency_24h, time_since_last_access_min, location_match, role_level, is_restricted_area, badge_id_used, context(JSONB)
+4. anomaly_alerts: id, log_id(FK), alert_type, severity(ENUM: low/medium/high/critical), status(ENUM: open/acknowledged/resolved/false_positive), is_resolved, description, confidence, triggered_by, created_at, resolved_at, resolved_by(FK), notes
+5. access_rules: id, access_point_id(FK), role, department, min_clearance, allowed_days, time_start, time_end, max_daily_accesses, is_active, description, created_at
+
+## ZONE TO DEPARTMENT MAPPING
+ZONE_DEPARTMENT_MAP = {
+    "engineering": "Engineering",
+    "hr": "HR",
+    "finance": "Finance",
+    "marketing": "Marketing",
+    "logistics": "Logistics",
+    "it": "IT",
+    "server-room": "IT",
+    "executive": "Management",
+    "lobby": None,      # anyone allowed
+    "parking": None,    # anyone allowed
+}
+
+ROLE_LEVEL_MAP = {
+    "employee": 1, "contractor": 1, "visitor": 1,
+    "security": 2, "manager": 2,
+    "admin": 3,
+}
+
+---
+
+## PHASE 4.7 — WHAT TO BUILD
+
+### TASK 1: Copy decision_engine.py into backend
+
+Copy E:/RAPTORX/decision_engine.py to E:/RAPTORX/backend/app/services/decision_engine.py
+Make one change: update the default models_dir path:
+```python
+def __init__(self, models_dir=None):
+    if models_dir is None:
+        # Auto-detect path relative to project root
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        models_dir = os.path.join(base, "ml", "models")
+    self.models_dir = models_dir
+```
+
+---
+
+### TASK 2: Create ml_service.py
+
+Create E:/RAPTORX/backend/app/services/ml_service.py with:
+
+1. Function: extract_features(user, access_point, timestamp, db, failed_attempts=0) → dict
+   - Extracts all 13 features from the request context + database queries
+   - Queries access_logs table for frequency and last access time
+   - Calculates location_match using ZONE_DEPARTMENT_MAP
+   - Calculates hour_deviation_from_norm from user's last 50 access logs
+   - Scales features using the loaded scaler.pkl
+   - Returns: {"raw": dict, "scaled": dict, "list": list}
+
+2. Function: get_scaler() → MinMaxScaler
+   - Loads scaler.pkl once at startup and caches it
+
+3. Function: determine_alert_type(features_raw: dict, risk_score: float) → str
+   - Returns alert type string based on which features triggered highest scores:
+     - hour < 6 or hour > 22 → "unusual_hour"
+     - is_weekend == 1 → "weekend_access"
+     - is_restricted_area == 1 and role_level == 1 → "unauthorized_zone"
+     - access_frequency_24h > 10 → "high_frequency"
+     - time_since_last_access_min < 5 and location_match == 0 → "badge_cloning"
+     - location_match == 0 → "location_mismatch"
+     - default → "suspicious_pattern"
+
+4. Function: determine_alert_severity(risk_score: float) → str
+   - risk_score >= 0.85 → "critical"
+   - risk_score >= 0.70 → "high"
+   - risk_score >= 0.55 → "medium"
+   - default → "low"
+
+---
+
+### TASK 3: Create alert_service.py
+
+Create E:/RAPTORX/backend/app/services/alert_service.py with:
+
+Function: create_alert(db, log_id, ml_result, features_raw) → AnomalyAlert
+- Creates anomaly_alert record in database
+- alert_type from determine_alert_type()
+- severity from determine_alert_severity()
+- confidence = risk_score
+- triggered_by = ml_result["mode"] (ensemble/isolation_forest_only/etc)
+- description = ml_result["reasoning"]
+- status = "open"
+- is_resolved = False
+
+---
+
+### TASK 4: Update POST /api/access/request endpoint
+
+Update E:/RAPTORX/backend/app/routes/access.py
+
+The existing endpoint should be completely replaced with this full logic:
+POST /api/access/request
+Request body: { badge_id: str, access_point_id: int, timestamp: datetime (optional), method: str (optional, default "badge") }
+Full flow:
+
+Look up user by badge_id
+→ if not found: save log with decision=denied, return {"decision": "denied", "reason": "unknown_badge", "risk_score": 1.0}
+Check user.is_active
+→ if False: save log, return {"decision": "denied", "reason": "deactivated_user", "risk_score": 1.0}
+Look up access_point by access_point_id
+→ if not found: return {"decision": "denied", "reason": "invalid_access_point"}
+→ if status != "active": return {"decision": "denied", "reason": "access_point_inactive"}
+Check clearance: user.clearance_level >= access_point.required_clearance
+→ if insufficient: save log with risk_score=0.95, create alert type="unauthorized_zone", return denied
+Extract features using ml_service.extract_features()
+Get decision from decision engine:
+engine = get_engine()
+result = engine.decide(features["list"])
+Save access_log with ALL fields including ML feature columns:
+
+decision, risk_score, method, badge_id_used
+hour, day_of_week, is_weekend, access_frequency_24h
+time_since_last_access_min, location_match, role_level, is_restricted_area
+
+
+Update user.last_seen_at = timestamp
+If decision is "denied" OR (decision is "delayed" AND risk_score >= 0.50):
+→ create anomaly_alert using alert_service.create_alert()
+Return full response:
+{
+"decision": "granted" | "delayed" | "denied",
+"risk_score": float,
+"if_score": float,
+"ae_score": float,
+"log_id": int,
+"user_name": str,
+"access_point_name": str,
+"mode": str,
+"reasoning": str,
+"alert_created": bool
+}
+
+
+---
+
+### TASK 5: Add /api/ml/status endpoint
+
+Add to E:/RAPTORX/backend/app/routes/access.py:
+GET /api/ml/status
+Returns:
+{
+"is_loaded": bool,
+"isolation_forest": bool,
+"autoencoder": bool,
+"mode": str,
+"grant_threshold": float,
+"deny_threshold": float,
+"if_weight": float,
+"ae_weight": float
+}
+
+---
+
+### TASK 6: Initialize engine on startup
+
+Update E:/RAPTORX/backend/app/main.py:
+
+Add startup event that loads the decision engine when FastAPI starts:
+```python
+@app.on_event("startup")
+async def startup_event():
+    from app.routes.access import get_engine
+    engine = get_engine()
+    print(f"✅ Decision Engine loaded: {engine.status()}")
+```
+
+---
+
+### TASK 7: Update requirements.txt
+
+Make sure these are in E:/RAPTORX/backend/requirements.txt:
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+alembic
+pydantic
+pydantic-settings
+python-dotenv
+tensorflow==2.20.0
+scikit-learn
+joblib
+numpy
+pandas
+
+---
+
+## IMPORTANT INSTRUCTIONS
+
+1. The ML models are at E:/RAPTORX/ml/models/ — use relative paths that work regardless of where uvicorn is launched from. Use os.path to build absolute paths based on __file__ location.
+
+2. Load the decision engine ONCE at module level using a singleton pattern — do NOT reload models on every request as TensorFlow loading takes 3-5 seconds.
+
+3. Handle ALL exceptions in the access request endpoint — if ML scoring fails for any reason, fall back to rule-based decision and log the error. Never let the endpoint crash.
+
+4. The scaler was fitted on these exact feature ranges:
+   - hour: 0-23
+   - day_of_week: 0-6
+   - is_weekend: 0-1
+   - access_frequency_24h: 0-40
+   - time_since_last_access_min: 0-480
+   - location_match: 0-1
+   - role_level: 1-3
+   - is_restricted_area: 0-1
+   - is_first_access_today: 0-1
+   - sequential_zone_violation: 0-1
+   - access_attempt_count: 0-8
+   - time_of_week: 0-167
+   - hour_deviation_from_norm: 0-10
+   Clip all raw feature values to these ranges before scaling.
+
+5. The access_logs table already has columns for all ML features — fill them all when saving.
+
+6. Suppress TensorFlow warnings at the top of any file that imports tensorflow:
+   import os
+   os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+   os.environ["TF_CPP_MIN_LOG_LEVEL"]  = "2"
+
+7. After completing all tasks, start the server with:
+   cd E:/RAPTORX/backend
+   uvicorn app.main:app --reload --port 8000
+
+8. Test these 3 endpoints to verify everything works:
+   GET  http://localhost:8000/health
+   GET  http://localhost:8000/api/ml/status
+   POST http://localhost:8000/api/access/request
+   Body: {"badge_id": "B001", "access_point_id": 1}
+
+The POST should return:
+{
+    "decision": "granted",
+    "risk_score": < 0.30,
+    "if_score": float,
+    "ae_score": float,
+    "log_id": integer,
+    "mode": "ensemble"
+}You are helping me complete Phase 4.7 of an AI-Powered Contextual Access Control System (PFE project).
+
+## PROJECT CONTEXT
+- Backend: FastAPI (Python) — already built in Phase 3.2 + 3.3
+- Database: PostgreSQL (already set up)
+- DB URL: postgresql://postgres:YOUR_PASSWORD@localhost:5432/access_control_db
+- Project root: E:/RAPTORX/
+- Backend folder: E:/RAPTORX/backend/
+- ML models folder: E:/RAPTORX/ml/models/
+
+## EXISTING ML MODELS (already trained and saved)
+- E:/RAPTORX/ml/models/isolation_forest.pkl   ← trained Isolation Forest
+- E:/RAPTORX/ml/models/autoencoder.keras      ← trained Autoencoder
+- E:/RAPTORX/ml/models/autoencoder_config.pkl ← threshold + config
+- E:/RAPTORX/ml/models/scaler.pkl             ← fitted MinMaxScaler
+- E:/RAPTORX/ml/models/ensemble_config.pkl    ← ensemble weights config
+
+## EXISTING DECISION ENGINE (already built and tested)
+File: E:/RAPTORX/decision_engine.py
+Class: AccessDecisionEngine
+- Loads both models on startup
+- decide(features: list) → returns decision, risk_score, if_score, ae_score, reasoning
+- status() → returns model loading status
+- Ensemble: 30% Isolation Forest + 70% Autoencoder
+- Thresholds: GRANT < 0.30, DELAY 0.30-0.60, DENY >= 0.60
+- Fallback to rule-based if models unavailable
+
+## EXISTING 13 ML FEATURES (in exact order)
+FEATURE_COLS = [
+    "hour",                        # 0-23
+    "day_of_week",                 # 0=Monday to 6=Sunday
+    "is_weekend",                  # 0 or 1
+    "access_frequency_24h",        # count of accesses in last 24h
+    "time_since_last_access_min",  # minutes since last access
+    "location_match",              # 1 if zone matches department
+    "role_level",                  # 1=employee/contractor/visitor, 2=security/manager, 3=admin
+    "is_restricted_area",          # 1 if access point is restricted
+    "is_first_access_today",       # 1 if first access of the day
+    "sequential_zone_violation",   # 1 if accessed different zone < 5 min ago
+    "access_attempt_count",        # failed attempts before this one
+    "time_of_week",                # day_of_week * 24 + hour (0-167)
+    "hour_deviation_from_norm"     # how much hour deviates from user's usual pattern
+]
+
+## EXISTING DATABASE TABLES
+1. users: id, badge_id(UNIQUE), first_name, last_name, email, phone, role(ENUM), department, clearance_level(1-5), is_active, pin_hash, created_at, updated_at, last_seen_at
+2. access_points: id, name, type(ENUM), building, floor, room, zone, status(ENUM: active/maintenance/disabled), required_clearance(1-5), is_restricted(BOOL), ip_address, installed_at, description
+3. access_logs: id, user_id(FK), access_point_id(FK), timestamp, decision(ENUM: granted/denied/delayed), risk_score(0-1), method, hour, day_of_week, is_weekend, access_frequency_24h, time_since_last_access_min, location_match, role_level, is_restricted_area, badge_id_used, context(JSONB)
+4. anomaly_alerts: id, log_id(FK), alert_type, severity(ENUM: low/medium/high/critical), status(ENUM: open/acknowledged/resolved/false_positive), is_resolved, description, confidence, triggered_by, created_at, resolved_at, resolved_by(FK), notes
+5. access_rules: id, access_point_id(FK), role, department, min_clearance, allowed_days, time_start, time_end, max_daily_accesses, is_active, description, created_at
+
+## ZONE TO DEPARTMENT MAPPING
+ZONE_DEPARTMENT_MAP = {
+    "engineering": "Engineering",
+    "hr": "HR",
+    "finance": "Finance",
+    "marketing": "Marketing",
+    "logistics": "Logistics",
+    "it": "IT",
+    "server-room": "IT",
+    "executive": "Management",
+    "lobby": None,      # anyone allowed
+    "parking": None,    # anyone allowed
+}
+
+ROLE_LEVEL_MAP = {
+    "employee": 1, "contractor": 1, "visitor": 1,
+    "security": 2, "manager": 2,
+    "admin": 3,
+}
+
+---
+
+## PHASE 4.7 — WHAT TO BUILD
+
+### TASK 1: Copy decision_engine.py into backend
+
+Copy E:/RAPTORX/decision_engine.py to E:/RAPTORX/backend/app/services/decision_engine.py
+Make one change: update the default models_dir path:
+```python
+def __init__(self, models_dir=None):
+    if models_dir is None:
+        # Auto-detect path relative to project root
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        models_dir = os.path.join(base, "ml", "models")
+    self.models_dir = models_dir
+```
+
+---
+
+### TASK 2: Create ml_service.py
+
+Create E:/RAPTORX/backend/app/services/ml_service.py with:
+
+1. Function: extract_features(user, access_point, timestamp, db, failed_attempts=0) → dict
+   - Extracts all 13 features from the request context + database queries
+   - Queries access_logs table for frequency and last access time
+   - Calculates location_match using ZONE_DEPARTMENT_MAP
+   - Calculates hour_deviation_from_norm from user's last 50 access logs
+   - Scales features using the loaded scaler.pkl
+   - Returns: {"raw": dict, "scaled": dict, "list": list}
+
+2. Function: get_scaler() → MinMaxScaler
+   - Loads scaler.pkl once at startup and caches it
+
+3. Function: determine_alert_type(features_raw: dict, risk_score: float) → str
+   - Returns alert type string based on which features triggered highest scores:
+     - hour < 6 or hour > 22 → "unusual_hour"
+     - is_weekend == 1 → "weekend_access"
+     - is_restricted_area == 1 and role_level == 1 → "unauthorized_zone"
+     - access_frequency_24h > 10 → "high_frequency"
+     - time_since_last_access_min < 5 and location_match == 0 → "badge_cloning"
+     - location_match == 0 → "location_mismatch"
+     - default → "suspicious_pattern"
+
+4. Function: determine_alert_severity(risk_score: float) → str
+   - risk_score >= 0.85 → "critical"
+   - risk_score >= 0.70 → "high"
+   - risk_score >= 0.55 → "medium"
+   - default → "low"
+
+---
+
+### TASK 3: Create alert_service.py
+
+Create E:/RAPTORX/backend/app/services/alert_service.py with:
+
+Function: create_alert(db, log_id, ml_result, features_raw) → AnomalyAlert
+- Creates anomaly_alert record in database
+- alert_type from determine_alert_type()
+- severity from determine_alert_severity()
+- confidence = risk_score
+- triggered_by = ml_result["mode"] (ensemble/isolation_forest_only/etc)
+- description = ml_result["reasoning"]
+- status = "open"
+- is_resolved = False
+
+---
+
+### TASK 4: Update POST /api/access/request endpoint
+
+Update E:/RAPTORX/backend/app/routes/access.py
+
+The existing endpoint should be completely replaced with this full logic:
+POST /api/access/request
+Request body: { badge_id: str, access_point_id: int, timestamp: datetime (optional), method: str (optional, default "badge") }
+Full flow:
+
+Look up user by badge_id
+→ if not found: save log with decision=denied, return {"decision": "denied", "reason": "unknown_badge", "risk_score": 1.0}
+Check user.is_active
+→ if False: save log, return {"decision": "denied", "reason": "deactivated_user", "risk_score": 1.0}
+Look up access_point by access_point_id
+→ if not found: return {"decision": "denied", "reason": "invalid_access_point"}
+→ if status != "active": return {"decision": "denied", "reason": "access_point_inactive"}
+Check clearance: user.clearance_level >= access_point.required_clearance
+→ if insufficient: save log with risk_score=0.95, create alert type="unauthorized_zone", return denied
+Extract features using ml_service.extract_features()
+Get decision from decision engine:
+engine = get_engine()
+result = engine.decide(features["list"])
+Save access_log with ALL fields including ML feature columns:
+
+decision, risk_score, method, badge_id_used
+hour, day_of_week, is_weekend, access_frequency_24h
+time_since_last_access_min, location_match, role_level, is_restricted_area
+
+
+Update user.last_seen_at = timestamp
+If decision is "denied" OR (decision is "delayed" AND risk_score >= 0.50):
+→ create anomaly_alert using alert_service.create_alert()
+Return full response:
+{
+"decision": "granted" | "delayed" | "denied",
+"risk_score": float,
+"if_score": float,
+"ae_score": float,
+"log_id": int,
+"user_name": str,
+"access_point_name": str,
+"mode": str,
+"reasoning": str,
+"alert_created": bool
+}
+
+
+---
+
+### TASK 5: Add /api/ml/status endpoint
+
+Add to E:/RAPTORX/backend/app/routes/access.py:
+GET /api/ml/status
+Returns:
+{
+"is_loaded": bool,
+"isolation_forest": bool,
+"autoencoder": bool,
+"mode": str,
+"grant_threshold": float,
+"deny_threshold": float,
+"if_weight": float,
+"ae_weight": float
+}
+
+---
+
+### TASK 6: Initialize engine on startup
+
+Update E:/RAPTORX/backend/app/main.py:
+
+Add startup event that loads the decision engine when FastAPI starts:
+```python
+@app.on_event("startup")
+async def startup_event():
+    from app.routes.access import get_engine
+    engine = get_engine()
+    print(f"✅ Decision Engine loaded: {engine.status()}")
+```
+
+---
+
+### TASK 7: Update requirements.txt
+
+Make sure these are in E:/RAPTORX/backend/requirements.txt:
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+alembic
+pydantic
+pydantic-settings
+python-dotenv
+tensorflow==2.20.0
+scikit-learn
+joblib
+numpy
+pandas
+
+---
+
+## IMPORTANT INSTRUCTIONS
+
+1. The ML models are at E:/RAPTORX/ml/models/ — use relative paths that work regardless of where uvicorn is launched from. Use os.path to build absolute paths based on __file__ location.
+
+2. Load the decision engine ONCE at module level using a singleton pattern — do NOT reload models on every request as TensorFlow loading takes 3-5 seconds.
+
+3. Handle ALL exceptions in the access request endpoint — if ML scoring fails for any reason, fall back to rule-based decision and log the error. Never let the endpoint crash.
+
+4. The scaler was fitted on these exact feature ranges:
+   - hour: 0-23
+   - day_of_week: 0-6
+   - is_weekend: 0-1
+   - access_frequency_24h: 0-40
+   - time_since_last_access_min: 0-480
+   - location_match: 0-1
+   - role_level: 1-3
+   - is_restricted_area: 0-1
+   - is_first_access_today: 0-1
+   - sequential_zone_violation: 0-1
+   - access_attempt_count: 0-8
+   - time_of_week: 0-167
+   - hour_deviation_from_norm: 0-10
+   Clip all raw feature values to these ranges before scaling.
+
+5. The access_logs table already has columns for all ML features — fill them all when saving.
+
+6. Suppress TensorFlow warnings at the top of any file that imports tensorflow:
+   import os
+   os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+   os.environ["TF_CPP_MIN_LOG_LEVEL"]  = "2"
+
+7. After completing all tasks, start the server with:
+   cd E:/RAPTORX/backend
+   uvicorn app.main:app --reload --port 8000
+
+8. Test these 3 endpoints to verify everything works:
+   GET  http://localhost:8000/health
+   GET  http://localhost:8000/api/ml/status
+   POST http://localhost:8000/api/access/request
+   Body: {"badge_id": "B001", "access_point_id": 1}
+
+The POST should return:
+{
+    "decision": "granted",
+    "risk_score": < 0.30,
+    "if_score": float,
+    "ae_score": float,
+    "log_id": integer,
+    "mode": "ensemble"
+}

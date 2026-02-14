@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .routes import access_router, alerts_router, stats_router, users_router
+from .routes import access_router, alerts_router, ml_router, stats_router, users_router
 
 
 app = FastAPI(title="AI Access Control System API")
@@ -27,7 +27,16 @@ def health_check():
     return {"status": "ok"}
 
 
+@app.on_event("startup")
+async def startup_event():
+    from app.routes.access import get_engine
+
+    engine = get_engine()
+    print(f"Decision Engine loaded: {engine.status()}")
+
+
 app.include_router(users_router, prefix="/api")
 app.include_router(access_router, prefix="/api")
+app.include_router(ml_router, prefix="/api")
 app.include_router(alerts_router, prefix="/api")
 app.include_router(stats_router, prefix="/api")

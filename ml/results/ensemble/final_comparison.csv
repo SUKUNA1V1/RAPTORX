@@ -1,0 +1,4 @@
+Model,Precision,Recall,F1-Score,AUC-ROC,FPR,Train Time,Inference
+Isolation Forest,98.27%,97.29%,0.9777,0.9997,0.13%,0.46s,9.6ms
+Autoencoder,75.27%,100.00%,0.8589,1.0000,2.47%,88.61s,65.5ms
+"Ensemble (Weighted (IF=0.3, AE=0.7))",100.00%,100.00%,1.0000,1.0000,0.00%,~89s,~75ms

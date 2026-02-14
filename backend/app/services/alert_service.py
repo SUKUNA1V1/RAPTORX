@@ -3,6 +3,25 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from ..models import AnomalyAlert
+from .ml_service import determine_alert_severity, determine_alert_type
+
+
+def create_alert(db: Session, log_id: int, ml_result: dict, features_raw: dict) -> AnomalyAlert:
+    risk_score = float(ml_result.get("risk_score", 0.0))
+    alert = AnomalyAlert(
+        log_id=log_id,
+        alert_type=determine_alert_type(features_raw, risk_score),
+        severity=determine_alert_severity(risk_score),
+        status="open",
+        is_resolved=False,
+        description=ml_result.get("reasoning"),
+        confidence=risk_score,
+        triggered_by=ml_result.get("mode"),
+    )
+    db.add(alert)
+    db.commit()
+    db.refresh(alert)
+    return alert
 
 
 class AlertService:

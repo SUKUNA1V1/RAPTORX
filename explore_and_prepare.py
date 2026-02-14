@@ -16,6 +16,7 @@ MODELS_DIR    = "ml/models"
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR,    exist_ok=True)
 
+# NEW — 13 features
 FEATURE_COLS = [
     "hour",
     "day_of_week",
@@ -24,7 +25,12 @@ FEATURE_COLS = [
     "time_since_last_access_min",
     "location_match",
     "role_level",
-    "is_restricted_area"
+    "is_restricted_area",
+    "is_first_access_today",
+    "sequential_zone_violation",
+    "access_attempt_count",
+    "time_of_week",
+    "hour_deviation_from_norm"
 ]
 
 # ============================================================
