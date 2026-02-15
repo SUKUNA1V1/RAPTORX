@@ -13,6 +13,7 @@ from ..services.ml_service import FEATURE_COLS
 
 router = APIRouter(prefix="/access", tags=["access"])
 ml_router = APIRouter(prefix="/ml", tags=["ml"])
+access_points_router = APIRouter(prefix="/access-points", tags=["access-points"])
 
 
 class AccessRequest(BaseModel):
@@ -82,6 +83,24 @@ def _rule_based_score(features: list) -> float:
         score += 0.15
 
     return float(min(max(score, 0.0), 1.0))
+
+
+@access_points_router.get("", status_code=status.HTTP_200_OK)
+def list_access_points(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    building: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Return access points list with optional filters."""
+    try:
+        query = db.query(AccessPoint)
+        if status_filter:
+            query = query.filter(AccessPoint.status == status_filter)
+        if building:
+            query = query.filter(AccessPoint.building == building)
+        return query.all()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.post("/request", response_model=AccessDecisionResponse, status_code=status.HTTP_200_OK)
@@ -341,22 +360,38 @@ def list_access_logs(
         if date_to:
             query = query.filter(AccessLog.timestamp <= date_to)
 
+        total = query.count()
         logs = query.order_by(AccessLog.timestamp.desc()).offset(skip).limit(limit).all()
-        results = []
+        items = []
         for log in logs:
-            results.append(
+            items.append(
                 {
                     "id": log.id,
                     "timestamp": log.timestamp,
                     "decision": log.decision,
-                    "risk_score": log.risk_score,
+                    "risk_score": float(log.risk_score or 0.0),
+                    "method": log.method,
+                    "badge_id_used": log.badge_id_used,
                     "user_id": log.user_id,
                     "access_point_id": log.access_point_id,
-                    "user_name": f"{log.user.first_name} {log.user.last_name}" if log.user else None,
-                    "access_point_name": log.access_point.name if log.access_point else None,
+                    "user": {
+                        "first_name": log.user.first_name,
+                        "last_name": log.user.last_name,
+                        "badge_id": log.user.badge_id,
+                        "role": log.user.role,
+                    }
+                    if log.user
+                    else None,
+                    "access_point": {
+                        "name": log.access_point.name,
+                        "building": log.access_point.building,
+                        "room": log.access_point.room,
+                    }
+                    if log.access_point
+                    else None,
                 }
             )
-        return results
+        return {"items": items, "total": total}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

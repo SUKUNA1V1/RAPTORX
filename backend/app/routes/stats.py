@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import case, func
@@ -21,6 +21,12 @@ def get_overview(db: Session = Depends(get_db)):
         total_accesses_today = (
             db.query(func.count(AccessLog.id))
             .filter(AccessLog.timestamp >= start_of_day)
+            .scalar()
+        )
+        granted_today = (
+            db.query(func.count(AccessLog.id))
+            .filter(AccessLog.timestamp >= start_of_day)
+            .filter(AccessLog.decision == "granted")
             .scalar()
         )
         denied_today = (
@@ -46,6 +52,7 @@ def get_overview(db: Session = Depends(get_db)):
 
         return {
             "total_accesses_today": total_accesses_today,
+            "granted_today": granted_today,
             "denied_today": denied_today,
             "delayed_today": delayed_today,
             "active_alerts_count": active_alerts_count,
@@ -60,37 +67,39 @@ def get_overview(db: Session = Depends(get_db)):
 def get_access_timeline(db: Session = Depends(get_db)):
     """Return hourly access counts for last 24 hours."""
     try:
-        now = datetime.now(timezone.utc)
-        start = now - timedelta(hours=24)
-
-        rows = (
-            db.query(
-                func.date_trunc("hour", AccessLog.timestamp).label("hour"),
-                func.sum(case((AccessLog.decision == "granted", 1), else_=0)).label("granted"),
-                func.sum(case((AccessLog.decision == "denied", 1), else_=0)).label("denied"),
-                func.sum(case((AccessLog.decision == "delayed", 1), else_=0)).label("delayed"),
+        today = date.today()
+        result = []
+        for hour in range(24):
+            start = datetime.combine(today, time(hour, 0))
+            end = datetime.combine(today, time(hour, 59, 59))
+            granted = (
+                db.query(func.count(AccessLog.id))
+                .filter(AccessLog.timestamp.between(start, end))
+                .filter(AccessLog.decision == "granted")
+                .scalar()
             )
-            .filter(AccessLog.timestamp >= start)
-            .group_by("hour")
-            .order_by("hour")
-            .all()
-        )
-
-        counts = {row.hour: row for row in rows}
-        results = []
-        for offset in range(24):
-            hour = (start + timedelta(hours=offset)).replace(minute=0, second=0, microsecond=0)
-            row = counts.get(hour)
-            results.append(
+            denied = (
+                db.query(func.count(AccessLog.id))
+                .filter(AccessLog.timestamp.between(start, end))
+                .filter(AccessLog.decision == "denied")
+                .scalar()
+            )
+            delayed = (
+                db.query(func.count(AccessLog.id))
+                .filter(AccessLog.timestamp.between(start, end))
+                .filter(AccessLog.decision == "delayed")
+                .scalar()
+            )
+            result.append(
                 {
                     "hour": hour,
-                    "granted": int(row.granted) if row else 0,
-                    "denied": int(row.denied) if row else 0,
-                    "delayed": int(row.delayed) if row else 0,
+                    "granted": granted,
+                    "denied": denied,
+                    "delayed": delayed,
                 }
             )
 
-        return results
+        return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -101,6 +110,7 @@ def get_anomaly_distribution(db: Session = Depends(get_db)):
     try:
         rows = (
             db.query(AnomalyAlert.severity, func.count(AnomalyAlert.id))
+            .filter(AnomalyAlert.is_resolved.is_(False))
             .group_by(AnomalyAlert.severity)
             .all()
         )
