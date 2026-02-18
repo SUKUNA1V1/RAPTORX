@@ -137,10 +137,17 @@ class AccessDecisionEngine:
             access_attempt_count,
             time_of_week,
             hour_deviation_from_norm,
+            geographic_impossibility,
+            distance_between_scans_km,
+            velocity_km_per_min,
+            zone_clearance_mismatch,
+            department_zone_mismatch,
+            concurrent_session_detected,
         ) = features
 
         score = 0.0
 
+        # Original rules
         if hour < 6 or hour > 22:
             score += 0.35
         if is_weekend and role_level == 1:
@@ -157,6 +164,27 @@ class AccessDecisionEngine:
             score += 0.20
         if access_attempt_count > 2:
             score += 0.15
+        
+        # NEW SPECIALIZED BADGE CLONING RULES
+        # Rule 1: Quick succession + location mismatch (strong badge cloning signal)
+        if time_since_last_access_min and time_since_last_access_min < 3 and not location_match:
+            score += 0.50
+        
+        # Rule 2: Very high frequency + quick succession
+        if time_since_last_access_min and time_since_last_access_min < 5 and access_frequency_24h > 15:
+            score += 0.40
+        
+        # Rule 3: Geographic impossibility (near-instant deny)
+        if geographic_impossibility:
+            score += 0.80
+        
+        # Rule 4: Concurrent session detected (badge used in two places)
+        if concurrent_session_detected:
+            score += 0.80
+        
+        # Rule 5: Zone clearance mismatch in restricted area
+        if zone_clearance_mismatch and is_restricted_area:
+            score += 0.45
 
         return float(np.clip(score, 0.0, 1.0))
 

@@ -148,15 +148,20 @@ class AccessDecisionEngine:
         """
         Simple rule-based scoring when models are unavailable.
         Returns a risk score between 0-1.
+        Now handles 19 features with specialized badge cloning rules.
         """
         (hour, day_of_week, is_weekend, access_frequency_24h,
          time_since_last_access_min, location_match, role_level,
          is_restricted_area, is_first_access_today,
          sequential_zone_violation, access_attempt_count,
-         time_of_week, hour_deviation_from_norm) = features
+         time_of_week, hour_deviation_from_norm,
+         geographic_impossibility, distance_between_scans_km,
+         velocity_km_per_min, zone_clearance_mismatch,
+         department_zone_mismatch, concurrent_session_detected) = features
 
         score = 0.0
 
+        # Original rules
         if hour < 6 or hour > 22:
             score += 0.35
         if is_weekend and role_level == 1:
@@ -173,6 +178,27 @@ class AccessDecisionEngine:
             score += 0.20
         if access_attempt_count > 2:
             score += 0.15
+        
+        # NEW SPECIALIZED BADGE CLONING RULES
+        # Rule 1: Quick succession + location mismatch (strong badge cloning signal)
+        if time_since_last_access_min and time_since_last_access_min < 3 and not location_match:
+            score += 0.50
+        
+        # Rule 2: Very high frequency + quick succession
+        if time_since_last_access_min and time_since_last_access_min < 5 and access_frequency_24h > 15:
+            score += 0.40
+        
+        # Rule 3: Geographic impossibility (near-instant deny)
+        if geographic_impossibility:
+            score += 0.80
+        
+        # Rule 4: Concurrent session detected (badge used in two places)
+        if concurrent_session_detected:
+            score += 0.80
+        
+        # Rule 5: Zone clearance mismatch in restricted area
+        if zone_clearance_mismatch and is_restricted_area:
+            score += 0.45
 
         return float(np.clip(score, 0.0, 1.0))
 
@@ -259,12 +285,15 @@ if __name__ == "__main__":
     engine = AccessDecisionEngine()
     print("Engine status:", engine.status())
 
-    # Feature order:
+    # Feature order (19 features):
     # hour, day_of_week, is_weekend, access_frequency_24h,
     # time_since_last_access_min, location_match, role_level,
     # is_restricted_area, is_first_access_today,
     # sequential_zone_violation, access_attempt_count,
-    # time_of_week, hour_deviation_from_norm
+    # time_of_week, hour_deviation_from_norm,
+    # geographic_impossibility, distance_between_scans_km,
+    # velocity_km_per_min, zone_clearance_mismatch,
+    # department_zone_mismatch, concurrent_session_detected
 
     # Load scaler to normalize features
     import joblib as jl
@@ -273,27 +302,27 @@ if __name__ == "__main__":
     test_cases = [
         {
             "name":     "✅ Normal employee — 9AM weekday",
-            "features": [9, 0, 0, 3, 120, 1, 1, 0, 1, 0, 0, 9,  0.5]
+            "features": [9, 0, 0, 3, 120, 1, 1, 0, 1, 0, 0, 9,  0.5, 0, 0.0, 0.0, 0, 0, 0]
         },
         {
             "name":     "✅ Admin — server room access",
-            "features": [10, 1, 0, 2, 180, 1, 3, 1, 0, 0, 0, 34, 0.3]
+            "features": [10, 1, 0, 2, 180, 1, 3, 1, 0, 0, 0, 34, 0.3, 0, 0.0, 0.0, 0, 0, 0]
         },
         {
             "name":     "⚠️  After hours — 2AM access",
-            "features": [2, 1, 0, 8, 15,  0, 1, 1, 0, 1, 3, 26, 5.0]
+            "features": [2, 1, 0, 8, 15,  0, 1, 1, 0, 1, 3, 26, 5.0, 0, 0.2, 0.013, 1, 1, 0]
         },
         {
             "name":     "⚠️  Weekend + restricted area",
-            "features": [3, 6, 1, 15, 5,  0, 1, 1, 0, 1, 4, 147, 6.0]
+            "features": [3, 6, 1, 15, 5,  0, 1, 1, 0, 1, 4, 147, 6.0, 0, 0.3, 0.06, 1, 1, 0]
         },
         {
-            "name":     "❌ Badge cloning — 2 min gap",
-            "features": [9, 0, 0, 18, 2,  0, 1, 0, 0, 1, 5, 9,  4.0]
+            "name":     "❌ Badge cloning — 2 min gap + location mismatch",
+            "features": [9, 0, 0, 18, 2,  0, 1, 1, 0, 1, 5, 9,  4.0, 1, 0.5, 0.25, 1, 1, 1]
         },
         {
-            "name":     "❌ High frequency + restricted",
-            "features": [2, 5, 1, 30, 3,  0, 1, 1, 0, 1, 6, 53, 7.0]
+            "name":     "❌ High frequency + restricted + impossible velocity",
+            "features": [2, 5, 1, 30, 1,  0, 1, 1, 0, 1, 6, 53, 7.0, 1, 0.4, 0.40, 1, 1, 1]
         },
     ]
 

@@ -29,7 +29,7 @@ RANDOM_SEED   = 42
 os.makedirs(MODELS_DIR,  exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# NEW — 13 features
+# NEW — 19 features
 FEATURE_COLS = [
     "hour",
     "day_of_week",
@@ -43,7 +43,13 @@ FEATURE_COLS = [
     "sequential_zone_violation",
     "access_attempt_count",
     "time_of_week",
-    "hour_deviation_from_norm"
+    "hour_deviation_from_norm",
+    "geographic_impossibility",
+    "distance_between_scans_km",
+    "velocity_km_per_min",
+    "zone_clearance_mismatch",
+    "department_zone_mismatch",
+    "concurrent_session_detected"
 ]
 
 # ============================================================
@@ -79,14 +85,14 @@ print("=" * 60)
 
 param_grid = [
     {"n_estimators": 100, "contamination": 0.07, "max_samples": 256},
-    {"n_estimators": 200, "contamination": 0.07, "max_samples": 256},
     {"n_estimators": 200, "contamination": 0.07, "max_samples": 512},
-    {"n_estimators": 300, "contamination": 0.07, "max_samples": 256},
-    {"n_estimators": 300, "contamination": 0.07, "max_samples": 512},
-    {"n_estimators": 200, "contamination": 0.08, "max_samples": 256},
-    {"n_estimators": 200, "contamination": 0.08, "max_samples": 512},
-    {"n_estimators": 300, "contamination": 0.08, "max_samples": 512},
-    {"n_estimators": 300, "contamination": 0.08, "max_samples": 1024},
+    {"n_estimators": 300, "contamination": 0.07, "max_samples": 1024},
+    {"n_estimators": 500, "contamination": 0.07, "max_samples": 2048},
+    {"n_estimators": 500, "contamination": 0.07, "max_samples": 4096},
+    {"n_estimators": 700, "contamination": 0.07, "max_samples": 2048},
+    {"n_estimators": 1000, "contamination": 0.07, "max_samples": 2048},
+    {"n_estimators": 500, "contamination": 0.08, "max_samples": 2048},
+    {"n_estimators": 500, "contamination": 0.08, "max_samples": 4096},
 ]
 
 tuning_results = []

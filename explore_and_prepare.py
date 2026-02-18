@@ -16,7 +16,7 @@ MODELS_DIR    = "ml/models"
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR,    exist_ok=True)
 
-# NEW — 13 features
+# NEW — 19 features
 FEATURE_COLS = [
     "hour",
     "day_of_week",
@@ -30,7 +30,13 @@ FEATURE_COLS = [
     "sequential_zone_violation",
     "access_attempt_count",
     "time_of_week",
-    "hour_deviation_from_norm"
+    "hour_deviation_from_norm",
+    "geographic_impossibility",
+    "distance_between_scans_km",
+    "velocity_km_per_min",
+    "zone_clearance_mismatch",
+    "department_zone_mismatch",
+    "concurrent_session_detected"
 ]
 
 # ============================================================

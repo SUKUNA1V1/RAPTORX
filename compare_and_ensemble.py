@@ -31,7 +31,10 @@ FEATURE_COLS = [
     "access_frequency_24h", "time_since_last_access_min",
     "location_match", "role_level", "is_restricted_area",
     "is_first_access_today", "sequential_zone_violation",
-    "access_attempt_count", "time_of_week", "hour_deviation_from_norm"
+    "access_attempt_count", "time_of_week", "hour_deviation_from_norm",
+    "geographic_impossibility", "distance_between_scans_km",
+    "velocity_km_per_min", "zone_clearance_mismatch",
+    "department_zone_mismatch", "concurrent_session_detected"
 ]
 
 # ============================================================
