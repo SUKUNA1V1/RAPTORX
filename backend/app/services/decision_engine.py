@@ -77,6 +77,49 @@ class AccessDecisionEngine:
         else:
             print("No models loaded - rule-based decisions")
 
+    def detect_badge_cloning(self, features: list) -> dict:
+        """
+        Specialized detector for physically impossible travel scenarios.
+        Returns cloning probability and reason.
+        """
+        (hour, day_of_week, is_weekend, access_frequency_24h,
+         time_since_last_access_min, location_match, role_level,
+         is_restricted_area, is_first_access_today,
+         sequential_zone_violation, access_attempt_count,
+         time_of_week, hour_deviation_from_norm,
+         geographic_impossibility, distance_between_scans_km,
+         velocity_km_per_min, zone_clearance_mismatch,
+         department_zone_mismatch, concurrent_session_detected) = features
+        
+        cloning_score = 0.0
+        reasons = []
+        
+        # Check 1: Impossible velocity (most reliable)
+        if velocity_km_per_min > 1.0:  # > 60 km/h
+            cloning_score += 0.80
+            reasons.append(f"Impossible velocity: {velocity_km_per_min:.1f} km/min")
+        
+        # Check 2: Concurrent session (definitive)
+        if concurrent_session_detected:
+            cloning_score += 0.90
+            reasons.append("Badge used simultaneously at another location")
+        
+        # Check 3: Very short gap + location mismatch
+        if time_since_last_access_min < 3 and not location_match:
+            cloning_score += 0.50
+            reasons.append(f"Location change in {time_since_last_access_min} min")
+        
+        # Check 4: High frequency + short gaps
+        if access_frequency_24h > 15 and time_since_last_access_min < 5:
+            cloning_score += 0.40
+            reasons.append("Abnormally rapid repeated access")
+        
+        return {
+            "is_cloning": cloning_score > 0.5,
+            "cloning_score": min(cloning_score, 1.0),
+            "reasons": reasons
+        }
+
     def compute_risk_score(self, features: list) -> dict:
         X = np.array(features).reshape(1, -1)
 
@@ -123,6 +166,10 @@ class AccessDecisionEngine:
         }
 
     def rule_based_score(self, features: list) -> float:
+        """
+        Enhanced rule-based scoring with badge cloning detection.
+        Returns a risk score between 0-1.
+        """
         (
             hour,
             day_of_week,
@@ -137,10 +184,17 @@ class AccessDecisionEngine:
             access_attempt_count,
             time_of_week,
             hour_deviation_from_norm,
+            geographic_impossibility,
+            distance_between_scans_km,
+            velocity_km_per_min,
+            zone_clearance_mismatch,
+            department_zone_mismatch,
+            concurrent_session_detected,
         ) = features
 
         score = 0.0
 
+        # Original rules
         if hour < 6 or hour > 22:
             score += 0.35
         if is_weekend and role_level == 1:
@@ -157,6 +211,26 @@ class AccessDecisionEngine:
             score += 0.20
         if access_attempt_count > 2:
             score += 0.15
+
+        # NEW: Badge cloning detection rules (HIGH PRIORITY - Quick Win #3)
+        if geographic_impossibility:
+            score += 0.80  # Near-instant deny
+        if concurrent_session_detected:
+            score += 0.80  # Definitive cloning
+        if velocity_km_per_min > 1.0:
+            score += 0.60  # Impossible travel speed
+        if time_since_last_access_min < 3 and not location_match:
+            score += 0.50  # Rapid location change
+        if time_since_last_access_min < 5 and access_frequency_24h > 15:
+            score += 0.40  # Suspicious rapid access
+
+        # NEW: Unauthorized zone detection rules (Quick Win #3)
+        if zone_clearance_mismatch and is_restricted_area:
+            score += 0.45  # Wrong clearance for zone
+        if department_zone_mismatch and is_restricted_area:
+            score += 0.35  # Wrong department for zone
+        if not location_match and is_restricted_area and role_level == 1:
+            score += 0.40  # Low-level in restricted area
 
         return float(np.clip(score, 0.0, 1.0))
 

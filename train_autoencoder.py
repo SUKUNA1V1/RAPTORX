@@ -23,7 +23,7 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 
 np.random.seed(RANDOM_SEED)
 
-# NEW — 13 features
+# NEW — 19 features (was 13, added 6 new geographic features)
 FEATURE_COLS = [
     "hour",
     "day_of_week",
@@ -37,7 +37,14 @@ FEATURE_COLS = [
     "sequential_zone_violation",
     "access_attempt_count",
     "time_of_week",
-    "hour_deviation_from_norm"
+    "hour_deviation_from_norm",
+    # NEW FEATURES for badge cloning & unauthorized zone detection
+    "geographic_impossibility",
+    "distance_between_scans_km",
+    "velocity_km_per_min",
+    "zone_clearance_mismatch",
+    "department_zone_mismatch",
+    "concurrent_session_detected",
 ]
 
 # ============================================================
@@ -84,16 +91,19 @@ print("\n" + "=" * 60)
 print("STEP 3 — Building Autoencoder architecture")
 print("=" * 60)
 
-n_features = len(FEATURE_COLS)  # 8 features
+n_features = len(FEATURE_COLS)  # 19 features
 
-# NEW — built for 13 features
+# NEW — built for 19 features with deeper architecture
 def build_autoencoder(n_features, learning_rate=0.001):
     inputs   = keras.Input(shape=(n_features,), name="input")
 
-    # Encoder — larger because more features
-    x        = layers.Dense(32, activation="relu", name="encoder_1")(inputs)
-    x        = layers.Dense(16, activation="relu", name="encoder_2")(x)
-    x        = layers.Dense(8,  activation="relu", name="encoder_3")(x)
+    # Encoder — deeper for better feature learning
+    x        = layers.Dense(64, activation="relu", name="encoder_1")(inputs)
+    x        = layers.Dropout(0.1, name="dropout_1")(x)
+    x        = layers.Dense(32, activation="relu", name="encoder_2")(x)
+    x        = layers.Dropout(0.1, name="dropout_2")(x)
+    x        = layers.Dense(16, activation="relu", name="encoder_3")(x)
+    x        = layers.Dense(8,  activation="relu", name="encoder_4")(x)
 
     # Bottleneck
     encoded  = layers.Dense(4,  activation="relu", name="bottleneck")(x)
@@ -102,6 +112,7 @@ def build_autoencoder(n_features, learning_rate=0.001):
     x        = layers.Dense(8,  activation="relu", name="decoder_1")(encoded)
     x        = layers.Dense(16, activation="relu", name="decoder_2")(x)
     x        = layers.Dense(32, activation="relu", name="decoder_3")(x)
+    x        = layers.Dense(64, activation="relu", name="decoder_4")(x)
 
     # Output
     outputs  = layers.Dense(n_features, activation="sigmoid", name="output")(x)
