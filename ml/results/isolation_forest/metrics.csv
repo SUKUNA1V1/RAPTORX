@@ -1,2 +1,2 @@
 model,n_estimators,contamination,max_samples,precision,recall,f1_score,auc_roc,false_positive_rate,training_time_sec,inference_ms,true_negatives,false_positives,false_negatives,true_positives
-Isolation Forest,100,0.07,256,0.9827,0.9729,0.9777,0.9997,0.0013,0.458,9.62,9288,12,19,681
+Isolation Forest,300,0.07,512,0.9957,1.0,0.9979,1.0,0.0003,0.938,16.349,9297,3,0,700
