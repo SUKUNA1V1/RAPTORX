@@ -11,6 +11,7 @@ from ..services import AccessDecisionEngine, create_alert, extract_features
 from ..services.ml_service import FEATURE_COLS
 
 
+# Purpose: Access-control endpoints for request evaluation, logs, and ML status.
 router = APIRouter(prefix="/access", tags=["access"])
 ml_router = APIRouter(prefix="/ml", tags=["ml"])
 access_points_router = APIRouter(prefix="/access-points", tags=["access-points"])
@@ -40,6 +41,7 @@ _ENGINE: Optional[AccessDecisionEngine] = None
 
 
 def get_engine() -> AccessDecisionEngine:
+    # Purpose: Lazily initialize and reuse a single decision-engine instance.
     global _ENGINE
     if _ENGINE is None:
         _ENGINE = AccessDecisionEngine()
@@ -47,6 +49,8 @@ def get_engine() -> AccessDecisionEngine:
 
 
 def _rule_based_score(features: list) -> float:
+    # Purpose: Compute fallback score from the base behavioral feature subset.
+    base_features = features[:13]
     (
         hour,
         day_of_week,
@@ -61,7 +65,7 @@ def _rule_based_score(features: list) -> float:
         access_attempt_count,
         time_of_week,
         hour_deviation_from_norm,
-    ) = features
+    ) = base_features
 
     score = 0.0
 
@@ -245,13 +249,13 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
             )
 
         features = extract_features(user, access_point, timestamp, db)
+        raw_list = [features["raw"][name] for name in FEATURE_COLS]
 
         engine = get_engine()
         try:
-            ml_result = engine.decide(features["list"])
+            ml_result = engine.decide(features["list"], raw_features=raw_list)
         except Exception as exc:
             print(f"ML scoring failed, falling back to rule-based: {exc}")
-            raw_list = [features["raw"][name] for name in FEATURE_COLS]
             risk_score = _rule_based_score(raw_list)
             if risk_score < engine.GRANT_THRESHOLD:
                 decision = "granted"
@@ -329,6 +333,7 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
 
 @ml_router.get("/status", status_code=status.HTTP_200_OK)
 def ml_status():
+    """Return model loading/threshold status for frontend diagnostics."""
     engine = get_engine()
     return engine.status()
 

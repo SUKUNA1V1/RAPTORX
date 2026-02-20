@@ -9,12 +9,14 @@ from ..models import AccessLog, AccessPoint, AnomalyAlert, User
 
 
 class AccessService:
+    """Service layer for synchronous rule-based access decisions and logging."""
     def __init__(self, db: Session):
         self.db = db
 
     def process_access_request(
         self, badge_id: str, access_point_id: int, timestamp: datetime
     ) -> Tuple[str, float, Optional[int], str]:
+        """Validate access request, score risk, persist log, and optionally create alert."""
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=timezone.utc)
 
@@ -114,6 +116,7 @@ class AccessService:
         return decision, risk_score, access_log.id, "risk_score"
 
     def _create_alert(self, access_log: AccessLog, alert_type: str, risk_score: float) -> None:
+        """Persist an anomaly alert linked to an access log entry."""
         severity = self._severity_from_score(risk_score)
         alert = AnomalyAlert(
             log_id=access_log.id,
@@ -129,12 +132,14 @@ class AccessService:
 
     @staticmethod
     def _location_match(department: Optional[str], zone: Optional[str]) -> bool:
+        """Return whether user's department aligns with access-point zone."""
         if not department or not zone:
             return False
         return department.strip().lower() == zone.strip().lower()
 
     @staticmethod
     def _role_level(role: str) -> int:
+        """Map role names to comparable integer privilege levels."""
         mapping = {
             "employee": 1,
             "manager": 2,
@@ -147,6 +152,7 @@ class AccessService:
 
     @staticmethod
     def _severity_from_score(score: float) -> str:
+        """Convert risk score to alert severity tier."""
         if score >= 0.85:
             return "critical"
         if score >= 0.7:
@@ -167,6 +173,7 @@ class AccessService:
         access_frequency_24h: int,
         time_since_last_access_min: Optional[int],
     ) -> Tuple[float, str]:
+        """Compute rule-based risk score and most relevant alert type."""
         score = 0.0
         triggered = []
 

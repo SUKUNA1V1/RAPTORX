@@ -21,8 +21,12 @@ class AccessDecisionEngine:
         risk_score >= DENY_THRESHOLD  -> DENIED
     """
 
-    GRANT_THRESHOLD = float(os.getenv("GRANT_THRESHOLD", "0.30"))
-    DENY_THRESHOLD = float(os.getenv("DENY_THRESHOLD", "0.60"))
+    GRANT_THRESHOLD = float(
+        os.getenv("DECISION_THRESHOLD_GRANT", os.getenv("GRANT_THRESHOLD", "0.30"))
+    )
+    DENY_THRESHOLD = float(
+        os.getenv("DECISION_THRESHOLD_DENY", os.getenv("DENY_THRESHOLD", "0.70"))
+    )
 
     IF_WEIGHT = 0.3
     AE_WEIGHT = 0.7
@@ -160,11 +164,12 @@ class AccessDecisionEngine:
 
         return float(np.clip(score, 0.0, 1.0))
 
-    def decide(self, features: list) -> dict:
+    def decide(self, features: list, raw_features: list | None = None) -> dict:
         scores = self.compute_risk_score(features)
 
         if scores["combined_score"] is None:
-            risk_score = self.rule_based_score(features)
+            risk_source = raw_features if raw_features is not None else features
+            risk_score = self.rule_based_score(risk_source)
             mode = "rule_based"
         else:
             risk_score = scores["combined_score"]
@@ -195,10 +200,16 @@ class AccessDecisionEngine:
         }
 
     def status(self) -> dict:
+        if_path = os.path.join(self.models_dir, "isolation_forest.pkl")
+        ae_path = os.path.join(self.models_dir, "autoencoder.keras")
+        ae_cfg_path = os.path.join(self.models_dir, "autoencoder_config.pkl")
+
         return {
             "is_loaded": self.is_loaded,
             "isolation_forest": self.if_model is not None,
             "autoencoder": self.ae_model is not None,
+            "if_artifact_found": os.path.exists(if_path),
+            "ae_artifact_found": os.path.exists(ae_path) and os.path.exists(ae_cfg_path),
             "mode": "ensemble"
             if (self.if_model and self.ae_model)
             else "single_model"

@@ -19,6 +19,7 @@ warnings.filterwarnings("ignore")
 # ============================================================
 # CONFIGURATION
 # ============================================================
+# Purpose: Configure paths, reproducibility, and shared feature schema.
 PROCESSED_DIR = "data/processed"
 MODELS_DIR    = "ml/models"
 RESULTS_DIR   = "ml/results/ensemble"
@@ -31,12 +32,15 @@ FEATURE_COLS = [
     "access_frequency_24h", "time_since_last_access_min",
     "location_match", "role_level", "is_restricted_area",
     "is_first_access_today", "sequential_zone_violation",
-    "access_attempt_count", "time_of_week", "hour_deviation_from_norm"
+    "access_attempt_count", "time_of_week", "hour_deviation_from_norm",
+    "geographic_impossibility", "distance_between_scans_km", "velocity_km_per_min",
+    "zone_clearance_mismatch", "department_zone_mismatch", "concurrent_session_detected",
 ]
 
 # ============================================================
 # STEP 1 — LOAD TEST DATA
 # ============================================================
+# Purpose: Load prepared test data used for side-by-side model comparison.
 print("=" * 60)
 print("STEP 1 — Loading test data and models")
 print("=" * 60)
@@ -51,6 +55,7 @@ print(f"Anomaly ratio   : {y_test.mean() * 100:.2f}%")
 # ============================================================
 # STEP 2 — LOAD BOTH MODELS
 # ============================================================
+# Purpose: Load trained Isolation Forest and Autoencoder artifacts.
 print("\n" + "=" * 60)
 print("STEP 2 — Loading models")
 print("=" * 60)
@@ -61,7 +66,7 @@ if_model    = if_data["model"]
 if_min      = if_data["min_score"]
 if_max      = if_data["max_score"]
 if_thresh   = if_data["best_threshold"]
-print(f"✅ Isolation Forest loaded")
+print(f"Isolation Forest loaded")
 print(f"   Best threshold : {if_thresh:.4f}")
 
 # Load Autoencoder
@@ -70,12 +75,13 @@ ae_config   = joblib.load(os.path.join(MODELS_DIR, "autoencoder_config.pkl"))
 ae_thresh   = ae_config["threshold"]
 ae_min_err  = ae_config["min_error"]
 ae_max_err  = ae_config["max_error"]
-print(f"✅ Autoencoder loaded")
+print(f"Autoencoder loaded")
 print(f"   Best threshold : {ae_thresh:.6f}")
 
 # ============================================================
 # STEP 3 — GET INDIVIDUAL RISK SCORES
 # ============================================================
+# Purpose: Compute normalized risk scores from each individual model.
 print("\n" + "=" * 60)
 print("STEP 3 — Computing individual risk scores")
 print("=" * 60)
@@ -97,6 +103,7 @@ print(f"AE  scores  — mean normal: {ae_scores[y_test==0].mean():.4f}  mean ano
 # ============================================================
 # STEP 4 — INDIVIDUAL MODEL METRICS
 # ============================================================
+# Purpose: Evaluate each model independently before ensembling.
 print("\n" + "=" * 60)
 print("STEP 4 — Individual model metrics")
 print("=" * 60)
@@ -129,6 +136,7 @@ ae_metrics = get_metrics(y_test, ae_preds, ae_scores, "Autoencoder")
 # ============================================================
 # STEP 5 — ENSEMBLE STRATEGIES
 # ============================================================
+# Purpose: Test weighted and voting ensemble strategies across thresholds.
 print("\n" + "=" * 60)
 print("STEP 5 — Testing ensemble strategies")
 print("=" * 60)
@@ -218,6 +226,7 @@ ensemble_results.append({
 # ============================================================
 # STEP 6 — SELECT BEST ENSEMBLE
 # ============================================================
+# Purpose: Select and persist the best ensemble configuration.
 print("\n" + "=" * 60)
 print("STEP 6 — Best ensemble strategy")
 print("=" * 60)
@@ -253,11 +262,12 @@ ensemble_config = {
     "feature_cols":  FEATURE_COLS,
 }
 joblib.dump(ensemble_config, os.path.join(MODELS_DIR, "ensemble_config.pkl"))
-print(f"\n✅ Ensemble config saved")
+print(f"\nEnsemble config saved")
 
 # ============================================================
 # STEP 7 — VISUALIZATIONS
 # ============================================================
+# Purpose: Generate charts comparing model performance and score distributions.
 print("\n" + "=" * 60)
 print("STEP 7 — Creating comparison visualizations")
 print("=" * 60)
@@ -283,7 +293,7 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "roc_curves_comparison.png"), dpi=150)
 plt.show()
-print("✅ Saved: roc_curves_comparison.png")
+print("Saved: roc_curves_comparison.png")
 
 # --- Plot 2: Side-by-side confusion matrices ---
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))
@@ -305,7 +315,7 @@ plt.suptitle("Confusion Matrices — Model Comparison", fontsize=15)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "confusion_matrices_comparison.png"), dpi=150)
 plt.show()
-print("✅ Saved: confusion_matrices_comparison.png")
+print("Saved: confusion_matrices_comparison.png")
 
 # --- Plot 3: Bar chart comparing F1, Precision, Recall ---
 models     = ["Isolation\nForest", "Autoencoder", "Ensemble"]
@@ -337,7 +347,7 @@ ax.grid(axis="y", alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "metrics_comparison_bar.png"), dpi=150)
 plt.show()
-print("✅ Saved: metrics_comparison_bar.png")
+print("Saved: metrics_comparison_bar.png")
 
 # --- Plot 4: Score distributions all 3 models ---
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))
@@ -361,13 +371,14 @@ plt.suptitle("Risk Score Distributions — All Models", fontsize=14)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "score_distributions_comparison.png"), dpi=150)
 plt.show()
-print("✅ Saved: score_distributions_comparison.png")
+print("Saved: score_distributions_comparison.png")
 
 # ============================================================
 # STEP 8 — FINAL COMPARISON TABLE
 # ============================================================
+# Purpose: Print and save a single summary table for all candidate models.
 print("\n" + "=" * 60)
-print("🎉 FINAL COMPARISON TABLE")
+print("FINAL COMPARISON TABLE")
 print("=" * 60)
 
 comparison = pd.DataFrame([
@@ -405,5 +416,5 @@ comparison = pd.DataFrame([
 
 print(comparison.to_string(index=False))
 comparison.to_csv(os.path.join(RESULTS_DIR, "final_comparison.csv"), index=False)
-print(f"\n✅ Comparison table saved: {RESULTS_DIR}/final_comparison.csv")
-print(f"\n➡️  Ready for Phase 4.6 — Decision Engine!")
+print(f"\nComparison table saved: {RESULTS_DIR}/final_comparison.csv")
+print(f"\nReady for Phase 4.6 — Decision Engine!")

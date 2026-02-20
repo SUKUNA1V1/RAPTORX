@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import case, func
@@ -8,6 +8,7 @@ from ..database import get_db
 from ..models import AccessLog, AccessPoint, AnomalyAlert, User
 
 
+# Purpose: Dashboard/statistics endpoints used by overview and chart widgets.
 router = APIRouter(prefix="/stats", tags=["stats"])
 
 
@@ -67,11 +68,11 @@ def get_overview(db: Session = Depends(get_db)):
 def get_access_timeline(db: Session = Depends(get_db)):
     """Return hourly access counts for last 24 hours."""
     try:
-        today = date.today()
+        today = datetime.now(timezone.utc).date()
         result = []
         for hour in range(24):
-            start = datetime.combine(today, time(hour, 0))
-            end = datetime.combine(today, time(hour, 59, 59))
+            start = datetime.combine(today, time(hour, 0), tzinfo=timezone.utc)
+            end = datetime.combine(today, time(hour, 59, 59), tzinfo=timezone.utc)
             granted = (
                 db.query(func.count(AccessLog.id))
                 .filter(AccessLog.timestamp.between(start, end))

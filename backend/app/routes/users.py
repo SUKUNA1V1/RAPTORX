@@ -9,6 +9,7 @@ from ..models import User
 from ..schemas.user import UserCreate, UserResponse, UserUpdate
 
 
+# Purpose: User CRUD endpoints with filtering and soft-delete behavior.
 router = APIRouter(prefix="/users", tags=["users"])
 
 

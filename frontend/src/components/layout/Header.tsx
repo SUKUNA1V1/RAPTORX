@@ -7,11 +7,8 @@ export default function Header() {
   const [time, setTime] = useState<Date | null>(null);
   const [online, setOnline] = useState(true);
   const [mlMode, setMlMode] = useState("ensemble");
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    setTime(new Date());
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -32,7 +29,7 @@ export default function Header() {
     <header className="h-16 min-h-[64px] bg-[color:var(--surface)] border-b border-[color:var(--border)] flex items-center justify-between px-6 flex-shrink-0 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
       <div>
         <p className="text-slate-400 text-sm">
-          {mounted && time
+          {time
             ? time.toLocaleDateString("en-US", {
                 weekday: "long",
                 year: "numeric",
@@ -61,7 +58,7 @@ export default function Header() {
         </div>
 
         <span className="font-mono text-sm text-slate-300">
-          {mounted && time
+          {time
             ? time.toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",

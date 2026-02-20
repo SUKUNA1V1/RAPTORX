@@ -3,10 +3,17 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import os
 
-TOTAL_RECORDS = 50000
+TOTAL_RECORDS = 500000
 ANOMALY_RATIO = 0.07
 RANDOM_SEED   = 42
 OUTPUT_DIR    = "data/raw"
+
+RESTRICTED_ZONES = {"server_room", "executive"}
+CLEARANCE_REQUIREMENTS = {
+    "server_room": 3,
+    "executive": 3,
+    "finance": 2,
+}
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 np.random.seed(RANDOM_SEED)
@@ -22,8 +29,29 @@ print(f"Generating {normal_count} normal + {anomaly_count} anomalous records..."
 NUM_USERS = 100
 user_profiles = []
 
-for user_id in range(NUM_USERS):
-    role = np.random.choice([1, 2, 3], p=[0.60, 0.30, 0.10])
+def build_user_profiles(num_users: int = 500) -> list[dict]:
+    """
+    Build user profiles with:
+    - 5x more users (500 vs 100) for better diversity
+    - Per-user hour_std variation (some people are rigid, others flexible)
+    - Power-law activity_weight so a minority of users generate most access events
+    """
+    profiles = []
+    for user_id in range(num_users):
+        role_level = np.random.choice([1, 2, 3], p=[0.60, 0.30, 0.10])
+
+        if role_level == 3:
+            usual_hour = np.random.randint(7, 18)
+            usual_days = [0, 1, 2, 3, 4, 5, 6]
+            usual_hour_std = round(np.random.uniform(2.0, 4.0), 2)  # executives are flexible
+        elif role_level == 2:
+            usual_hour = np.random.randint(8, 10)
+            usual_days = [0, 1, 2, 3, 4]
+            usual_hour_std = round(np.random.uniform(1.0, 2.5), 2)
+        else:
+            usual_hour = np.random.randint(7, 12)
+            usual_days = [0, 1, 2, 3, 4]
+            usual_hour_std = round(np.random.uniform(0.5, 1.5), 2)  # workers are routine-bound
 
     # Each user has their OWN usual hour (some come early, some late)
     if role == 3:   # admin — can come anytime
@@ -33,11 +61,23 @@ for user_id in range(NUM_USERS):
     else:           # employee — varied
         usual_hour = np.random.randint(7, 12)
 
-    # Each user has their OWN usual days
-    if role == 3:
-        usual_days = [0, 1, 2, 3, 4, 5, 6]  # admin works any day
-    else:
-        usual_days = [0, 1, 2, 3, 4]         # employee weekdays only
+        # Power-law activity weight: a small number of "power users" generate most events
+        activity_weight = float(np.random.pareto(1.5) + 1.0)
+
+        profiles.append(
+            {
+                "user_id": user_id,
+                "role_level": role_level,
+                "clearance": clearance,
+                "department": department,
+                "usual_hour_mean": usual_hour,
+                "usual_hour_std": usual_hour_std,
+                "usual_days": usual_days,
+                "usual_zone": usual_zone,
+                "activity_weight": activity_weight,
+            }
+        )
+    return profiles
 
     # Each user has their OWN usual zone
     zone = np.random.choice(
@@ -55,15 +95,98 @@ for user_id in range(NUM_USERS):
         "days_since_created": np.random.randint(30, 1000)
     })
 
-# ============================================================
-# GENERATE NORMAL RECORDS
-# ============================================================
-def generate_normal(n):
+# Normalized sampling weights â€” used in both normal and anomaly generation
+_PROFILE_WEIGHTS = np.array([p["activity_weight"] for p in USER_PROFILES], dtype=float)
+_PROFILE_WEIGHTS /= _PROFILE_WEIGHTS.sum()
+
+
+def _sample_user() -> dict:
+    return USER_PROFILES[np.random.choice(len(USER_PROFILES), p=_PROFILE_WEIGHTS)]
+
+
+def _time_of_week(day: int, hour: int) -> int:
+    return day * 24 + hour
+
+
+def _zone_clearance_req(zone: str) -> int:
+    return CLEARANCE_REQUIREMENTS.get(zone, 1)
+
+
+def _compute_dept_zone_mismatch(user: dict, current_zone: str, is_anomaly: bool) -> int:
+    """
+    Compute dept_zone_mismatch consistently from actual zone vs department.
+
+    Normal records: allow a small fraction of legitimate cross-department visits
+    (e.g. going to IT for support, HR for a meeting). 15% soft pass rate â€” much
+    lower than the original 70%, so the feature retains real signal.
+
+    Anomaly records: always reflect the true computed value â€” no soft pass.
+    This ensures the feature has symmetric, consistent meaning across both classes.
+    """
+    mismatch = int(current_zone != user["department"])
+    if mismatch and not is_anomaly:
+        # 15% of cross-dept visits are legitimate (authorized escort, shared space, etc.)
+        if np.random.random() < 0.15:
+            mismatch = 0
+    return mismatch
+
+
+def _record_common(
+    user: dict,
+    hour: int,
+    day: int,
+    freq: int,
+    time_s: int,
+    loc: int,
+    restr: int,
+    is_first: int,
+    seq_viol: int,
+    attempts: int,
+    role: int,
+    distance_km: float,
+    velocity: float,
+    geo_impossible: int,
+    zone_clear_mismatch: int,
+    dept_zone_mismatch: int,
+    concurrent: int,
+    label: int,
+) -> dict:
+    hour_dev = abs(hour - user["usual_hour_mean"]) / max(user["usual_hour_std"], 1)
+    return {
+        "hour": hour,
+        "day_of_week": day,
+        "is_weekend": 1 if day >= 5 else 0,
+        "access_frequency_24h": freq,
+        "time_since_last_access_min": time_s,
+        "location_match": loc,
+        "role_level": role,
+        "is_restricted_area": restr,
+        "is_first_access_today": is_first,
+        "sequential_zone_violation": seq_viol,
+        "access_attempt_count": attempts,
+        "time_of_week": _time_of_week(day, hour),
+        "hour_deviation_from_norm": round(hour_dev, 3),
+        "geographic_impossibility": geo_impossible,
+        "distance_between_scans_km": round(distance_km, 3),
+        "velocity_km_per_min": round(velocity, 3),
+        "zone_clearance_mismatch": zone_clear_mismatch,
+        "department_zone_mismatch": dept_zone_mismatch,
+        "concurrent_session_detected": concurrent,
+        "label": label,
+    }
+
+
+def generate_normal(n: int, prev_zone_by_user: dict) -> list[dict]:
+    """
+    Generate normal access records. prev_zone_by_user is shared with anomaly generation
+    so that temporal zone context is consistent across the full dataset.
+    """
     records = []
+
     for _ in range(n):
-        # Pick a random user
-        user    = user_profiles[np.random.randint(0, NUM_USERS)]
-        role    = user["role_level"]
+        user = _sample_user()
+        role = user["role_level"]
+        user_id = user["user_id"]
 
         # Access hour close to THIS user's usual hour
         hour    = int(np.clip(
@@ -71,26 +194,29 @@ def generate_normal(n):
             6, 20
         ))
 
-        # Access day from THIS user's usual days
-        day     = np.random.choice(user["usual_days"])
-        is_wknd = 1 if day >= 5 else 0
+        current_zone = (
+            user["usual_zone"]
+            if loc == 1
+            else np.random.choice([z for z in ZONES if z != user["usual_zone"]])
+        )
+
+        prev_zone = prev_zone_by_user.get(user_id)
+        distance_km = ZONE_DISTANCES[prev_zone][current_zone] if prev_zone is not None else 0.0
+        prev_zone_by_user[user_id] = current_zone
 
         # Normal frequency for this user
         freq    = int(np.clip(np.random.normal(3, 1.2), 1, 8))
 
-        # Normal time since last access
-        time_s  = int(np.clip(np.random.normal(150, 60), 30, 480))
+        zone_clear_mismatch = int(user["clearance"] < _zone_clearance_req(current_zone))
+        dept_zone_mismatch = _compute_dept_zone_mismatch(user, current_zone, is_anomaly=False)
 
-        # Almost always in correct zone
-        loc     = np.random.choice([1, 0], p=[0.97, 0.03])
-
-        # Restricted only for high roles
-        if role == 3:
-            restr = np.random.choice([1, 0], p=[0.30, 0.70])
-        elif role == 2:
-            restr = np.random.choice([1, 0], p=[0.07, 0.93])
-        else:
-            restr = 0
+        restr = (
+            int(np.random.choice([1, 0], p=[0.30, 0.70]))
+            if role == 3
+            else int(np.random.choice([1, 0], p=[0.07, 0.93]))
+            if role == 2
+            else 0
+        )
 
         # New features
         is_first       = np.random.choice([1, 0], p=[0.30, 0.70])
@@ -133,77 +259,239 @@ def generate_anomalous(n):
         "location_mismatch"
     ]
 
-    for i in range(n):
-        atype   = anomaly_types[i % len(anomaly_types)]
-        user    = user_profiles[np.random.randint(0, NUM_USERS)]
+def generate_single_anomaly(atype: str, prev_zone_by_user: dict) -> dict:
+    """
+    Generate a single anomalous record.
 
-        # Every anomaly ALWAYS violates at least 3 features simultaneously
-        # This is the key change — no more single-feature anomalies
+    prev_zone_by_user is now shared with normal generation so that zone history
+    is realistic. Each anomaly type explicitly sets current_zone so that
+    dept_zone_mismatch and zone_clearance_mismatch are computed from the actual
+    zone rather than being hardcoded to random values.
+    """
+    user = _sample_user()
+    user_id = user["user_id"]
 
-        if atype == "unusual_hour":
-            hour       = np.random.choice(list(range(0, 4)))  # strictly 0-3AM
-            day        = np.random.randint(0, 7)
-            is_wknd    = 1 if day >= 5 else 0
-            freq       = np.random.randint(8, 20)             # also high freq
-            time_s     = np.random.randint(2, 20)             # also short gaps
-            loc        = 0                                     # also wrong zone
-            restr      = np.random.choice([0, 1], p=[0.3, 0.7])  # often restricted
-            role       = 1
-            is_first   = 0
-            seq_viol   = 1
-            attempts   = np.random.randint(2, 5)
+    # ------------------------------------------------------------------ #
+    # Badge cloning: badge appears simultaneously in two distant locations.
+    # The key signal is geographic_impossibility â€” a tiny time_s with a
+    # large distance. We simulate the "other" scan coming from a random
+    # distant zone rather than the user's usual zone.
+    # ------------------------------------------------------------------ #
+    if atype == "badge_cloning":
+        hour = np.random.randint(8, 18)
+        day = np.random.randint(0, 5)
+        freq = np.random.randint(15, 35)
+        time_s = np.random.randint(0, 3)
 
-        elif atype == "weekend_access":
-            hour       = np.random.choice(list(range(0, 6)))  # very late/early
-            day        = np.random.choice([5, 6])
-            is_wknd    = 1
-            freq       = np.random.randint(10, 25)            # high freq
-            time_s     = np.random.randint(2, 15)
-            loc        = 0                                     # wrong zone
-            restr      = 1                                     # always restricted
-            role       = 1
-            is_first   = 0
-            seq_viol   = 1
-            attempts   = np.random.randint(2, 6)
+        # Pick a zone far from the user's usual zone to maximise impossibility
+        distant_zones = sorted(
+            [z for z in ZONES if z != user["usual_zone"]],
+            key=lambda z: ZONE_DISTANCES[user["usual_zone"]][z],
+            reverse=True,
+        )
+        current_zone = distant_zones[np.random.randint(0, min(3, len(distant_zones)))]
 
-        elif atype == "restricted_area":
-            hour       = np.random.choice(list(range(0, 5)) + list(range(22, 24)))
-            day        = np.random.randint(0, 7)
-            is_wknd    = 1 if day >= 5 else 0
-            freq       = np.random.randint(5, 15)
-            time_s     = np.random.randint(2, 20)
-            loc        = 0                                     # wrong zone
-            restr      = 1                                     # restricted
-            role       = 1                                     # low clearance
-            is_first   = 0
-            seq_viol   = 1
-            attempts   = np.random.randint(3, 8)              # many attempts
+        # Use prev_zone if available; otherwise use user's usual_zone as "first scan"
+        prev_zone = prev_zone_by_user.get(user_id, user["usual_zone"])
+        distance_km = float(np.random.uniform(5, 100))  # override â€” badge-clone distance is physical impossibility
+        velocity = distance_km / max(time_s, 0.1)
+        prev_zone_by_user[user_id] = current_zone
 
-        elif atype == "high_frequency":
-            hour       = np.random.randint(8, 18)             # normal hour
-            day        = np.random.randint(0, 5)
-            is_wknd    = 0
-            freq       = np.random.randint(25, 40)            # extremely high
-            time_s     = np.random.randint(1, 5)              # very short gaps
-            loc        = np.random.choice([0, 1], p=[0.7, 0.3])
-            restr      = np.random.choice([0, 1], p=[0.4, 0.6])
-            role       = 1
-            is_first   = 0
-            seq_viol   = 1
-            attempts   = np.random.randint(3, 8)
+        zone_clear_mismatch = int(user["clearance"] < _zone_clearance_req(current_zone))
+        dept_zone_mismatch = _compute_dept_zone_mismatch(user, current_zone, is_anomaly=True)
 
-        elif atype == "badge_cloning":
-            hour       = np.random.randint(8, 18)             # normal hour
-            day        = np.random.randint(0, 5)
-            is_wknd    = 0
-            freq       = np.random.randint(10, 20)            # high freq
-            time_s     = np.random.randint(1, 3)              # under 3 minutes!
-            loc        = 0                                     # different location
-            restr      = np.random.choice([0, 1], p=[0.5, 0.5])
-            role       = 1
-            is_first   = 0
-            seq_viol   = 1
-            attempts   = np.random.randint(2, 5)
+        return _record_common(
+            user, hour, day, freq, time_s,
+            loc=0, restr=1, is_first=0, seq_viol=1,
+            attempts=np.random.randint(5, 12), role=user["role_level"],
+            distance_km=distance_km, velocity=velocity, geo_impossible=1,
+            zone_clear_mismatch=zone_clear_mismatch,
+            dept_zone_mismatch=dept_zone_mismatch,
+            concurrent=int(np.random.choice([0, 1], p=[0.3, 0.7])),
+            label=1,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Unauthorized zone: user enters a zone they have no clearance for.
+    # ------------------------------------------------------------------ #
+    if atype == "unauthorized_zone":
+        hour = np.random.randint(8, 18)
+        day = np.random.randint(0, 5)
+        freq = np.random.randint(3, 10)
+        time_s = np.random.randint(30, 120)
+
+        # Pick a zone that requires higher clearance than the user has
+        restricted_targets = [z for z in ZONES if _zone_clearance_req(z) > user["clearance"]]
+        current_zone = (
+            np.random.choice(restricted_targets)
+            if restricted_targets
+            else np.random.choice([z for z in ZONES if z != user["usual_zone"]])
+        )
+
+        prev_zone = prev_zone_by_user.get(user_id, user["usual_zone"])
+        distance_km = ZONE_DISTANCES[prev_zone][current_zone]
+        velocity = distance_km / max(time_s, 1)
+        prev_zone_by_user[user_id] = current_zone
+
+        zone_clear_mismatch = int(user["clearance"] < _zone_clearance_req(current_zone))
+        dept_zone_mismatch = _compute_dept_zone_mismatch(user, current_zone, is_anomaly=True)
+
+        return _record_common(
+            user, hour, day, freq, time_s,
+            loc=0, restr=1,
+            is_first=int(np.random.choice([0, 1])),
+            seq_viol=1, attempts=np.random.randint(2, 6),
+            role=user["role_level"],
+            distance_km=distance_km, velocity=velocity,
+            geo_impossible=int(velocity > 1.0),
+            zone_clear_mismatch=zone_clear_mismatch,
+            dept_zone_mismatch=dept_zone_mismatch,
+            concurrent=0,
+            label=1,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Restricted area: access to a high-security zone at off-hours.
+    # ------------------------------------------------------------------ #
+    if atype == "restricted_area":
+        hour = int(np.random.choice(list(range(0, 5)) + list(range(22, 24))))
+        day = np.random.randint(0, 7)
+        freq = np.random.randint(5, 15)
+        time_s = np.random.randint(2, 20)
+
+        current_zone = np.random.choice(list(RESTRICTED_ZONES))
+
+        prev_zone = prev_zone_by_user.get(user_id, user["usual_zone"])
+        distance_km = ZONE_DISTANCES[prev_zone][current_zone]
+        velocity = distance_km / max(time_s, 1)
+        prev_zone_by_user[user_id] = current_zone
+
+        zone_clear_mismatch = int(user["clearance"] < _zone_clearance_req(current_zone))
+        dept_zone_mismatch = _compute_dept_zone_mismatch(user, current_zone, is_anomaly=True)
+
+        return _record_common(
+            user, int(hour), int(day), int(freq), int(time_s),
+            loc=0, restr=1, is_first=0, seq_viol=1,
+            attempts=int(np.random.randint(3, 8)),
+            role=user["role_level"],
+            distance_km=distance_km, velocity=velocity,
+            geo_impossible=int(velocity > 1.0),
+            zone_clear_mismatch=zone_clear_mismatch,
+            dept_zone_mismatch=dept_zone_mismatch,
+            concurrent=0,
+            label=1,
+        )
+
+    # ------------------------------------------------------------------ #
+    # High frequency: rapid repeated scans â€” possible tailgating or
+    # automated badge replay attack.
+    # ------------------------------------------------------------------ #
+    if atype == "high_frequency":
+        hour = np.random.randint(8, 18)
+        day = np.random.randint(0, 5)
+        freq = np.random.randint(25, 40)
+        time_s = np.random.randint(1, 5)
+
+        # Usually hammers the same zone or an adjacent one
+        current_zone = (
+            user["usual_zone"]
+            if np.random.random() < 0.6
+            else np.random.choice(ZONES)
+        )
+
+        prev_zone = prev_zone_by_user.get(user_id, user["usual_zone"])
+        distance_km = ZONE_DISTANCES[prev_zone][current_zone]
+        velocity = distance_km / max(time_s, 1)
+        prev_zone_by_user[user_id] = current_zone
+
+        zone_clear_mismatch = int(user["clearance"] < _zone_clearance_req(current_zone))
+        dept_zone_mismatch = _compute_dept_zone_mismatch(user, current_zone, is_anomaly=True)
+
+        return _record_common(
+            user, int(hour), int(day), int(freq), int(time_s),
+            loc=int(np.random.choice([0, 1], p=[0.7, 0.3])),
+            restr=int(np.random.choice([0, 1], p=[0.4, 0.6])),
+            is_first=0, seq_viol=1,
+            attempts=int(np.random.randint(3, 8)),
+            role=user["role_level"],
+            distance_km=distance_km, velocity=velocity,
+            geo_impossible=int(velocity > 1.0),
+            zone_clear_mismatch=zone_clear_mismatch,
+            dept_zone_mismatch=dept_zone_mismatch,
+            concurrent=0,
+            label=1,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Location mismatch: access from an unexpected physical location,
+    # often at odd hours. The zone history makes the velocity suspicious.
+    # ------------------------------------------------------------------ #
+    if atype == "location_mismatch":
+        hour = int(np.random.choice(list(range(0, 6)) + list(range(21, 24))))
+        day = np.random.randint(0, 7)
+        freq = np.random.randint(8, 18)
+        time_s = np.random.randint(2, 15)
+
+        # Pick a zone far from usual to drive up velocity
+        far_zones = [z for z in ZONES if ZONE_DISTANCES[user["usual_zone"]][z] >= 0.5]
+        current_zone = np.random.choice(far_zones) if far_zones else np.random.choice(ZONES)
+
+        prev_zone = prev_zone_by_user.get(user_id, user["usual_zone"])
+        distance_km = ZONE_DISTANCES[prev_zone][current_zone]
+        velocity = distance_km / max(time_s, 1)
+        prev_zone_by_user[user_id] = current_zone
+
+        zone_clear_mismatch = int(user["clearance"] < _zone_clearance_req(current_zone))
+        dept_zone_mismatch = _compute_dept_zone_mismatch(user, current_zone, is_anomaly=True)
+
+        return _record_common(
+            user, int(hour), int(day), int(freq), int(time_s),
+            loc=0, restr=1, is_first=0, seq_viol=1,
+            attempts=int(np.random.randint(2, 5)),
+            role=user["role_level"],
+            distance_km=distance_km, velocity=velocity,
+            geo_impossible=int(velocity > 1.0),
+            zone_clear_mismatch=zone_clear_mismatch,
+            dept_zone_mismatch=dept_zone_mismatch,
+            concurrent=0,
+            label=1,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Unusual hour / weekend access: legitimate-looking access at the
+    # wrong time. Zone stays close to usual to isolate the time signal.
+    # ------------------------------------------------------------------ #
+    is_unusual_hour = atype == "unusual_hour"
+    hour = int(np.random.choice(list(range(0, 4)) if is_unusual_hour else list(range(0, 6))))
+    day = int(np.random.randint(0, 7) if is_unusual_hour else np.random.choice([5, 6]))
+    freq = np.random.randint(8, 20) if is_unusual_hour else np.random.randint(10, 25)
+    time_s = np.random.randint(2, 20) if is_unusual_hour else np.random.randint(2, 15)
+
+    # Keep zone near usual â€” the anomaly is the time, not the location
+    current_zone = user["usual_zone"]
+
+    prev_zone = prev_zone_by_user.get(user_id, user["usual_zone"])
+    distance_km = ZONE_DISTANCES[prev_zone][current_zone]
+    velocity = distance_km / max(time_s, 1)
+    prev_zone_by_user[user_id] = current_zone
+
+    zone_clear_mismatch = int(user["clearance"] < _zone_clearance_req(current_zone))
+    dept_zone_mismatch = _compute_dept_zone_mismatch(user, current_zone, is_anomaly=True)
+
+    return _record_common(
+        user, int(hour), int(day), int(freq), int(time_s),
+        loc=0,
+        restr=int(np.random.choice([0, 1], p=[0.3, 0.7])),
+        is_first=0, seq_viol=1,
+        attempts=int(np.random.randint(2, 6)),
+        role=user["role_level"],
+        distance_km=distance_km, velocity=velocity,
+        geo_impossible=int(velocity > 1.0),
+        zone_clear_mismatch=zone_clear_mismatch,
+        dept_zone_mismatch=dept_zone_mismatch,
+        concurrent=0,
+        label=1,
+    )
 
         elif atype == "location_mismatch":
             hour       = np.random.choice(list(range(0, 6)) + list(range(21, 24)))
@@ -218,27 +506,29 @@ def generate_anomalous(n):
             seq_viol   = 1
             attempts   = np.random.randint(2, 5)
 
-        time_of_week   = day * 24 + hour
-        hour_deviation = abs(hour - user["usual_hour_mean"]) / max(user["usual_hour_std"], 1)
-        # Anomalies always deviate a lot from user's norm
-        hour_deviation = max(hour_deviation, 3.0)
+def generate_anomalous(n: int, prev_zone_by_user: dict) -> list[dict]:
+    """
+    prev_zone_by_user is passed in from main() so that anomaly zone history
+    is continuous with normal record history â€” no more fresh-start context.
+    """
+    anomaly_weights = {
+        "unusual_hour": 0.10,
+        "weekend_access": 0.10,
+        "restricted_area": 0.15,
+        "high_frequency": 0.10,
+        "badge_cloning": 0.25,
+        "location_mismatch": 0.20,
+        "unauthorized_zone": 0.10,
+    }
 
-        records.append({
-            "hour":                       hour,
-            "day_of_week":                day,
-            "is_weekend":                 is_wknd,
-            "access_frequency_24h":       freq,
-            "time_since_last_access_min": time_s,
-            "location_match":             loc,
-            "role_level":                 role,
-            "is_restricted_area":         restr,
-            "is_first_access_today":      is_first,
-            "sequential_zone_violation":  seq_viol,
-            "access_attempt_count":       attempts,
-            "time_of_week":               time_of_week,
-            "hour_deviation_from_norm":   round(hour_deviation, 3),
-            "label":                      1
-        })
+    type_counts = {k: int(n * v) for k, v in anomaly_weights.items()}
+    remaining = n - sum(type_counts.values())
+    type_counts["badge_cloning"] += remaining
+
+    records = []
+    for atype, count in type_counts.items():
+        for _ in range(count):
+            records.append(generate_single_anomaly(atype, prev_zone_by_user))
     return records
 
 # ============================================================
@@ -248,10 +538,19 @@ normal_records  = generate_normal(normal_count)
 anomaly_records = generate_anomalous(anomaly_count)
 all_records     = normal_records + anomaly_records
 
-df = pd.DataFrame(all_records)
-df = df.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+def main() -> None:
+    # Purpose: Generate synthetic access records and persist train/test/raw datasets.
+    normal_count = int(TOTAL_RECORDS * (1 - ANOMALY_RATIO))
+    anomaly_count = TOTAL_RECORDS - normal_count
+    print(f"Generating {normal_count} normal + {anomaly_count} anomalous records...")
+    print(f"User profiles: {len(USER_PROFILES)}")
 
-df.to_csv(os.path.join(OUTPUT_DIR, "access_data.csv"), index=False)
+    # Shared zone history â€” both normal and anomaly generators update this dict
+    prev_zone_by_user: dict = {}
+
+    normal_records = generate_normal(normal_count, prev_zone_by_user)
+    anomaly_records = generate_anomalous(anomaly_count, prev_zone_by_user)
+    df = pd.DataFrame(normal_records + anomaly_records)
 
 train_df, test_df = train_test_split(
     df, test_size=0.2, random_state=RANDOM_SEED, stratify=df["label"]
@@ -259,8 +558,23 @@ train_df, test_df = train_test_split(
 train_df.to_csv(os.path.join(OUTPUT_DIR, "train.csv"), index=False)
 test_df.to_csv(os.path.join(OUTPUT_DIR,  "test.csv"),  index=False)
 
-print(f"✅ Total    : {len(df)}")
-print(f"✅ Normal   : {len(df[df.label==0])}")
-print(f"✅ Anomalous: {len(df[df.label==1])}")
-print(f"✅ Features : {len(df.columns)-1}")
-print(f"\n🎉 Done!")
+    df = df[FEATURE_COLS + ["label"]].sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+
+    access_data_path = os.path.join(OUTPUT_DIR, "access_data.csv")
+    train_path = os.path.join(OUTPUT_DIR, "train.csv")
+    test_path = os.path.join(OUTPUT_DIR, "test.csv")
+
+    df.to_csv(access_data_path, index=False)
+    train_df, test_df = train_test_split(df, test_size=0.2, random_state=RANDOM_SEED, stratify=df["label"])
+    train_df.to_csv(train_path, index=False)
+    test_df.to_csv(test_path, index=False)
+
+    print(f"Total    : {len(df)}")
+    print(f"Normal   : {int((df['label'] == 0).sum())}")
+    print(f"Anomalous: {int((df['label'] == 1).sum())}")
+    print(f"Features : {len(FEATURE_COLS)}")
+    print("Done!")
+
+
+if __name__ == "__main__":
+    main()

@@ -17,7 +17,7 @@ const IF_METRICS = [
 ];
 
 const AE_METRICS = [
-  ["Architecture", "13->32->16->4->16->32->13", false],
+  ["Architecture", "19->48->24->8->24->48->19", false],
   ["F1-Score", "0.9296", true],
   ["AUC-ROC", "1.0000", true],
   ["Recall", "100%", true],
@@ -41,6 +41,12 @@ const FEATURES = [
   ["access_attempt_count", "Failed attempts before this", "0", "3+"],
   ["time_of_week", "Combined day+hour (0-167)", "8-90", "Outlier values"],
   ["hour_deviation_from_norm", "Deviation from user's usual hour", "< 2.0", "> 4.0"],
+  ["geographic_impossibility", "Impossible travel flag", "0", "1"],
+  ["distance_between_scans_km", "Distance from previous scan", "0-1", "> 5"],
+  ["velocity_km_per_min", "Travel velocity", "< 0.2", "> 1.0"],
+  ["zone_clearance_mismatch", "Zone requires higher clearance", "0", "1"],
+  ["department_zone_mismatch", "Department does not match zone", "0", "1"],
+  ["concurrent_session_detected", "Overlapping badge sessions", "0", "1"],
 ];
 
 function ModelCard({
@@ -110,6 +116,8 @@ export default function MLStatusPage() {
   const isEnsemble = status?.mode === "ensemble";
   const ifActive = status?.isolation_forest ?? true;
   const aeActive = status?.autoencoder ?? true;
+  const artifactsReady =
+    status?.if_artifact_found !== false && status?.ae_artifact_found !== false;
 
   return (
     <div className="space-y-6">
@@ -119,6 +127,15 @@ export default function MLStatusPage() {
       </div>
 
       {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={fetchStatus} />}
+
+      {!loading && !error && !artifactsReady && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+          <p className="text-amber-300 text-sm font-medium">Model artifacts not found</p>
+          <p className="text-amber-400/90 text-xs mt-1">
+            Train and export models to <code>ml/models</code> to enable ML scoring. Backend is currently using rule-based mode.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <ModelCard
@@ -175,8 +192,8 @@ export default function MLStatusPage() {
             </div>
             <div className="flex justify-between text-xs text-slate-500">
               <span>0.0</span>
-              <span>0.30</span>
-              <span>0.60</span>
+              <span>{(status?.grant_threshold ?? 0.3).toFixed(2)}</span>
+              <span>{(status?.deny_threshold ?? 0.7).toFixed(2)}</span>
               <span>1.0</span>
             </div>
           </div>
@@ -223,11 +240,11 @@ export default function MLStatusPage() {
         <h2 className="text-white font-semibold mb-4">Training Dataset Statistics</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: "Total Records", value: "50,000", color: "text-white" },
-            { label: "Normal", value: "46,500", color: "text-green-400" },
-            { label: "Anomalous", value: "3,500", color: "text-red-400" },
+            { label: "Total Records", value: "500,000", color: "text-white" },
+            { label: "Normal", value: "465,000", color: "text-green-400" },
+            { label: "Anomalous", value: "35,000", color: "text-red-400" },
             { label: "Train / Test", value: "80% / 20%", color: "text-blue-400" },
-            { label: "Features", value: "13", color: "text-purple-400" },
+            { label: "Features", value: "19", color: "text-purple-400" },
           ].map((s) => (
             <div key={s.label} className="bg-slate-900 rounded-lg p-4 text-center">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>

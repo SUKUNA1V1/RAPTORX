@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import SeverityBadge from "@/components/ui/SeverityBadge";
 import ApiStatus from "@/components/ui/ApiStatus";
-import { getAlerts, resolveAlert } from "@/lib/api";
+import { getAlerts, markFalsePositive, resolveAlert } from "@/lib/api";
 import { MOCK_ALERTS, SEVERITY_BAR_COLORS } from "@/lib/constants";
 import type { AnomalyAlert, AlertSeverity } from "@/lib/types";
 
@@ -47,6 +47,29 @@ export default function AlertsPage() {
         prev.map((a) =>
           a.id === id
             ? { ...a, status: "resolved", is_resolved: true, resolved_at: new Date().toISOString() }
+            : a
+        )
+      );
+    } catch {
+      setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, is_resolved: true } : a)));
+    } finally {
+      setResolving(null);
+    }
+  };
+
+  const handleFalsePositive = async (id: number) => {
+    setResolving(id);
+    try {
+      await markFalsePositive(id);
+      setAlerts((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                status: "false_positive",
+                is_resolved: true,
+                resolved_at: new Date().toISOString(),
+              }
             : a
         )
       );
@@ -172,7 +195,11 @@ export default function AlertsPage() {
                         >
                           {resolving === alert.id ? "Resolving..." : "Resolve"}
                         </button>
-                        <button className="btn btn-secondary btn-sm">
+                        <button
+                          onClick={() => handleFalsePositive(alert.id)}
+                          disabled={resolving === alert.id}
+                          className="btn btn-secondary btn-sm"
+                        >
                           False Positive
                         </button>
                       </div>

@@ -9,6 +9,7 @@ import os
 # ============================================================
 # CONFIGURATION
 # ============================================================
+# Purpose: Configure input/output paths and define the ML feature schema.
 RAW_DIR       = "data/raw"
 PROCESSED_DIR = "data/processed"
 MODELS_DIR    = "ml/models"
@@ -16,7 +17,7 @@ MODELS_DIR    = "ml/models"
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR,    exist_ok=True)
 
-# NEW — 13 features
+# NEW — 19 features (added 6 geographic/behavioral features)
 FEATURE_COLS = [
     "hour",
     "day_of_week",
@@ -30,12 +31,19 @@ FEATURE_COLS = [
     "sequential_zone_violation",
     "access_attempt_count",
     "time_of_week",
-    "hour_deviation_from_norm"
+    "hour_deviation_from_norm",
+    "geographic_impossibility",
+    "distance_between_scans_km",
+    "velocity_km_per_min",
+    "zone_clearance_mismatch",
+    "department_zone_mismatch",
+    "concurrent_session_detected",
 ]
 
 # ============================================================
 # STEP 1 — LOAD DATA
 # ============================================================
+# Purpose: Load raw train/test/full datasets for analysis and scaling.
 print("=" * 50)
 print("STEP 1 — Loading data")
 print("=" * 50)
@@ -51,6 +59,7 @@ print(f"Full set  : {full_df.shape}")
 # ============================================================
 # STEP 2 — CHECK MISSING VALUES
 # ============================================================
+# Purpose: Validate dataset completeness before downstream processing.
 print("\n" + "=" * 50)
 print("STEP 2 — Missing values")
 print("=" * 50)
@@ -60,6 +69,7 @@ print("\nNo missing values expected — all fields are generated.")
 # ============================================================
 # STEP 3 — BASIC STATISTICS
 # ============================================================
+# Purpose: Inspect summary distributions and anomaly ratio in the dataset.
 print("\n" + "=" * 50)
 print("STEP 3 — Basic statistics")
 print("=" * 50)
@@ -72,6 +82,7 @@ print(f"Anomaly ratio: {full_df['label'].mean() * 100:.2f}%")
 # ============================================================
 # STEP 4 — VISUALIZATIONS
 # ============================================================
+# Purpose: Generate exploratory plots that compare normal and anomalous behavior.
 print("\n" + "=" * 50)
 print("STEP 4 — Creating visualizations")
 print("=" * 50)
@@ -131,6 +142,7 @@ print(" Saved: plot_correlation_heatmap.png")
 # ============================================================
 # STEP 5 — NORMALIZE WITH MINMAXSCALER
 # ============================================================
+# Purpose: Fit scaler on training data and transform train/test feature values.
 print("\n" + "=" * 50)
 print("STEP 5 — Normalizing features with MinMaxScaler")
 print("=" * 50)
@@ -160,6 +172,7 @@ test_scaled_df["label"]  = y_test.values
 # ============================================================
 # STEP 6 — SAVE PREPROCESSED DATA + SCALER
 # ============================================================
+# Purpose: Save scaled datasets and scaler artifact for model training/inference.
 print("\n" + "=" * 50)
 print("STEP 6 — Saving preprocessed files")
 print("=" * 50)
@@ -176,7 +189,7 @@ print(f" Scaled train set saved : {train_out}")
 print(f" Scaled test set saved  : {test_out}")
 print(f" Scaler saved           : {scaler_out}")
 
-print(f"\n🎉 Phase 4.2 DONE!")
+print(f"\nPhase 4.2 DONE!")
 print(f"\nFiles ready for ML training:")
 print(f"  Training : {train_out}")
 print(f"  Testing  : {test_out}")

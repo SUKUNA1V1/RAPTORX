@@ -21,6 +21,7 @@ warnings.filterwarnings("ignore")
 # ============================================================
 # CONFIGURATION
 # ============================================================
+# Purpose: Configure dataset/model paths, reproducibility, and feature schema.
 PROCESSED_DIR = "data/processed"
 MODELS_DIR    = "ml/models"
 RESULTS_DIR   = "ml/results/isolation_forest"
@@ -49,6 +50,7 @@ FEATURE_COLS = [
 # ============================================================
 # STEP 1 — LOAD PREPROCESSED DATA
 # ============================================================
+# Purpose: Load scaled train/test datasets and isolate normal training samples.
 print("=" * 60)
 print("STEP 1 — Loading preprocessed data")
 print("=" * 60)
@@ -73,6 +75,7 @@ print(f"Anomaly ratio test : {y_test.mean() * 100:.2f}%")
 # ============================================================
 # STEP 2 — HYPERPARAMETER TUNING
 # ============================================================
+# Purpose: Search model hyperparameters and record precision/recall/F1/AUC.
 print("\n" + "=" * 60)
 print("STEP 2 — Hyperparameter tuning")
 print("=" * 60)
@@ -137,6 +140,7 @@ print(f"\n Tuning results saved: {tuning_path}")
 # ============================================================
 # STEP 3 — SELECT BEST HYPERPARAMETERS (by F1 score)
 # ============================================================
+# Purpose: Select the highest-performing parameter set from tuning results.
 print("\n" + "=" * 60)
 print("STEP 3 — Best hyperparameters")
 print("=" * 60)
@@ -154,6 +158,7 @@ print(f"Best AUC-ROC : {best_row['auc_roc']:.4f}")
 # ============================================================
 # STEP 4 — TRAIN FINAL MODEL WITH BEST PARAMS
 # ============================================================
+# Purpose: Train the final Isolation Forest model with chosen parameters.
 print("\n" + "=" * 60)
 print("STEP 4 — Training final model")
 print("=" * 60)
@@ -176,6 +181,7 @@ print(f" Training completed in {training_time:.2f} seconds")
 # ============================================================
 # STEP 5 — CUSTOM THRESHOLD TUNING (key improvement)
 # ============================================================
+# Purpose: Tune anomaly-score thresholds to balance precision and recall.
 print("\n" + "=" * 60)
 print("STEP 5 — Custom threshold tuning")
 print("=" * 60)
@@ -252,7 +258,7 @@ for thresh in thresholds:
     })
     
     if valid:
-        print(f"{thresh:>8.2f} {prec_t:>10.4f} {rec_t:>8.4f} {f1_t:>8.4f} {'✅':>8}")
+        print(f"{thresh:>8.2f} {prec_t:>10.4f} {rec_t:>8.4f} {f1_t:>8.4f} {'YES':>8}")
     
     # Among valid thresholds pick best F1
     if valid and f1_t > best_score:
@@ -261,7 +267,7 @@ for thresh in thresholds:
 
 # Fallback 1 — relax precision requirement
 if best_score == 0:
-    print("\n⚠️  Relaxing precision target to 0.65...")
+    print("\nRelaxing precision target to 0.65...")
     MIN_PRECISION = 0.65
     for thresh in thresholds:
         y_pred_t = (risk_scores >= thresh).astype(int)
@@ -275,7 +281,7 @@ if best_score == 0:
 
 # Fallback 2 — just use best F1 no constraints
 if best_score == 0:
-    print("\n⚠️  No valid threshold found — using best F1...")
+    print("\nNo valid threshold found — using best F1...")
     for thresh in thresholds:
         y_pred_t = (risk_scores >= thresh).astype(int)
         f1_t     = f1_score(y_test, y_pred_t, zero_division=0)
@@ -283,12 +289,12 @@ if best_score == 0:
             best_score  = f1_t
             best_thresh = thresh
 
-print(f"\n✅ Best threshold : {best_thresh:.2f}")
-print(f"✅ Best F1        : {best_score:.4f}")
+print(f"\nBest threshold : {best_thresh:.2f}")
+print(f"Best F1        : {best_score:.4f}")
 
 # Fallback — if no threshold achieved 85% Recall, just use best F1
 if best_thresh == 0.5:
-    print("⚠️  Could not reach 85% Recall target — using best F1 instead")
+    print("Could not reach 85% Recall target — using best F1 instead")
     for thresh in thresholds:
         y_pred_t = (risk_scores >= thresh).astype(int)
         f1_t     = f1_score(y_test, y_pred_t, zero_division=0)
@@ -321,13 +327,14 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "threshold_curve.png"), dpi=150)
 plt.show()
-print("✅ Saved: threshold_curve.png")
+print("Saved: threshold_curve.png")
 
 # Final predictions using best threshold
 y_pred = (risk_scores >= best_thresh).astype(int)
 # ============================================================
 # STEP 6 — EVALUATION METRICS
 # ============================================================
+# Purpose: Evaluate final model predictions and compute confusion-matrix metrics.
 print("\n" + "=" * 60)
 print("STEP 6 — Evaluation metrics")
 print("=" * 60)
@@ -383,6 +390,7 @@ print(f"\n Metrics saved")
 # ============================================================
 # STEP 7 — VISUALIZATIONS
 # ============================================================
+# Purpose: Create visual diagnostics for model quality and feature contribution.
 print("\n" + "=" * 60)
 print("STEP 7 — Creating visualizations")
 print("=" * 60)
@@ -463,6 +471,7 @@ print(" Saved: feature_importance.png")
 # ============================================================
 # STEP 8 — SAVE FINAL MODEL
 # ============================================================
+# Purpose: Persist the trained model, scaling bounds, and summary metrics.
 print("\n" + "=" * 60)
 print("STEP 8 — Saving model")
 print("=" * 60)
@@ -483,7 +492,7 @@ print(f" Model saved: {model_path}")
 # FINAL SUMMARY
 # ============================================================
 print("\n" + "=" * 60)
-print("🎉 Phase 4.3 COMPLETE — Final Results")
+print("Phase 4.3 COMPLETE — Final Results")
 print("=" * 60)
 print(f"  Precision          : {precision*100:.2f}%")
 print(f"  Recall             : {recall*100:.2f}%")
@@ -496,7 +505,7 @@ print(f"\nFiles saved:")
 print(f"  Model      → {model_path}")
 print(f"  Metrics    → {RESULTS_DIR}/metrics.csv")
 print(f"  Charts     → {RESULTS_DIR}/*.png")
-print(f"\n➡️  Ready for Phase 4.4 — Train Autoencoder!")
+print(f"\nReady for Phase 4.4 — Train Autoencoder!")
 # ============================================================
 # DECISION ZONES — granted / delayed / denied
 # ============================================================
@@ -528,9 +537,9 @@ denied_anomaly  = np.sum((decisions == "denied")   & (y_test == 1))
 
 print(f"\n{'Decision':<12} {'Normal':>10} {'Anomalous':>12} {'Action':>25}")
 print("-" * 65)
-print(f"{'GRANTED':<12} {granted_normal:>10} {granted_anomaly:>12}   {'✅ Door opens':<25}")
-print(f"{'DELAYED':<12} {delayed_normal:>10} {delayed_anomaly:>12}   {'⚠️  Guard notified':<25}")
-print(f"{'DENIED':<12} {denied_normal:>10} {denied_anomaly:>12}   {'❌ Door locked':<25}")
+print(f"{'GRANTED':<12} {granted_normal:>10} {granted_anomaly:>12}   {'Door opens':<25}")
+print(f"{'DELAYED':<12} {delayed_normal:>10} {delayed_anomaly:>12}   {'Guard notified':<25}")
+print(f"{'DENIED':<12} {denied_normal:>10} {denied_anomaly:>12}   {'Door locked':<25}")
 
 print(f"\nThresholds saved:")
 print(f"  Grant threshold : risk_score < {grant_thresh:.3f}")
@@ -544,7 +553,7 @@ model_data["grant_threshold"] = float(grant_thresh)
 model_data["deny_threshold"]  = float(deny_thresh)
 model_data["best_threshold"]  = float(best_thresh)
 joblib.dump(model_data, os.path.join(MODELS_DIR, "isolation_forest.pkl"))
-print(f"\n✅ Thresholds saved to isolation_forest.pkl")
+print(f"\nThresholds saved to isolation_forest.pkl")
 
 # Plot decision zones
 plt.figure(figsize=(12, 5))
@@ -566,4 +575,4 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "decision_zones.png"), dpi=150)
 plt.show()
-print("✅ Saved: decision_zones.png")
+print("Saved: decision_zones.png")

@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore")
 # ============================================================
 # CONFIGURATION
 # ============================================================
+# Purpose: Define paths, reproducibility settings, and feature columns for training.
 PROCESSED_DIR = "data/processed"
 MODELS_DIR    = "ml/models"
 RESULTS_DIR   = "ml/results/autoencoder"
@@ -43,18 +44,20 @@ FEATURE_COLS = [
 # ============================================================
 # STEP 1 — INSTALL CHECK
 # ============================================================
+# Purpose: Verify TensorFlow is available before loading data and training.
 try:
     import tensorflow as tf
     from tensorflow import keras
     from tensorflow.keras import layers
-    print(f"✅ TensorFlow version: {tf.__version__}")
+    print(f"TensorFlow version: {tf.__version__}")
 except ImportError:
-    print("❌ TensorFlow not found. Run: pip install tensorflow")
+    print("TensorFlow not found. Run: pip install tensorflow")
     exit()
 
 # ============================================================
 # STEP 2 — LOAD DATA
 # ============================================================
+# Purpose: Load scaled datasets and prepare train/validation/test splits.
 print("\n" + "=" * 60)
 print("STEP 2 — Loading preprocessed data")
 print("=" * 60)
@@ -80,6 +83,7 @@ print(f"Anomaly ratio test  : {y_test.mean() * 100:.2f}%")
 # ============================================================
 # STEP 3 — BUILD AUTOENCODER ARCHITECTURE
 # ============================================================
+# Purpose: Build the neural network used to reconstruct normal behavior patterns.
 print("\n" + "=" * 60)
 print("STEP 3 — Building Autoencoder architecture")
 print("=" * 60)
@@ -119,6 +123,7 @@ model.summary()
 # ============================================================
 # STEP 4 — HYPERPARAMETER TUNING
 # ============================================================
+# Purpose: Evaluate parameter combinations and select the strongest configuration.
 print("\n" + "=" * 60)
 print("STEP 4 — Hyperparameter tuning")
 print("=" * 60)
@@ -187,11 +192,12 @@ for params in param_grid:
 
 tuning_df = pd.DataFrame(tuning_results)
 tuning_df.to_csv(os.path.join(RESULTS_DIR, "tuning_results.csv"), index=False)
-print(f"\n✅ Tuning results saved")
+print(f"\nTuning results saved")
 
 # ============================================================
 # STEP 5 — TRAIN FINAL MODEL WITH BEST PARAMS
 # ============================================================
+# Purpose: Train the final autoencoder using the best hyperparameters.
 print("\n" + "=" * 60)
 print("STEP 5 — Training final model")
 print("=" * 60)
@@ -226,11 +232,12 @@ history = final_model.fit(
     verbose=1
 )
 training_time = time.time() - start_time
-print(f"\n✅ Training completed in {training_time:.2f} seconds")
+print(f"\nTraining completed in {training_time:.2f} seconds")
 
 # ============================================================
 # STEP 6 — DETERMINE ANOMALY THRESHOLD
 # ============================================================
+# Purpose: Find the threshold that best separates normal and anomalous records.
 print("\n" + "=" * 60)
 print("STEP 6 — Determining anomaly threshold")
 print("=" * 60)
@@ -286,12 +293,13 @@ for strategy_name, threshold in threshold_strategies.items():
         best_threshold = threshold
         best_strategy  = strategy_name
 
-print(f"\n✅ Best threshold strategy : {best_strategy}")
-print(f"✅ Best threshold value    : {best_threshold:.6f}")
+print(f"\nBest threshold strategy : {best_strategy}")
+print(f"Best threshold value    : {best_threshold:.6f}")
 
 # ============================================================
 # STEP 7 — FINAL EVALUATION
 # ============================================================
+# Purpose: Compute core detection metrics and runtime characteristics.
 print("\n" + "=" * 60)
 print("STEP 7 — Final evaluation metrics")
 print("=" * 60)
@@ -357,6 +365,7 @@ pd.DataFrame([metrics]).to_csv(os.path.join(RESULTS_DIR, "metrics.csv"), index=F
 # ============================================================
 # STEP 8 — VISUALIZATIONS
 # ============================================================
+# Purpose: Generate plots for training behavior and anomaly separation quality.
 print("\n" + "=" * 60)
 print("STEP 8 — Creating visualizations")
 print("=" * 60)
@@ -373,7 +382,7 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "training_loss.png"), dpi=150)
 plt.show()
-print("✅ Saved: training_loss.png")
+print("Saved: training_loss.png")
 
 # --- Plot 2: Confusion Matrix ---
 plt.figure(figsize=(7, 6))
@@ -383,7 +392,7 @@ plt.title("Autoencoder — Confusion Matrix")
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "confusion_matrix.png"), dpi=150)
 plt.show()
-print("✅ Saved: confusion_matrix.png")
+print("Saved: confusion_matrix.png")
 
 # --- Plot 3: ROC Curve ---
 fpr_curve, tpr_curve, _ = roc_curve(y_test, risk_scores)
@@ -398,7 +407,7 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "roc_curve.png"), dpi=150)
 plt.show()
-print("✅ Saved: roc_curve.png")
+print("Saved: roc_curve.png")
 
 # --- Plot 4: Reconstruction Error Distribution ---
 plt.figure(figsize=(10, 6))
@@ -416,7 +425,7 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "reconstruction_error_dist.png"), dpi=150)
 plt.show()
-print("✅ Saved: reconstruction_error_dist.png")
+print("Saved: reconstruction_error_dist.png")
 
 # --- Plot 5: Reconstructed vs Original (3 anomalous samples) ---
 anomaly_indices = np.where(y_test == 1)[0][:3]
@@ -436,11 +445,12 @@ plt.suptitle("Autoencoder — Original vs Reconstructed (Anomalous Samples)", fo
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "reconstruction_comparison.png"), dpi=150)
 plt.show()
-print("✅ Saved: reconstruction_comparison.png")
+print("Saved: reconstruction_comparison.png")
 
 # ============================================================
 # STEP 9 — SAVE MODEL + CONFIG
 # ============================================================
+# Purpose: Persist the trained model and metadata used at inference time.
 print("\n" + "=" * 60)
 print("STEP 9 — Saving model and config")
 print("=" * 60)
@@ -462,14 +472,14 @@ config = {
 }
 joblib.dump(config, config_path)
 
-print(f"✅ Model saved  : {model_path}")
-print(f"✅ Config saved : {config_path}")
+print(f"Model saved  : {model_path}")
+print(f"Config saved : {config_path}")
 
 # ============================================================
 # FINAL SUMMARY
 # ============================================================
 print("\n" + "=" * 60)
-print("🎉 Phase 4.4 COMPLETE — Final Results")
+print("Phase 4.4 COMPLETE — Final Results")
 print("=" * 60)
 print(f"  Precision          : {precision*100:.2f}%")
 print(f"  Recall             : {recall*100:.2f}%")
@@ -483,4 +493,4 @@ print(f"\nFiles saved:")
 print(f"  Model  → {model_path}")
 print(f"  Config → {config_path}")
 print(f"  Charts → {RESULTS_DIR}/*.png")
-print(f"\n➡️  Ready for Phase 4.5 — Compare both models + build Ensemble!")
+print(f"\nReady for Phase 4.5 — Compare both models + build Ensemble!")

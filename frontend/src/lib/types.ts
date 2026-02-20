@@ -66,18 +66,18 @@ export interface AccessLog {
 
 export interface AnomalyAlert {
   id: number;
-  log_id: number;
+  log_id?: number;
   alert_type: string;
   severity: AlertSeverity;
   status: AlertStatus;
   is_resolved: boolean;
-  description: string | null;
-  confidence: number | null;
-  triggered_by: string;
+  description?: string | null;
+  confidence?: number | null;
+  triggered_by?: string | null;
   created_at: string;
-  resolved_at: string | null;
-  resolved_by: number | null;
-  notes: string | null;
+  resolved_at?: string | null;
+  resolved_by?: number | null;
+  notes?: string | null;
   log?: AccessLog;
 }
 
@@ -129,6 +129,8 @@ export interface MLStatus {
   is_loaded: boolean;
   isolation_forest: boolean;
   autoencoder: boolean;
+  if_artifact_found?: boolean;
+  ae_artifact_found?: boolean;
   mode: string;
   grant_threshold: number;
   deny_threshold: number;

@@ -10,11 +10,12 @@ from ..models import AccessLog, AnomalyAlert
 from ..services import AlertService
 
 
+# Purpose: Alert management endpoints for listing, inspection, and resolution.
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
 class AlertResolveRequest(BaseModel):
-    resolved_by: int
+    resolved_by: Optional[int] = None
 
 
 @router.get("", status_code=status.HTTP_200_OK)
@@ -57,6 +58,12 @@ def list_alerts(
                     "created_at": alert.created_at,
                     "is_resolved": alert.is_resolved,
                     "log_id": alert.log_id,
+                    "description": alert.description,
+                    "confidence": alert.confidence,
+                    "triggered_by": alert.triggered_by,
+                    "resolved_at": alert.resolved_at,
+                    "resolved_by": alert.resolved_by,
+                    "notes": alert.notes,
                     "user": {
                         "id": user.id,
                         "name": f"{user.first_name} {user.last_name}",
@@ -141,7 +148,11 @@ def get_alert(alert_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{alert_id}/resolve", status_code=status.HTTP_200_OK)
-def resolve_alert(alert_id: int, payload: AlertResolveRequest, db: Session = Depends(get_db)):
+def resolve_alert(
+    alert_id: int,
+    payload: Optional[AlertResolveRequest] = None,
+    db: Session = Depends(get_db),
+):
     """Resolve an alert by setting status and resolved fields."""
     try:
         alert = db.query(AnomalyAlert).filter(AnomalyAlert.id == alert_id).first()
@@ -149,7 +160,38 @@ def resolve_alert(alert_id: int, payload: AlertResolveRequest, db: Session = Dep
             raise HTTPException(status_code=404, detail="Alert not found")
 
         service = AlertService(db)
-        resolved = service.resolve_alert(alert, resolved_by=payload.resolved_by)
+        resolved = service.resolve_alert(
+            alert, resolved_by=(payload.resolved_by if payload else 0)
+        )
+        return {
+            "id": resolved.id,
+            "status": resolved.status,
+            "is_resolved": resolved.is_resolved,
+            "resolved_at": resolved.resolved_at,
+            "resolved_by": resolved.resolved_by,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.put("/{alert_id}/false-positive", status_code=status.HTTP_200_OK)
+def mark_false_positive(
+    alert_id: int,
+    payload: Optional[AlertResolveRequest] = None,
+    db: Session = Depends(get_db),
+):
+    """Mark an alert as false-positive and resolved."""
+    try:
+        alert = db.query(AnomalyAlert).filter(AnomalyAlert.id == alert_id).first()
+        if not alert:
+            raise HTTPException(status_code=404, detail="Alert not found")
+
+        service = AlertService(db)
+        resolved = service.mark_false_positive(
+            alert, resolved_by=(payload.resolved_by if payload else None)
+        )
         return {
             "id": resolved.id,
             "status": resolved.status,

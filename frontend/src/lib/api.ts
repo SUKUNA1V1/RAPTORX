@@ -78,10 +78,11 @@ export const getAlerts = (params?: {
   limit?: number;
 }) => api.get<AnomalyAlert[]>("/api/alerts", { params }).then((r) => r.data);
 
-export const resolveAlert = (id: number) => api.put(`/api/alerts/${id}/resolve`).then((r) => r.data);
+export const resolveAlert = (id: number, resolvedBy = 0) =>
+  api.put(`/api/alerts/${id}/resolve`, { resolved_by: resolvedBy }).then((r) => r.data);
 
-export const markFalsePositive = (id: number) =>
-  api.put(`/api/alerts/${id}/false-positive`).then((r) => r.data);
+export const markFalsePositive = (id: number, resolvedBy = 0) =>
+  api.put(`/api/alerts/${id}/false-positive`, { resolved_by: resolvedBy }).then((r) => r.data);
 
 export const getAccessPointsList = (params?: { status?: string; building?: string }) =>
   api.get<AccessPoint[]>("/api/access-points", { params }).then((r) => r.data);
