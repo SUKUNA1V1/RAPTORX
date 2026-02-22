@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
 from ..models import AccessLog, AccessPoint, AnomalyAlert, User
+from ..schemas.access_point import AccessPointCreate, AccessPointResponse
 from ..services import AccessDecisionEngine, create_alert, extract_features
 from ..services.ml_service import FEATURE_COLS
 
@@ -104,6 +105,20 @@ def list_access_points(
             query = query.filter(AccessPoint.building == building)
         return query.all()
     except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@access_points_router.post("", response_model=AccessPointResponse, status_code=status.HTTP_201_CREATED)
+def create_access_point(data: AccessPointCreate, db: Session = Depends(get_db)):
+    """Create a new access point."""
+    try:
+        access_point = AccessPoint(**data.model_dump())
+        db.add(access_point)
+        db.commit()
+        db.refresh(access_point)
+        return access_point
+    except Exception as exc:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -252,8 +267,19 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
         raw_list = [features["raw"][name] for name in FEATURE_COLS]
 
         engine = get_engine()
+        audit_context = {
+            "user_id": user.id,
+            "access_point_id": access_point.id,
+            "badge_id": payload.badge_id,
+            "method": payload.method or "badge",
+            "timestamp": timestamp.isoformat() if timestamp else None,
+        }
         try:
-            ml_result = engine.decide(features["list"], raw_features=raw_list)
+            ml_result = engine.decide(
+                features["list"],
+                raw_features=raw_list,
+                audit_context=audit_context,
+            )
         except Exception as exc:
             print(f"ML scoring failed, falling back to rule-based: {exc}")
             risk_score = _rule_based_score(raw_list)
@@ -278,6 +304,13 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
                 "reasoning": reasoning,
                 "mode": "rule_based",
             }
+            engine.audit_decision(
+                decision=ml_result,
+                features=features["list"],
+                raw_features=raw_list,
+                audit_context={**audit_context, "error": str(exc)},
+                event_type="decision_exception_fallback",
+            )
 
         access_log = AccessLog(
             user_id=user.id,

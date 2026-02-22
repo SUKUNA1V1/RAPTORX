@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score
 from tensorflow import keras
-from pathlib import Path
+from model_registry import resolve_model_artifact_path
+from threshold_utils import resolve_alert_threshold
 
 FEATURE_COLS = [
     "hour", "day_of_week", "is_weekend",
@@ -16,34 +17,21 @@ FEATURE_COLS = [
     "department_zone_mismatch", "concurrent_session_detected",
 ]
 
+# Models use only first 13 features
+FEATURE_COLS_13 = FEATURE_COLS[:13]
+
 # Load test data
 test_df = pd.read_csv("data/processed/test_scaled.csv")
-X = test_df[FEATURE_COLS].values
+X_all = test_df[FEATURE_COLS].values
+X = test_df[FEATURE_COLS_13].values  # Only 13 features for models
 y = test_df["label"].values
 
 # Load models
-if_data = joblib.load("ml/models/isolation_forest.pkl")
+if_data = joblib.load(resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest"))
 if_model = if_data["model"]
-ae_model = keras.models.load_model("ml/models/autoencoder.keras")
-ae_config = joblib.load("ml/models/autoencoder_config.pkl")
+ae_model = keras.models.load_model(resolve_model_artifact_path("autoencoder.keras", "autoencoder"))
+ae_config = joblib.load(resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder"))
 
-
-def resolve_threshold() -> tuple[float, str]:
-    ensemble_path = Path("ml/models/ensemble_config.pkl")
-    if ensemble_path.exists():
-        try:
-            ensemble = joblib.load(ensemble_path)
-            if "best_threshold" in ensemble and ensemble["best_threshold"] is not None:
-                return float(ensemble["best_threshold"]), "ensemble_config.best_threshold"
-            if "threshold" in ensemble and ensemble["threshold"] is not None:
-                return float(ensemble["threshold"]), "ensemble_config.threshold"
-        except Exception:
-            pass
-
-    if "best_threshold" in if_data and if_data["best_threshold"] is not None:
-        return float(if_data["best_threshold"]), "isolation_forest.best_threshold"
-
-    return 0.5, "default_0.50"
 
 # Get scores
 raw = if_model.decision_function(X)
@@ -60,7 +48,7 @@ ae_scores = np.clip(
     1,
 )
 combined = 0.3 * if_scores + 0.7 * ae_scores
-threshold, threshold_source = resolve_threshold()
+threshold, threshold_source = resolve_alert_threshold(if_data=if_data)
 preds = (combined >= threshold).astype(int)
 
 # Metrics

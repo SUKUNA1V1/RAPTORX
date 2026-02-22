@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
+from model_registry import register_model_version, resolve_model_artifact_path
 
 FEATURE_COLS = [
     "hour", "day_of_week", "is_weekend",
@@ -15,6 +16,8 @@ FEATURE_COLS = [
     "velocity_km_per_min", "zone_clearance_mismatch",
     "department_zone_mismatch", "concurrent_session_detected",
 ]
+
+FEATURE_COLS_13 = FEATURE_COLS[:13]
 
 
 def load_validation_data() -> pd.DataFrame:
@@ -55,13 +58,13 @@ def compute_scores(X, if_data, ae_model, ae_config):
 
 # Load validation data
 val_df = load_validation_data()
-X_val = val_df[FEATURE_COLS].values
+X_val = val_df[FEATURE_COLS_13].values
 y_val = val_df["label"].values
 
 # Load models
-if_data = joblib.load("ml/models/isolation_forest.pkl")
-ae_model = keras.models.load_model("ml/models/autoencoder.keras")
-ae_config = joblib.load("ml/models/autoencoder_config.pkl")
+if_data = joblib.load(resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest"))
+ae_model = keras.models.load_model(resolve_model_artifact_path("autoencoder.keras", "autoencoder"))
+ae_config = joblib.load(resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder"))
 
 # Get validation scores
 combined = compute_scores(X_val, if_data, ae_model, ae_config)
@@ -102,7 +105,7 @@ print("=" * 60)
 
 # Evaluate on test set
 test_df = pd.read_csv("data/processed/test_scaled.csv")
-X_test = test_df[FEATURE_COLS].values
+X_test = test_df[FEATURE_COLS_13].values
 y_test = test_df["label"].values
 
 combined_test = compute_scores(X_test, if_data, ae_model, ae_config)
@@ -143,14 +146,19 @@ if f1_test > 0.95:
 
 # Update saved models
 if_data["best_threshold"] = best_t
-joblib.dump(if_data, "ml/models/isolation_forest.pkl")
+if_root_path = "ml/models/isolation_forest.pkl"
+joblib.dump(if_data, if_root_path)
+register_model_version("isolation_forest", [if_root_path], "ml/models")
 print(f"\nUpdated threshold in isolation_forest.pkl: {best_t:.2f}")
 
 try:
-    ensemble = joblib.load("ml/models/ensemble_config.pkl")
+    ensemble_path = resolve_model_artifact_path("ensemble_config.pkl", "ensemble")
+    ensemble = joblib.load(ensemble_path)
     ensemble["best_threshold"] = best_t
     ensemble["threshold"] = best_t
-    joblib.dump(ensemble, "ml/models/ensemble_config.pkl")
+    ensemble_root_path = "ml/models/ensemble_config.pkl"
+    joblib.dump(ensemble, ensemble_root_path)
+    register_model_version("ensemble", [ensemble_root_path], "ml/models")
     print(f"Updated threshold in ensemble_config.pkl: {best_t:.2f}")
 except Exception:
     pass

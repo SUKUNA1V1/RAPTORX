@@ -6,6 +6,10 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import AccessLog, AccessPoint, AnomalyAlert, User
+from ..monitoring import get_query_statistics
+from ..api_metrics import get_api_performance_stats
+import psutil
+import os
 
 
 # Purpose: Dashboard/statistics endpoints used by overview and chart widgets.
@@ -153,5 +157,55 @@ def get_top_access_points(db: Session = Depends(get_db)):
             }
             for row in rows
         ]
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/database-performance", status_code=status.HTTP_200_OK)
+def get_database_performance():
+    """Return database query performance statistics and slow query logs."""
+    try:
+        return get_query_statistics()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/api-performance", status_code=status.HTTP_200_OK)
+def get_api_performance():
+    """Return API endpoint performance statistics."""
+    try:
+        return get_api_performance_stats()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/system-health", status_code=status.HTTP_200_OK)
+def get_system_health():
+    """Return comprehensive system health metrics."""
+    try:
+        process = psutil.Process(os.getpid())
+        
+        # Get CPU and memory metrics
+        cpu_percent = process.cpu_percent(interval=0.1)
+        memory_info = process.memory_info()
+        
+        # Get system-wide metrics
+        system_cpu = psutil.cpu_percent(interval=0.1)
+        system_memory = psutil.virtual_memory()
+        
+        return {
+            "timestamp": datetime.utcnow().isoformat(),
+            "process": {
+                "cpu_percent": cpu_percent,
+                "memory_mb": round(memory_info.rss / 1024 / 1024, 2),
+                "threads": process.num_threads(),
+            },
+            "system": {
+                "cpu_percent": system_cpu,
+                "memory_percent": system_memory.percent,
+                "memory_available_mb": round(system_memory.available / 1024 / 1024, 2),
+                "disk_percent": psutil.disk_usage("/").percent,
+            },
+        }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

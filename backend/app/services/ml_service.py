@@ -135,9 +135,12 @@ def get_scaler():
     """Load and cache scaler artifact used for runtime feature normalization."""
     global _SCALER
     if _SCALER is None:
-        scaler_path = os.path.join(_models_dir(), "scaler.pkl")
-        if os.path.exists(scaler_path):
-            _SCALER = joblib.load(scaler_path)
+        scaler_path_13 = os.path.join(_models_dir(), "scaler_13.pkl")
+        scaler_path_legacy = os.path.join(_models_dir(), "scaler.pkl")
+        if os.path.exists(scaler_path_13):
+            _SCALER = joblib.load(scaler_path_13)
+        elif os.path.exists(scaler_path_legacy):
+            _SCALER = joblib.load(scaler_path_legacy)
         else:
             _SCALER = _IdentityScaler()
     return _SCALER

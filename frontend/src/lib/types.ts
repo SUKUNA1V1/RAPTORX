@@ -150,3 +150,34 @@ export interface AccessDecision {
   reasoning: string;
   alert_created: boolean;
 }
+export interface FeatureContribution {
+  name: string;
+  value: number;
+  contribution: number;
+  importance: number;
+  percentile: number;
+}
+
+export interface Explanation {
+  decision: Decision;
+  confidence: number;
+  reason: string;
+  if_score: number;
+  ae_score: number;
+  combined_score: number;
+  threshold: number;
+  top_features: FeatureContribution[];
+  feature_warnings: Array<{
+    feature: string;
+    value: number;
+    percentile: number;
+    warning: string;
+  }>;
+  contributing_factors: Array<{
+    factor: string;
+    description: string;
+    impact: "high" | "medium" | "low";
+  }>;
+  risk_level: "low" | "medium" | "high" | "critical";
+  timestamp: string;
+}

@@ -16,6 +16,7 @@ import joblib
 import os
 import time
 import warnings
+from model_registry import register_model_version
 warnings.filterwarnings("ignore")
 
 # ============================================================
@@ -554,6 +555,12 @@ model_data["deny_threshold"]  = float(deny_thresh)
 model_data["best_threshold"]  = float(best_thresh)
 joblib.dump(model_data, os.path.join(MODELS_DIR, "isolation_forest.pkl"))
 print(f"\nThresholds saved to isolation_forest.pkl")
+register_model_version(
+    "isolation_forest",
+    [os.path.join(MODELS_DIR, "isolation_forest.pkl")],
+    MODELS_DIR,
+)
+print("Isolation Forest version registered")
 
 # Plot decision zones
 plt.figure(figsize=(12, 5))

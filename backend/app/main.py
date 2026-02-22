@@ -2,10 +2,25 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .routes import access_points_router, access_router, alerts_router, ml_router, stats_router, users_router
+from .routes import (
+    access_points_router,
+    access_router,
+    alerts_router,
+    ml_router,
+    stats_router,
+    users_router,
+    explainability_router,
+)
+from .api_metrics import APIPerformanceMiddleware
+from .logging_config import get_logger
+
+logger = get_logger("main")
 
 
 app = FastAPI(title="AI Access Control System API")
+
+# Add API performance monitoring middleware
+app.add_middleware(APIPerformanceMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,3 +56,4 @@ app.include_router(access_points_router, prefix="/api")
 app.include_router(ml_router, prefix="/api")
 app.include_router(alerts_router, prefix="/api")
 app.include_router(stats_router, prefix="/api")
+app.include_router(explainability_router, prefix="/api")

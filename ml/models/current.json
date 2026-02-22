@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-02-22T04:56:24.120052+00:00",
+  "current": {
+    "ensemble": {
+      "version": "20260222T045624Z",
+      "updated_at": "2026-02-22T04:56:24.120047+00:00",
+      "artifacts": {
+        "ensemble_config.pkl": "versions/ensemble/20260222T045624Z/ensemble_config.pkl"
+      }
+    }
+  }
+}

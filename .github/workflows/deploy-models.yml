@@ -1,0 +1,174 @@
+name: Deploy Updated Models
+
+on:
+  workflow_run:
+    workflows: ["Retune Anomaly Detection Thresholds"]
+    types:
+      - completed
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      model_version:
+        description: 'Model version to deploy'
+        required: false
+      target_env:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy-models:
+    # Only deploy if threshold retuning was successful
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    environment:
+      name: ${{ github.event.inputs.target_env || 'staging' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download retune artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: updated-models
+          path: ./models/
+      
+      - name: Verify model artifacts
+        run: |
+          echo "Verifying downloaded model artifacts..."
+          ls -lah models/ || true
+          
+          # Check if models exist
+          if [ -f "models/isolation_forest.pkl" ]; then
+              echo "✅ isolation_forest.pkl present"
+          else
+              echo "⚠️  isolation_forest.pkl missing (using existing version)"
+          fi
+          
+          if [ -f "models/ensemble_config.pkl" ]; then
+              echo "✅ ensemble_config.pkl present"
+          else
+              echo "⚠️  ensemble_config.pkl missing (using existing version)"
+          fi
+      
+      - name: Validate model integrity
+        run: |
+          apt-get update && apt-get install -y python3-pip
+          pip install joblib numpy scikit-learn
+          
+          python3 << 'EOF'
+          import joblib
+          from pathlib import Path
+          
+          models_dir = Path("models")
+          if models_dir.exists():
+              for model_file in models_dir.glob("*.pkl"):
+                  try:
+                      model = joblib.load(str(model_file))
+                      print(f"✅ {model_file.name} is valid (size: {model_file.stat().st_size} bytes)")
+                  except Exception as e:
+                      print(f"❌ {model_file.name} is corrupted: {e}")
+                      exit(1)
+          EOF
+      
+      - name: Create deployment package
+        run: |
+          mkdir -p deployment/models
+          mkdir -p deployment/config
+          
+          # Copy models
+          cp models/*.pkl deployment/models/ 2>/dev/null || true
+          
+          # Create deployment manifest
+          cat > deployment/manifest.json << 'EOF'
+          {
+            "version": "${{ github.sha }}",
+            "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+            "source": "github.com/${{ github.repository }}",
+            "workflow_run": "${{ github.run_id }}",
+            "target": "${{ github.event.inputs.target_env || 'staging' }}"
+          }
+          EOF
+          
+          echo "Deployment package created:"
+          ls -la deployment/
+      
+      - name: Deploy to staging
+        if: github.event.inputs.target_env == 'staging' || github.event.inputs.target_env == ''
+        run: |
+          echo "🚀 Deploying models to staging environment..."
+          
+          # In production, this would:
+          # 1. Update model storage (S3, GCS, artifact repository)
+          # 2. Trigger staging environment updates
+          # 3. Run smoke tests
+          
+          echo "✅ Staging deployment would update:"
+          echo "  - ml/models/isolation_forest.pkl"
+          echo "  - ml/models/ensemble_config.pkl"
+          echo "  - Model version registry"
+      
+      - name: Deploy to production
+        if: github.event.inputs.target_env == 'production'
+        run: |
+          echo "🚀 Deploying models to PRODUCTION environment..."
+          echo "⚠️  This is a critical operation - ensure validation passed!"
+          
+          # Production deployment would:
+          # 1. Create backup of current models
+          # 2. Update models in production storage
+          # 3. Update live inference endpoints
+          # 4. Run health checks and rollback if needed
+          # 5. Create deployment record
+          
+          echo "✅ Production deployment would:"
+          echo "  - Backup current models"
+          echo "  - Update production ml/models/ directory"
+          echo "  - Restart inference service"
+          echo "  - Run smoke tests"
+          echo "  - Monitor error rates for 30 minutes"
+      
+      - name: Create deployment issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentStatus = '${{ job.status }}';
+            const targetEnv = '${{ github.event.inputs.target_env || 'staging' }}';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Model Deployment Update** 
+              
+              - **Environment**: ${targetEnv}
+              - **Status**: ${deploymentStatus}
+              - **Models**: isolation_forest, ensemble_config
+              - **Workflow**: [Run #${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              `
+            });
+      
+      - name: Post deployment notification
+        if: success()
+        run: |
+          echo "📊 Deployment Summary:"
+          echo "- Environment: ${{ github.event.inputs.target_env || 'staging' }}"
+          echo "- Commit: ${{ github.sha }}"
+          echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "- Status: ✅ SUCCESS"
+      
+      - name: Post failure notification
+        if: failure()
+        run: |
+          echo "❌ Deployment failed"
+          echo "Please check logs and retry"
+          exit 1

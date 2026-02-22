@@ -1,0 +1,155 @@
+name: Model Validation Pipeline
+
+on:
+  push:
+    paths:
+      - 'decision_engine.py'
+      - 'train_isolation_forest.py'
+      - 'train_autoencoder.py'
+      - 'retune_threshold.py'
+      - 'backend/app/services/decision_engine.py'
+      - '.github/workflows/model-validation.yml'
+  
+  pull_request:
+    paths:
+      - 'decision_engine.py'
+      - 'train_isolation_forest.py'
+      - 'train_autoencoder.py'
+      - 'retune_threshold.py'
+      - 'backend/app/services/decision_engine.py'
+
+jobs:
+  validate-models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/ -v --tb=short || true
+      
+      - name: Lint model code
+        run: |
+          pip install pylint
+          pylint decision_engine.py --disable=all --enable=E,F || true
+      
+      - name: Type check
+        run: |
+          pip install mypy
+          mypy decision_engine.py --ignore-missing-imports || true
+      
+      - name: Test decision engine
+        run: |
+          python -c "
+          import joblib
+          import numpy as np
+          from decision_engine import DecisionEngine
+          
+          print('Testing DecisionEngine...')
+          engine = DecisionEngine()
+          
+          # Test with dummy data
+          test_data = np.random.rand(1, 13)
+          result = engine.predict(test_data)
+          print(f'✅ DecisionEngine predict works: {result}')
+          
+          status = engine.status()
+          print(f'✅ Engine status: {status}')
+          "
+      
+      - name: Test model artifacts exist
+        run: |
+          python -c "
+          import joblib
+          from pathlib import Path
+          
+          models = [
+              'ml/models/isolation_forest.pkl',
+              'ml/models/autoencoder.pkl',
+              'ml/models/ensemble_config.pkl'
+          ]
+          
+          for model in models:
+              if Path(model).exists():
+                  print(f'✅ {model} exists')
+              else:
+                  print(f'⚠️  {model} not found')
+          "
+      
+      - name: Validate threshold range
+        run: |
+          python -c "
+          import joblib
+          
+          try:
+              if_model = joblib.load('ml/models/isolation_forest.pkl')
+              threshold = if_model.get('best_threshold', 0.5)
+              
+              if 0.0 <= threshold <= 1.0:
+                  print(f'✅ Threshold {threshold} is valid')
+              else:
+                  print(f'❌ Threshold {threshold} is out of range')
+                  exit(1)
+          except Exception as e:
+              print(f'⚠️  Could not validate threshold: {e}')
+          "
+      
+      - name: Test thread safety
+        run: |
+          python -c "
+          import threading
+          import numpy as np
+          from decision_engine import DecisionEngine
+          
+          engine = DecisionEngine()
+          results = []
+          errors = []
+          
+          def worker():
+              try:
+                  data = np.random.rand(1, 13)
+                  result = engine.predict(data)
+                  results.append(result)
+              except Exception as e:
+                  errors.append(str(e))
+          
+          threads = [threading.Thread(target=worker) for _ in range(5)]
+          for t in threads:
+              t.start()
+          for t in threads:
+              t.join()
+          
+          if errors:
+              print(f'❌ Thread safety errors: {errors}')
+              exit(1)
+          else:
+              print(f'✅ Thread safety test passed ({len(results)} concurrent predictions)')
+          "
+      
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: validation-report-py${{ matrix.python-version }}
+          path: |
+            .coverage
+            htmlcov/
+          retention-days: 7

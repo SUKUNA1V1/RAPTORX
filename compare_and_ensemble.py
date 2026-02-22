@@ -14,6 +14,8 @@ from sklearn.metrics import (
     f1_score, roc_auc_score, roc_curve, ConfusionMatrixDisplay
 )
 import warnings
+from model_registry import register_model_version, resolve_model_artifact_path
+from threshold_utils import resolve_alert_threshold
 warnings.filterwarnings("ignore")
 
 # ============================================================
@@ -28,13 +30,19 @@ RANDOM_SEED   = 42
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 FEATURE_COLS = [
-    "hour", "day_of_week", "is_weekend",
-    "access_frequency_24h", "time_since_last_access_min",
-    "location_match", "role_level", "is_restricted_area",
-    "is_first_access_today", "sequential_zone_violation",
-    "access_attempt_count", "time_of_week", "hour_deviation_from_norm",
-    "geographic_impossibility", "distance_between_scans_km", "velocity_km_per_min",
-    "zone_clearance_mismatch", "department_zone_mismatch", "concurrent_session_detected",
+    "hour",
+    "day_of_week",
+    "is_weekend",
+    "access_frequency_24h",
+    "time_since_last_access_min",
+    "location_match",
+    "role_level",
+    "is_restricted_area",
+    "is_first_access_today",
+    "sequential_zone_violation",
+    "access_attempt_count",
+    "time_of_week",
+    "hour_deviation_from_norm",
 ]
 
 # ============================================================
@@ -61,17 +69,24 @@ print("STEP 2 — Loading models")
 print("=" * 60)
 
 # Load Isolation Forest
-if_data     = joblib.load(os.path.join(MODELS_DIR, "isolation_forest.pkl"))
+if_path     = resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest", MODELS_DIR)
+if_data     = joblib.load(if_path)
 if_model    = if_data["model"]
 if_min      = if_data["min_score"]
 if_max      = if_data["max_score"]
-if_thresh   = if_data["best_threshold"]
+if_thresh, if_thresh_source = resolve_alert_threshold(
+    models_dir=MODELS_DIR,
+    if_data=if_data,
+    prefer_ensemble=False,
+)
 print(f"Isolation Forest loaded")
-print(f"   Best threshold : {if_thresh:.4f}")
+print(f"   Best threshold : {if_thresh:.4f} ({if_thresh_source})")
 
 # Load Autoencoder
-ae_model    = keras.models.load_model(os.path.join(MODELS_DIR, "autoencoder.keras"))
-ae_config   = joblib.load(os.path.join(MODELS_DIR, "autoencoder_config.pkl"))
+ae_path     = resolve_model_artifact_path("autoencoder.keras", "autoencoder", MODELS_DIR)
+ae_cfg_path = resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder", MODELS_DIR)
+ae_model    = keras.models.load_model(ae_path)
+ae_config   = joblib.load(ae_cfg_path)
 ae_thresh   = ae_config["threshold"]
 ae_min_err  = ae_config["min_error"]
 ae_max_err  = ae_config["max_error"]
@@ -178,7 +193,7 @@ for w_if in [0.3, 0.4, 0.5, 0.6]:
         "combined_scores": combined,
         "best_thresh": best_thresh
     })
-    print(f"  IF={w_if:.1f} AE={w_ae:.1f} → P:{prec*100:.1f}% R:{rec*100:.1f}% F1:{f1:.4f} FPR:{fpr_val*100:.2f}%")
+    print(f"  IF={w_if:.1f} AE={w_ae:.1f} => P:{prec*100:.1f}% R:{rec*100:.1f}% F1:{f1:.4f} FPR:{fpr_val*100:.2f}%")
 
 # Strategy B — Voting (both must agree for anomaly)
 voting_and   = ((if_preds == 1) & (ae_preds == 1)).astype(int)
@@ -189,7 +204,7 @@ rec          = recall_score(y_test, voting_and, zero_division=0)
 f1           = f1_score(y_test, voting_and, zero_division=0)
 auc          = roc_auc_score(y_test, (if_scores + ae_scores) / 2)
 fpr_val      = fp / (fp + tn) if (fp + tn) > 0 else 0
-print(f"\n  Voting AND (both flag) → P:{prec*100:.1f}% R:{rec*100:.1f}% F1:{f1:.4f} FPR:{fpr_val*100:.2f}%")
+print(f"\n  Voting AND (both flag) => P:{prec*100:.1f}% R:{rec*100:.1f}% F1:{f1:.4f} FPR:{fpr_val*100:.2f}%")
 ensemble_results.append({
     "strategy":  "Voting AND",
     "threshold": "both",
@@ -210,7 +225,7 @@ prec         = precision_score(y_test, voting_or, zero_division=0)
 rec          = recall_score(y_test, voting_or, zero_division=0)
 f1           = f1_score(y_test, voting_or, zero_division=0)
 fpr_val      = fp / (fp + tn) if (fp + tn) > 0 else 0
-print(f"  Voting OR  (either flags) → P:{prec*100:.1f}% R:{rec*100:.1f}% F1:{f1:.4f} FPR:{fpr_val*100:.2f}%")
+print(f"  Voting OR  (either flags) => P:{prec*100:.1f}% R:{rec*100:.1f}% F1:{f1:.4f} FPR:{fpr_val*100:.2f}%")
 ensemble_results.append({
     "strategy":  "Voting OR",
     "threshold": "either",
@@ -261,7 +276,9 @@ ensemble_config = {
     "best_threshold": float(best_thresh),
     "feature_cols":  FEATURE_COLS,
 }
-joblib.dump(ensemble_config, os.path.join(MODELS_DIR, "ensemble_config.pkl"))
+ensemble_path = os.path.join(MODELS_DIR, "ensemble_config.pkl")
+joblib.dump(ensemble_config, ensemble_path)
+register_model_version("ensemble", [ensemble_path], MODELS_DIR)
 print(f"\nEnsemble config saved")
 
 # ============================================================

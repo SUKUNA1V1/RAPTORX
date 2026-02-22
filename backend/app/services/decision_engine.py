@@ -2,12 +2,23 @@ import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
+import hashlib
+import json
+import logging
+import threading
 import numpy as np
 import joblib
 import tensorflow as tf
 from tensorflow import keras
+from datetime import datetime, timezone
 import warnings
 warnings.filterwarnings("ignore")
+
+try:
+    from model_registry import resolve_model_artifact_path
+except Exception:
+    def resolve_model_artifact_path(artifact_filename: str, model_key: str | None = None, models_dir: str = "ml/models") -> str:
+        return os.path.join(models_dir, artifact_filename)
 
 
 class AccessDecisionEngine:
@@ -19,6 +30,11 @@ class AccessDecisionEngine:
         risk_score < GRANT_THRESHOLD  -> GRANTED
         risk_score < DENY_THRESHOLD   -> DELAYED
         risk_score >= DENY_THRESHOLD  -> DENIED
+    
+    Thread Safety:
+        - Model loading protected by class-level lock (one-time initialization)
+        - Predictions protected by instance-level RLock (re-entrant for nested calls)
+        - Safe for concurrent FastAPI requests
     """
 
     GRANT_THRESHOLD = float(
@@ -30,6 +46,10 @@ class AccessDecisionEngine:
 
     IF_WEIGHT = 0.3
     AE_WEIGHT = 0.7
+    
+    # Class-level lock for thread-safe model initialization
+    _init_lock = threading.Lock()
+    _initialized = False
 
     def __init__(self, models_dir=None):
         if models_dir is None:
@@ -43,14 +63,83 @@ class AccessDecisionEngine:
         self.if_data = None
         self.ae_config = None
         self.is_loaded = False
-        self.load_models()
+        # Instance-level RLock for thread-safe predictions (allows re-entrant access)
+        self._predict_lock = threading.RLock()
+        self.audit_logger = self._build_audit_logger()
+        # Load models with thread safety using double-checked locking pattern
+        with AccessDecisionEngine._init_lock:
+            if not AccessDecisionEngine._initialized:
+                self.load_models()
+                AccessDecisionEngine._initialized = True
+            else:
+                # Models already loaded by another thread, verify they're accessible
+                self._load_models_verify()
+
+    def _build_audit_logger(self) -> logging.Logger:
+        logger = logging.getLogger("raptorx.access_audit")
+        if logger.handlers:
+            return logger
+
+        base = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        logs_dir = os.path.join(base, "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        log_path = os.path.join(logs_dir, "access_decisions_audit.log")
+
+        logger.setLevel(logging.INFO)
+        handler = logging.FileHandler(log_path, encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(handler)
+        logger.propagate = False
+        return logger
+
+    def _hash_features(self, values: list | None) -> str | None:
+        if values is None:
+            return None
+        try:
+            arr = np.asarray(values, dtype=float)
+            payload = ",".join(f"{v:.6f}" for v in arr.tolist())
+            return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        except Exception:
+            return None
+
+    def _emit_audit(
+        self,
+        event_type: str,
+        decision: dict,
+        features: list | None = None,
+        raw_features: list | None = None,
+        audit_context: dict | None = None,
+    ) -> None:
+        try:
+            entry = {
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                "event_type": event_type,
+                "decision": decision.get("decision"),
+                "risk_score": decision.get("risk_score"),
+                "if_score": decision.get("if_score"),
+                "ae_score": decision.get("ae_score"),
+                "mode": decision.get("mode"),
+                "reasoning": decision.get("reasoning"),
+                "thresholds": decision.get("thresholds", {}),
+                "features_scaled_len": len(features) if features is not None else None,
+                "features_raw_len": len(raw_features) if raw_features is not None else None,
+                "features_scaled_sha256": self._hash_features(features),
+                "features_raw_sha256": self._hash_features(raw_features),
+                "context": audit_context or {},
+            }
+            self.audit_logger.info(json.dumps(entry, ensure_ascii=False))
+        except Exception:
+            # Never fail access flow because of audit logging errors
+            pass
 
     def load_models(self):
         print("Loading ML models...")
         errors = []
 
         try:
-            if_path = os.path.join(self.models_dir, "isolation_forest.pkl")
+            if_path = resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest", self.models_dir)
             self.if_data = joblib.load(if_path)
             self.if_model = self.if_data["model"]
             print("Isolation Forest loaded")
@@ -59,11 +148,10 @@ class AccessDecisionEngine:
             print(f"Isolation Forest failed: {e}")
 
         try:
-            ae_path = os.path.join(self.models_dir, "autoencoder.keras")
+            ae_path = resolve_model_artifact_path("autoencoder.keras", "autoencoder", self.models_dir)
+            ae_cfg_path = resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder", self.models_dir)
             self.ae_model = keras.models.load_model(ae_path)
-            self.ae_config = joblib.load(
-                os.path.join(self.models_dir, "autoencoder_config.pkl")
-            )
+            self.ae_config = joblib.load(ae_cfg_path)
             print("Autoencoder loaded")
         except Exception as e:
             errors.append(f"Autoencoder: {e}")
@@ -80,6 +168,23 @@ class AccessDecisionEngine:
             print("Only Autoencoder loaded - single model")
         else:
             print("No models loaded - rule-based decisions")
+
+    def _load_models_verify(self) -> None:
+        """Verify models from first initialization are accessible (for concurrent initialization)."""
+        try:
+            if_path = resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest", self.models_dir)
+            self.if_data = joblib.load(if_path)
+            self.if_model = self.if_data["model"]
+            
+            ae_path = resolve_model_artifact_path("autoencoder.keras", "autoencoder", self.models_dir)
+            ae_cfg_path = resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder", self.models_dir)
+            self.ae_model = keras.models.load_model(ae_path)
+            self.ae_config = joblib.load(ae_cfg_path)
+            
+            self.is_loaded = bool(self.if_model and self.ae_model)
+        except Exception as e:
+            print(f"Warning: Failed to verify model loading after concurrent init: {e}")
+            self.is_loaded = False
 
     def compute_risk_score(self, features: list) -> dict:
         X = np.array(features).reshape(1, -1)
@@ -164,8 +269,29 @@ class AccessDecisionEngine:
 
         return float(np.clip(score, 0.0, 1.0))
 
-    def decide(self, features: list, raw_features: list | None = None) -> dict:
-        scores = self.compute_risk_score(features)
+    def decide(
+        self,
+        features: list,
+        raw_features: list | None = None,
+        audit_context: dict | None = None,
+    ) -> dict:
+        """
+        Make access control decision based on features (THREAD-SAFE).
+        
+        Args:
+            features: 13 or 19-element feature vector
+            raw_features: Unscaled features for contextual decisions
+            audit_context: Optional dict with request context for audit trail
+            
+        Returns:
+            dict with decision, risk_score, reasoning, etc.
+        
+        Note: ML model predictions are protected by re-entrant lock to ensure
+        thread-safe access to model instances for concurrent FastAPI requests.
+        """
+        # CRITICAL SECTION: Model prediction (protected by re-entrant lock)
+        with self._predict_lock:
+            scores = self.compute_risk_score(features)
 
         if scores["combined_score"] is None:
             risk_source = raw_features if raw_features is not None else features
@@ -189,7 +315,7 @@ class AccessDecisionEngine:
                 f"Risk score {risk_score:.4f} above deny threshold {self.DENY_THRESHOLD}"
             )
 
-        return {
+        result = {
             "decision": decision,
             "risk_score": round(risk_score, 4),
             "if_score": scores["if_score"],
@@ -198,6 +324,30 @@ class AccessDecisionEngine:
             "mode": mode,
             "thresholds": {"grant": self.GRANT_THRESHOLD, "deny": self.DENY_THRESHOLD},
         }
+        self._emit_audit(
+            event_type="decision",
+            decision=result,
+            features=features,
+            raw_features=raw_features,
+            audit_context=audit_context,
+        )
+        return result
+
+    def audit_decision(
+        self,
+        decision: dict,
+        features: list | None = None,
+        raw_features: list | None = None,
+        audit_context: dict | None = None,
+        event_type: str = "decision_fallback",
+    ) -> None:
+        self._emit_audit(
+            event_type=event_type,
+            decision=decision,
+            features=features,
+            raw_features=raw_features,
+            audit_context=audit_context,
+        )
 
     def status(self) -> dict:
         if_path = os.path.join(self.models_dir, "isolation_forest.pkl")

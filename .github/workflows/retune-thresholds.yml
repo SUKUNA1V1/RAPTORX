@@ -1,0 +1,182 @@
+name: Retune Anomaly Detection Thresholds
+
+on:
+  schedule:
+    # Run every Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+  
+  # Allow manual trigger from Actions tab
+  workflow_dispatch:
+    inputs:
+      validate_only:
+        description: 'Only validate, do not update models'
+        required: false
+        default: 'false'
+
+jobs:
+  retune-thresholds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    env:
+      PYTHON_VERSION: '3.13'
+      DATA_DIR: 'data/processed'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
+      
+      - name: Download data artifacts
+        run: |
+          # Create data directory structure
+          mkdir -p ${{ env.DATA_DIR }}
+          
+          # In production, fetch from cloud storage (S3, GCS, etc.)
+          # For now, we'll assume data is in repo or use test data
+          if [ ! -f "${{ env.DATA_DIR }}/val_scaled.csv" ]; then
+            echo "Warning: Validation data not found, using test data"
+            # Generate or fetch test data as fallback
+          fi
+      
+      - name: Run threshold retuning
+        id: retune
+        run: |
+          python retune_threshold.py > retune_output.log 2>&1
+          RETUNE_EXIT_CODE=$?
+          
+          # Parse results from log
+          BEST_THRESHOLD=$(grep -oP 'BEST THRESHOLD: \K[0-9.]+' retune_output.log || echo "unknown")
+          TEST_F1=$(grep -oP 'Test F1: \K[0-9.]+' retune_output.log || echo "0")
+          VERDICT=$(grep -oP 'FINAL VERDICT.*\n.*\n\K.*(?=\n)' retune_output.log || echo "unknown")
+          
+          echo "exit_code=${RETUNE_EXIT_CODE}" >> $GITHUB_OUTPUT
+          echo "best_threshold=${BEST_THRESHOLD}" >> $GITHUB_OUTPUT
+          echo "test_f1=${TEST_F1}" >> $GITHUB_OUTPUT
+          echo "verdict=${VERDICT}" >> $GITHUB_OUTPUT
+          
+          exit $RETUNE_EXIT_CODE
+      
+      - name: Validate results
+        id: validate
+        run: |
+          TEST_F1=${{ steps.retune.outputs.test_f1 }}
+          BEST_THRESHOLD=${{ steps.retune.outputs.best_threshold }}
+          
+          echo "Validating threshold retuning results..."
+          echo "Test F1 Score: ${TEST_F1}"
+          echo "Best Threshold: ${BEST_THRESHOLD}"
+          
+          # Check if F1 is in acceptable range (0.70-0.95)
+          VALID=$(python -c "
+          f1 = float('${TEST_F1}')
+          if 0.70 <= f1 <= 0.95:
+              print('PASS')
+          else:
+              print('FAIL')
+          ")
+          
+          echo "validation=${VALID}" >> $GITHUB_OUTPUT
+          
+          if [ "${VALID}" == "FAIL" ]; then
+            echo "❌ F1 Score ${TEST_F1} is outside acceptable range (0.70-0.95)"
+            exit 1
+          else
+            echo "✅ F1 Score ${TEST_F1} is within acceptable range"
+          fi
+      
+      - name: Check for manual validation-only mode
+        id: check_mode
+        run: |
+          VALIDATE_ONLY="${{ github.event.inputs.validate_only }}"
+          echo "validate_only=${VALIDATE_ONLY}" >> $GITHUB_OUTPUT
+      
+      - name: Prepare model artifacts
+        if: steps.validate.outputs.validation == 'PASS' && steps.check_mode.outputs.validate_only == 'false'
+        run: |
+          mkdir -p artifacts/models
+          
+          # Copy updated model files
+          if [ -f "ml/models/isolation_forest.pkl" ]; then
+            cp ml/models/isolation_forest.pkl artifacts/models/
+          fi
+          if [ -f "ml/models/ensemble_config.pkl" ]; then
+            cp ml/models/ensemble_config.pkl artifacts/models/
+          fi
+          if [ -f "ml/models/model_registry.json" ]; then
+            cp ml/models/model_registry.json artifacts/models/
+          fi
+          
+          echo "Updated model artifacts prepared"
+      
+      - name: Upload artifacts
+        if: steps.validate.outputs.validation == 'PASS' && steps.check_mode.outputs.validate_only == 'false'
+        uses: actions/upload-artifact@v3
+        with:
+          name: updated-models
+          path: artifacts/models/
+          retention-days: 30
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: retune-logs
+          path: retune_output.log
+          retention-days: 30
+      
+      - name: Post validation report
+        if: always()
+        run: |
+          cat > report.md << 'EOF'
+          # Threshold Retuning Report
+          
+          **Date**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          **Status**: ${{ steps.validate.outputs.validation }}
+          
+          ## Results
+          - **Best Threshold**: ${{ steps.retune.outputs.best_threshold }}
+          - **Test F1 Score**: ${{ steps.retune.outputs.test_f1 }}
+          - **Verdict**: ${{ steps.retune.outputs.verdict }}
+          
+          ## Details
+          - Exit Code: ${{ steps.retune.outputs.exit_code }}
+          - Validation Mode: ${{ steps.check_mode.outputs.validate_only }}
+          
+          Full logs available in artifacts.
+          EOF
+          
+          cat report.md
+      
+      - name: Comment on pull request (if triggered by workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch' && always()
+        run: |
+          echo "✅ Threshold retuning completed"
+          echo "Results: F1=${{ steps.retune.outputs.test_f1 }}, Threshold=${{ steps.retune.outputs.best_threshold }}"
+      
+      - name: Notify deployment (success)
+        if: steps.validate.outputs.validation == 'PASS' && steps.check_mode.outputs.validate_only == 'false'
+        run: |
+          echo "🚀 Models ready for deployment"
+          echo "Threshold: ${{ steps.retune.outputs.best_threshold }}"
+          echo "F1 Score: ${{ steps.retune.outputs.test_f1 }}"
+      
+      - name: Fail if validation fails
+        if: steps.validate.outputs.validation == 'FAIL'
+        run: |
+          echo "❌ Threshold retuning validation failed"
+          echo "F1 Score ${{ steps.retune.outputs.test_f1 }} is outside acceptable range"
+          exit 1

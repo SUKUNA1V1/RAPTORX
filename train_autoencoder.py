@@ -8,6 +8,7 @@ import seaborn as sns
 import os
 import time
 import warnings
+from model_registry import register_model_version
 warnings.filterwarnings("ignore")
 
 # ============================================================
@@ -471,9 +472,11 @@ config = {
     "metrics":            metrics
 }
 joblib.dump(config, config_path)
+register_model_version("autoencoder", [model_path, config_path], MODELS_DIR)
 
 print(f"Model saved  : {model_path}")
 print(f"Config saved : {config_path}")
+print("Autoencoder version registered")
 
 # ============================================================
 # FINAL SUMMARY

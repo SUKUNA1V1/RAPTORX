@@ -40,6 +40,8 @@ FEATURE_COLS = [
     "concurrent_session_detected",
 ]
 
+FEATURE_COLS_13 = FEATURE_COLS[:13]
+
 # ============================================================
 # STEP 1 — LOAD DATA
 # ============================================================
@@ -155,9 +157,14 @@ X_test  = test_df[FEATURE_COLS].copy()
 y_test  = test_df["label"].copy()
 
 # Fit ONLY on training set — never on test set (prevents data leakage)
-scaler  = MinMaxScaler()
-X_train_scaled = scaler.fit_transform(X_train)   # fit + transform
-X_test_scaled  = scaler.transform(X_test)         # transform only
+# 19-feature scaler (full schema for analytics / 19-feature workflows)
+scaler_19 = MinMaxScaler()
+X_train_scaled = scaler_19.fit_transform(X_train)   # fit + transform
+X_test_scaled  = scaler_19.transform(X_test)        # transform only
+
+# 13-feature scaler (model runtime schema)
+scaler_13 = MinMaxScaler()
+scaler_13.fit(train_df[FEATURE_COLS_13].copy())
 
 print(f"Feature min after scaling: {X_train_scaled.min():.4f} (should be 0.0)")
 print(f"Feature max after scaling: {X_train_scaled.max():.4f} (should be 1.0)")
@@ -179,18 +186,25 @@ print("=" * 50)
 
 train_out = os.path.join(PROCESSED_DIR, "train_scaled.csv")
 test_out  = os.path.join(PROCESSED_DIR, "test_scaled.csv")
-scaler_out = os.path.join(MODELS_DIR,   "scaler.pkl")
+scaler_out_19 = os.path.join(MODELS_DIR, "scaler_19.pkl")
+scaler_out_13 = os.path.join(MODELS_DIR, "scaler_13.pkl")
+scaler_out_legacy = os.path.join(MODELS_DIR, "scaler.pkl")
 
 train_scaled_df.to_csv(train_out,  index=False)
 test_scaled_df.to_csv(test_out,    index=False)
-joblib.dump(scaler, scaler_out)
+joblib.dump(scaler_19, scaler_out_19)
+joblib.dump(scaler_13, scaler_out_13)
+joblib.dump(scaler_13, scaler_out_legacy)
 
 print(f" Scaled train set saved : {train_out}")
 print(f" Scaled test set saved  : {test_out}")
-print(f" Scaler saved           : {scaler_out}")
+print(f" Scaler (19f) saved     : {scaler_out_19}")
+print(f" Scaler (13f) saved     : {scaler_out_13}")
+print(f" Scaler legacy saved    : {scaler_out_legacy}")
 
 print(f"\nPhase 4.2 DONE!")
 print(f"\nFiles ready for ML training:")
 print(f"  Training : {train_out}")
 print(f"  Testing  : {test_out}")
-print(f"  Scaler   : {scaler_out}")
+print(f"  Scaler13 : {scaler_out_13}")
+print(f"  Scaler19 : {scaler_out_19}")

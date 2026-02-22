@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import AddAccessPointForm from "@/components/forms/AddAccessPointForm";
+
 const ACCESS_POINTS = [
   {
     id: 1,
@@ -138,13 +141,23 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AccessPointsPage() {
+  const [showForm, setShowForm] = useState(false);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Access Points</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          {ACCESS_POINTS.length} access points across all buildings
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Access Points</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            {ACCESS_POINTS.length} access points across all buildings
+          </p>
+        </div>
+        <button 
+          onClick={() => setShowForm(true)}
+          className="btn btn-primary"
+        >
+          Add Device
+        </button>
       </div>
 
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
@@ -211,6 +224,13 @@ export default function AccessPointsPage() {
           </table>
         </div>
       </div>
+
+      {showForm && (
+        <AddAccessPointForm 
+          onSuccess={() => setShowForm(false)}
+          onClose={() => setShowForm(false)} 
+        />
+      )}
     </div>
   );
 }

@@ -2,10 +2,16 @@ import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"]  = "2"
 
+import hashlib
+import json
+import logging
+import threading
 import numpy as np
 import joblib
 import tensorflow as tf
 from tensorflow import keras
+from datetime import datetime, timezone
+from model_registry import resolve_model_artifact_path
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -22,6 +28,11 @@ class AccessDecisionEngine:
         risk_score < GRANT_THRESHOLD  → GRANTED
         risk_score < DENY_THRESHOLD   → DELAYED
         risk_score >= DENY_THRESHOLD  → DENIED
+    
+    Thread Safety:
+        - Model loading protected by class-level lock (one-time initialization)
+        - Predictions protected by instance-level RLock (re-entrant for nested calls)
+        - Audit logging wrapped in try/except to prevent exceptions from blocking access flow
     """
 
     # Default thresholds — can be overridden via env vars or DB
@@ -31,6 +42,12 @@ class AccessDecisionEngine:
     # Ensemble weights (from Phase 4.5 best result)
     IF_WEIGHT = 0.3
     AE_WEIGHT = 0.7
+    EXPECTED_FEATURE_COUNT = 19
+    MODEL_FEATURE_COUNT = 13
+    
+    # Class-level lock for thread-safe model initialization
+    _init_lock = threading.Lock()
+    _initialized = False
 
     def __init__(self, models_dir="ml/models"):
         self.models_dir  = models_dir
@@ -39,7 +56,122 @@ class AccessDecisionEngine:
         self.if_data     = None
         self.ae_config   = None
         self.is_loaded   = False
-        self.load_models()
+        # Instance-level RLock for thread-safe predictions (allows re-entrant access)
+        self._predict_lock = threading.RLock()
+        self.audit_logger = self._build_audit_logger()
+        self._validate_thresholds()
+        # Load models with thread safety using double-checked locking pattern
+        with AccessDecisionEngine._init_lock:
+            if not AccessDecisionEngine._initialized:
+                self.load_models()
+                AccessDecisionEngine._initialized = True
+            else:
+                # Models already loaded by another thread, verify they're accessible
+                self._load_models_verify()
+
+    def _build_audit_logger(self) -> logging.Logger:
+        logger = logging.getLogger("raptorx.local_access_audit")
+        if logger.handlers:
+            return logger
+
+        logs_dir = "logs"
+        os.makedirs(logs_dir, exist_ok=True)
+        log_path = os.path.join(logs_dir, "access_decisions_audit.log")
+
+        logger.setLevel(logging.INFO)
+        handler = logging.FileHandler(log_path, encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(handler)
+        logger.propagate = False
+        return logger
+
+    def _hash_features(self, values: list | None) -> str | None:
+        if values is None:
+            return None
+        try:
+            arr = np.asarray(values, dtype=float)
+            payload = ",".join(f"{v:.6f}" for v in arr.tolist())
+            return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        except Exception:
+            return None
+
+    def _emit_audit(
+        self,
+        event_type: str,
+        decision: dict,
+        features: list | None = None,
+        raw_features: list | None = None,
+        audit_context: dict | None = None,
+    ) -> None:
+        try:
+            entry = {
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                "event_type": event_type,
+                "decision": decision.get("decision"),
+                "risk_score": decision.get("risk_score"),
+                "if_score": decision.get("if_score"),
+                "ae_score": decision.get("ae_score"),
+                "mode": decision.get("mode"),
+                "reasoning": decision.get("reasoning"),
+                "thresholds": decision.get("thresholds", {}),
+                "features_scaled_len": len(features) if features is not None else None,
+                "features_raw_len": len(raw_features) if raw_features is not None else None,
+                "features_scaled_sha256": self._hash_features(features),
+                "features_raw_sha256": self._hash_features(raw_features),
+                "context": audit_context or {},
+            }
+            self.audit_logger.info(json.dumps(entry, ensure_ascii=False))
+        except Exception:
+            pass
+
+    def _validate_thresholds(self) -> None:
+        if not (0.0 <= self.GRANT_THRESHOLD <= 1.0):
+            raise ValueError(f"GRANT_THRESHOLD must be in [0, 1], got {self.GRANT_THRESHOLD}")
+        if not (0.0 <= self.DENY_THRESHOLD <= 1.0):
+            raise ValueError(f"DENY_THRESHOLD must be in [0, 1], got {self.DENY_THRESHOLD}")
+        if self.GRANT_THRESHOLD >= self.DENY_THRESHOLD:
+            raise ValueError(
+                f"GRANT_THRESHOLD ({self.GRANT_THRESHOLD}) must be smaller than DENY_THRESHOLD ({self.DENY_THRESHOLD})"
+            )
+
+    def _load_models_verify(self) -> None:
+        """Verify models from first initialization are accessible (for concurrent initialization)."""
+        try:
+            if_path = resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest", self.models_dir)
+            self.if_data = joblib.load(if_path)
+            self.if_model = self.if_data["model"]
+            
+            ae_path = resolve_model_artifact_path("autoencoder.keras", "autoencoder", self.models_dir)
+            ae_cfg_path = resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder", self.models_dir)
+            self.ae_model = keras.models.load_model(ae_path)
+            self.ae_config = joblib.load(ae_cfg_path)
+            
+            self.is_loaded = bool(self.if_model and self.ae_model)
+        except Exception as e:
+            print(f"Warning: Failed to verify model loading after concurrent init: {e}")
+            self.is_loaded = False
+
+    def _validate_features(self, features, name: str) -> list[float]:
+        if features is None:
+            raise ValueError(f"{name} cannot be None")
+
+        if not isinstance(features, (list, tuple, np.ndarray)):
+            raise TypeError(f"{name} must be a list/tuple/ndarray, got {type(features).__name__}")
+
+        if len(features) != self.EXPECTED_FEATURE_COUNT:
+            raise ValueError(
+                f"{name} must contain exactly {self.EXPECTED_FEATURE_COUNT} values, got {len(features)}"
+            )
+
+        try:
+            arr = np.asarray(features, dtype=float)
+        except Exception as exc:
+            raise ValueError(f"{name} contains non-numeric values") from exc
+
+        if not np.isfinite(arr).all():
+            raise ValueError(f"{name} contains NaN or infinite values")
+
+        return arr.tolist()
 
     # ============================================================
     # LOAD MODELS
@@ -51,7 +183,7 @@ class AccessDecisionEngine:
 
         # Load Isolation Forest
         try:
-            if_path       = os.path.join(self.models_dir, "isolation_forest.pkl")
+            if_path       = resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest", self.models_dir)
             self.if_data  = joblib.load(if_path)
             self.if_model = self.if_data["model"]
             print(f"  Isolation Forest loaded")
@@ -61,11 +193,10 @@ class AccessDecisionEngine:
 
         # Load Autoencoder
         try:
-            ae_path        = os.path.join(self.models_dir, "autoencoder.keras")
+            ae_path        = resolve_model_artifact_path("autoencoder.keras", "autoencoder", self.models_dir)
+            ae_config_path = resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder", self.models_dir)
             self.ae_model  = keras.models.load_model(ae_path)
-            self.ae_config = joblib.load(
-                os.path.join(self.models_dir, "autoencoder_config.pkl")
-            )
+            self.ae_config = joblib.load(ae_config_path)
             print(f"  Autoencoder loaded")
         except Exception as e:
             errors.append(f"Autoencoder: {e}")
@@ -90,39 +221,53 @@ class AccessDecisionEngine:
     def detect_badge_cloning(self, features: list) -> dict:
         """
         Specialized detector for physically impossible travel scenarios.
+        Uses all 19 features including direct location/velocity data.
         Returns cloning probability and reason.
         """
+        # Features 0-12: core features
         (hour, day_of_week, is_weekend, access_frequency_24h,
          time_since_last_access_min, location_match, role_level,
          is_restricted_area, is_first_access_today,
          sequential_zone_violation, access_attempt_count,
-         time_of_week, hour_deviation_from_norm,
-         geographic_impossibility, distance_between_scans_km,
+         time_of_week, hour_deviation_from_norm) = features[:13]
+        
+        # Features 13-18: location/velocity features
+        (geographic_impossibility, distance_between_scans_km,
          velocity_km_per_min, zone_clearance_mismatch,
-         department_zone_mismatch, concurrent_session_detected) = features
+         department_zone_mismatch, concurrent_session_detected) = features[13:19]
         
         cloning_score = 0.0
         reasons = []
         
-        # Check 1: Impossible velocity (most reliable)
-        if velocity_km_per_min > 1.0:  # > 60 km/h
-            cloning_score += 0.80
-            reasons.append(f"Impossible velocity: {velocity_km_per_min:.1f} km/min")
-        
-        # Check 2: Concurrent session (definitive)
+        # HARD RULE 1: Concurrent session = definitive cloning (100% confidence)
         if concurrent_session_detected:
-            cloning_score += 0.90
-            reasons.append("Badge used simultaneously at another location")
+            cloning_score += 0.95
+            reasons.append("CRITICAL: Badge used simultaneously at multiple locations")
         
-        # Check 3: Very short gap + location mismatch
-        if time_since_last_access_min < 3 and not location_match:
+        # HARD RULE 2: Impossible velocity (physically impossible travel)
+        if velocity_km_per_min > 1.0:  # > 60 km/h is impossible for humans
+            cloning_score += 0.85
+            reasons.append(f"CRITICAL: Impossible velocity {velocity_km_per_min:.1f} km/min (>60 km/h)")
+        
+        # HARD RULE 3: Geographic impossibility flag
+        if geographic_impossibility:
+            cloning_score += 0.70
+            reasons.append(f"Physical impossibility detected (distance: {distance_between_scans_km:.1f} km)")
+        
+        # Rule 4: Very short gap + location mismatch
+        if time_since_last_access_min and time_since_last_access_min < 3 and not location_match:
             cloning_score += 0.50
             reasons.append(f"Location change in {time_since_last_access_min} min")
         
-        # Check 4: High frequency + short gaps
-        if access_frequency_24h > 15 and time_since_last_access_min < 5:
+        # Rule 5: High frequency + short gaps
+        if access_frequency_24h > 15 and time_since_last_access_min and time_since_last_access_min < 5:
             cloning_score += 0.40
             reasons.append("Abnormally rapid repeated access")
+        
+        # Rule 6: Zone clearance violation
+        if zone_clearance_mismatch:
+            cloning_score += 0.35
+            reasons.append("Insufficient clearance for zone")
         
         return {
             "is_cloning": cloning_score > 0.5,
@@ -139,12 +284,16 @@ class AccessDecisionEngine:
         Compute ensemble risk score from feature vector.
 
         Args:
-            features: list of 13 values in FEATURE_COLS order
+            features: list of 19 values in FEATURE_COLS order
+            (models expect only first 13 for ML scoring)
 
         Returns:
             dict with if_score, ae_score, combined_score
         """
-        X = np.array(features).reshape(1, -1)
+        validated_features = self._validate_features(features, "features")
+
+        # Extract only first 13 features for the ML models
+        X = np.array(validated_features[:self.MODEL_FEATURE_COUNT]).reshape(1, -1)
 
         if_score = None
         ae_score = None
@@ -197,17 +346,34 @@ class AccessDecisionEngine:
     # Purpose: Provide deterministic scoring when ML models are unavailable.
     def rule_based_score(self, features: list) -> float:
         """
-        Simple rule-based scoring when models are unavailable.
+        Rule-based scoring using all 19 features.
         Returns a risk score between 0-1.
         """
+        validated_features = self._validate_features(features, "features")
+
+        # Features 0-12: core
         (hour, day_of_week, is_weekend, access_frequency_24h,
          time_since_last_access_min, location_match, role_level,
          is_restricted_area, is_first_access_today,
          sequential_zone_violation, access_attempt_count,
-         time_of_week, hour_deviation_from_norm) = features
+         time_of_week, hour_deviation_from_norm) = validated_features[:13]
+        
+        # Features 13-18: location/velocity
+        (geographic_impossibility, distance_between_scans_km,
+         velocity_km_per_min, zone_clearance_mismatch,
+         department_zone_mismatch, concurrent_session_detected) = validated_features[13:19]
 
         score = 0.0
 
+        # Hard rules (high confidence)
+        if concurrent_session_detected:
+            score += 0.90
+        if velocity_km_per_min > 1.0:
+            score += 0.80
+        if geographic_impossibility:
+            score += 0.70
+        
+        # Medium confidence rules
         if hour < 6 or hour > 22:
             score += 0.35
         if is_weekend and role_level == 1:
@@ -216,6 +382,8 @@ class AccessDecisionEngine:
             score += 0.20
         if is_restricted_area and role_level < 3:
             score += 0.30
+        if zone_clearance_mismatch:
+            score += 0.25
         if access_frequency_24h > 10:
             score += 0.25
         if time_since_last_access_min and time_since_last_access_min < 5:
@@ -224,6 +392,8 @@ class AccessDecisionEngine:
             score += 0.20
         if access_attempt_count > 2:
             score += 0.15
+        if department_zone_mismatch:
+            score += 0.15
 
         return float(np.clip(score, 0.0, 1.0))
 
@@ -231,27 +401,89 @@ class AccessDecisionEngine:
     # MAKE DECISION
     # ============================================================
     # Purpose: Convert risk scores into granted, delayed, or denied outcomes.
-    def decide(self, features: list) -> dict:
+    def decide(self, features: list, features_unscaled: list = None, audit_context: dict | None = None) -> dict:
         """
-        Main decision function — called for every access attempt.
+        Main decision function — called for every access attempt (THREAD-SAFE).
+        
+        Args:
+            features: list of 19 scaled values
+            features_unscaled: list of 19 unscaled values (for hard rule violations)
+            audit_context: Optional dict with request context for audit trail
 
         Returns:
-            {
-                decision:      "granted" | "delayed" | "denied"
-                risk_score:    float 0-1
-                if_score:      float 0-1
-                ae_score:      float 0-1
-                reasoning:     str explaining why
-                mode:          str (ensemble | rule_based | etc)
-                thresholds:    dict
-            }
+            dict with decision, risk_score, reasoning, etc.
+        
+        Note: ML model predictions are protected by re-entrant lock to ensure
+        thread-safe access to model instances. Hard rules and validation run
+        without locks as they are stateless.
         """
-        # Get scores
-        scores = self.compute_risk_score(features)
+        # Validate inputs (quick path, no lock needed)
+        validated_scaled = self._validate_features(features, "features")
+
+        # Use unscaled features for hard physical rules
+        if features_unscaled is None:
+            validated_unscaled = validated_scaled
+        else:
+            validated_unscaled = self._validate_features(features_unscaled, "features_unscaled")
+        
+        # HARD RULES FIRST — these override all threshold logic (stateless, no lock needed)
+        # These use UNSCALED values (raw physical measurements)
+        if len(validated_unscaled) >= self.EXPECTED_FEATURE_COUNT:
+            concurrent_session = validated_unscaled[18]
+            velocity_km_per_min = validated_unscaled[15]
+            
+            if concurrent_session:
+                result = {
+                    "decision":    "denied",
+                    "risk_score":  1.0,
+                    "if_score":    None,
+                    "ae_score":    None,
+                    "reasoning":   "HARD RULE VIOLATION: Badge used simultaneously at multiple locations",
+                    "mode":        "hard_rule",
+                    "thresholds": {
+                        "grant": self.GRANT_THRESHOLD,
+                        "deny":  self.DENY_THRESHOLD
+                    }
+                }
+                self._emit_audit(
+                    event_type="decision_hard_rule",
+                    decision=result,
+                    features=validated_scaled,
+                    raw_features=validated_unscaled,
+                    audit_context=audit_context,
+                )
+                return result
+            
+            if velocity_km_per_min > 1.0:
+                result = {
+                    "decision":    "denied",
+                    "risk_score":  1.0,
+                    "if_score":    None,
+                    "ae_score":    None,
+                    "reasoning":   f"HARD RULE VIOLATION: Impossible velocity {velocity_km_per_min:.1f} km/min (>60 km/h)",
+                    "mode":        "hard_rule",
+                    "thresholds": {
+                        "grant": self.GRANT_THRESHOLD,
+                        "deny":  self.DENY_THRESHOLD
+                    }
+                }
+                self._emit_audit(
+                    event_type="decision_hard_rule",
+                    decision=result,
+                    features=validated_scaled,
+                    raw_features=validated_unscaled,
+                    audit_context=audit_context,
+                )
+                return result
+        
+        # CRITICAL SECTION: Model prediction (protected by re-entrant lock)
+        with self._predict_lock:
+            # Get scores
+            scores = self.compute_risk_score(validated_scaled)
 
         # Fallback to rule-based if models unavailable
         if scores["combined_score"] is None:
-            risk_score = self.rule_based_score(features)
+            risk_score = self.rule_based_score(validated_scaled)
             mode       = "rule_based"
         else:
             risk_score = scores["combined_score"]
@@ -268,7 +500,7 @@ class AccessDecisionEngine:
             decision  = "denied"
             reasoning = f"Risk score {risk_score:.4f} above deny threshold {self.DENY_THRESHOLD}"
 
-        return {
+        result = {
             "decision":    decision,
             "risk_score":  round(risk_score, 4),
             "if_score":    scores["if_score"],
@@ -280,6 +512,14 @@ class AccessDecisionEngine:
                 "deny":  self.DENY_THRESHOLD
             }
         }
+        self._emit_audit(
+            event_type="decision",
+            decision=result,
+            features=validated_scaled,
+            raw_features=validated_unscaled,
+            audit_context=audit_context,
+        )
+        return result
 
     # ============================================================
     # STATUS
@@ -313,41 +553,58 @@ if __name__ == "__main__":
     engine = AccessDecisionEngine()
     print("Engine status:", engine.status())
 
-    # Feature order:
-    # hour, day_of_week, is_weekend, access_frequency_24h,
-    # time_since_last_access_min, location_match, role_level,
-    # is_restricted_area, is_first_access_today,
-    # sequential_zone_violation, access_attempt_count,
-    # time_of_week, hour_deviation_from_norm
-
-    # Load scaler to normalize features
-    import joblib as jl
-    scaler = jl.load("ml/models/scaler.pkl")
+    # Feature order (19 features):
+    # [0-12]  Core: hour, day_of_week, is_weekend, access_frequency_24h,
+    #        time_since_last_access_min, location_match, role_level,
+    #        is_restricted_area, is_first_access_today, sequential_zone_violation,
+    #        access_attempt_count, time_of_week, hour_deviation_from_norm
+    # [13-18] Location/Velocity: geographic_impossibility, distance_between_scans_km,
+    #        velocity_km_per_min, zone_clearance_mismatch, department_zone_mismatch,
+    #        concurrent_session_detected
+    
+    # Create a scaler from raw training data to normalize test features
+    import pandas as pd
+    from sklearn.preprocessing import MinMaxScaler
+    
+    FEATURE_COLS_19 = [
+        "hour", "day_of_week", "is_weekend", "access_frequency_24h",
+        "time_since_last_access_min", "location_match", "role_level",
+        "is_restricted_area", "is_first_access_today", "sequential_zone_violation",
+        "access_attempt_count", "time_of_week", "hour_deviation_from_norm",
+        "geographic_impossibility", "distance_between_scans_km", "velocity_km_per_min",
+        "zone_clearance_mismatch", "department_zone_mismatch", "concurrent_session_detected"
+    ]
+    
+    # Fit scaler on RAW training data (from data/raw, not data/processed)
+    train_df = pd.read_csv(os.path.join("data/raw", "train.csv"))
+    X_train = train_df[FEATURE_COLS_19].values
+    scaler = MinMaxScaler()
+    scaler.fit(X_train)  # Fit on raw data to get correct min/max ranges
 
     test_cases = [
         {
-            "name":     "Normal employee — 9AM weekday",
-            "features": [9, 0, 0, 3, 120, 1, 1, 0, 1, 0, 0, 9,  0.5, 0, 0.2, 0.002, 0, 0, 0]
+            "name":     "Normal employee @ 9AM weekday",
+            "features": [9, 0, 0, 3, 120, 1, 1, 0, 1, 0, 0, 9, 0.5, 0, 0.2, 0.002, 0, 0, 0]
         },
         {
-            "name":     "Admin — server room access",
+            "name":     "Admin @ server room (normal)",
             "features": [10, 1, 0, 2, 180, 1, 3, 1, 0, 0, 0, 34, 0.3, 0, 0.3, 0.002, 0, 0, 0]
         },
         {
-            "name":     "After hours — 2AM access",
-            "features": [2, 1, 0, 8, 15,  0, 1, 1, 0, 1, 3, 26, 5.0, 0, 0.5, 0.033, 1, 1, 0]
+            "name":     "After hours 2AM access",
+            "features": [2, 1, 0, 8, 15, 0, 1, 1, 0, 1, 3, 26, 5.0, 0, 0.5, 0.033, 1, 1, 0]
         },
         {
-            "name":     "Weekend + restricted area",
-            "features": [3, 6, 1, 15, 5,  0, 1, 1, 0, 1, 4, 147, 6.0, 0, 0.4, 0.080, 1, 1, 0]
+            "name":     "Badge cloning - 2min gap, 50km travel",
+            "features": [9, 0, 0, 18, 2, 0, 1, 0, 0, 1, 5, 9, 4.0, 1, 50.0, 25.0, 0, 0, 1]
         },
         {
-            "name":     "Badge cloning — 2 min gap, 50km travel",
-            "features": [9, 0, 0, 18, 2,  0, 1, 0, 0, 1, 5, 9,  4.0, 1, 50.0, 25.0, 0, 0, 1]
+            "name":     "CRITICAL - Impossible velocity 120km/min",
+            "features": [14, 2, 0, 12, 1, 0, 2, 0, 0, 1, 4, 38, 3.5, 1, 120.0, 120.0, 1, 0, 0]
         },
         {
-            "name":     "High frequency + restricted",
-            "features": [2, 5, 1, 30, 3,  0, 1, 1, 0, 1, 6, 53, 7.0, 0, 10.0, 3.33, 1, 1, 0]
+            "name":     "CRITICAL - Concurrent session detected",
+            "features": [9, 5, 1, 15, 3, 0, 1, 1, 0, 1, 4, 53, 6.0, 0, 10.0, 3.33, 1, 1, 1]
         },
     ]
 
@@ -356,9 +613,10 @@ if __name__ == "__main__":
     print("=" * 60)
 
     for case in test_cases:
-        # Scale features before passing to engine
+        # Scale test features using the 13-feature scaler
         features_scaled = scaler.transform([case["features"]])[0].tolist()
-        result          = engine.decide(features_scaled)
+        # Pass BOTH scaled (for ML models) and unscaled (for hard rules)
+        result = engine.decide(features_scaled, features_unscaled=case["features"])
 
         print(f"\n{case['name']}")
         print(f"  Decision   : {result['decision'].upper()}")

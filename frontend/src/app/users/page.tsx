@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getUsers } from "@/lib/api";
 import { MOCK_USERS, ROLE_COLORS } from "@/lib/constants";
 import ApiStatus from "@/components/ui/ApiStatus";
+import AddUserForm from "@/components/forms/AddUserForm";
 import type { User } from "@/lib/types";
 
 const ROLE_HEX: Record<string, string> = {
@@ -21,6 +22,7 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
+  const [showForm, setShowForm] = useState(false);
 
   const fetch = useCallback(async () => {
     try {
@@ -61,7 +63,10 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-white">Users Management</h1>
           <p className="text-slate-400 text-sm mt-1">{filtered.length} users</p>
         </div>
-        <button className="btn btn-primary">
+        <button 
+          onClick={() => setShowForm(true)}
+          className="btn btn-primary"
+        >
           Add User
         </button>
       </div>
@@ -175,6 +180,13 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {showForm && (
+        <AddUserForm 
+          onSuccess={() => fetch()} 
+          onClose={() => setShowForm(false)} 
+        />
+      )}
     </div>
   );
 }

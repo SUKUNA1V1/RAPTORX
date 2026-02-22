@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 from tensorflow import keras
-from pathlib import Path
+from model_registry import resolve_model_artifact_path
+from threshold_utils import resolve_alert_threshold
 
 FEATURE_COLS = [
     "hour", "day_of_week", "is_weekend",
@@ -16,35 +17,24 @@ FEATURE_COLS = [
     "department_zone_mismatch", "concurrent_session_detected",
 ]
 
+# Models use only first 13 features
+FEATURE_COLS_13 = FEATURE_COLS[:13]
+
 
 def load_models():
-    if_data = joblib.load("ml/models/isolation_forest.pkl")
-    ae_model = keras.models.load_model("ml/models/autoencoder.keras")
-    ae_config = joblib.load("ml/models/autoencoder_config.pkl")
-    scaler = joblib.load("ml/models/scaler.pkl")
+    if_data = joblib.load(resolve_model_artifact_path("isolation_forest.pkl", "isolation_forest"))
+    ae_model = keras.models.load_model(resolve_model_artifact_path("autoencoder.keras", "autoencoder"))
+    ae_config = joblib.load(resolve_model_artifact_path("autoencoder_config.pkl", "autoencoder"))
+    try:
+        scaler = joblib.load("ml/models/scaler_19.pkl")
+    except Exception:
+        scaler = joblib.load("ml/models/scaler.pkl")
     return if_data, ae_model, ae_config, scaler
 
 
-def resolve_threshold(if_data: dict) -> tuple[float, str]:
-    ensemble_path = Path("ml/models/ensemble_config.pkl")
-    if ensemble_path.exists():
-        try:
-            ensemble = joblib.load(ensemble_path)
-            if "best_threshold" in ensemble and ensemble["best_threshold"] is not None:
-                return float(ensemble["best_threshold"]), "ensemble_config.best_threshold"
-            if "threshold" in ensemble and ensemble["threshold"] is not None:
-                return float(ensemble["threshold"]), "ensemble_config.threshold"
-        except Exception:
-            pass
-
-    if "best_threshold" in if_data and if_data["best_threshold"] is not None:
-        return float(if_data["best_threshold"]), "isolation_forest.best_threshold"
-
-    return 0.5, "default_0.50"
-
-
 def score_dataset(df: pd.DataFrame, if_data: dict, ae_model, ae_config: dict, threshold: float):
-    X = df[FEATURE_COLS].values
+    X_all = df[FEATURE_COLS].values
+    X = df[FEATURE_COLS_13].values  # Only 13 features for models
     y = df["label"].values
 
     if_model = if_data["model"]
@@ -109,7 +99,8 @@ def run_edge_cases(if_data, ae_model, ae_config, scaler, threshold: float):
     for case in edge_cases:
         raw_f = np.array(case["features"]).reshape(1, -1)
         raw_df = pd.DataFrame(raw_f, columns=FEATURE_COLS)
-        scaled_f = scaler.transform(raw_df)
+        scaled_f_all = scaler.transform(raw_df)
+        scaled_f = scaled_f_all[:, :13]  # Only first 13 features for models
 
         raw_s = if_model.decision_function(scaled_f)[0]
         if_s = float(np.clip(1 - (raw_s - if_data["min_score"]) / (if_data["max_score"] - if_data["min_score"] + 1e-9), 0, 1))
@@ -149,7 +140,7 @@ def run_edge_cases(if_data, ae_model, ae_config, scaler, threshold: float):
 
 def main():
     if_data, ae_model, ae_config, scaler = load_models()
-    threshold, threshold_source = resolve_threshold(if_data)
+    threshold, threshold_source = resolve_alert_threshold(if_data=if_data)
 
     print("=" * 60)
     print("TEST 1 — Train vs Test Performance Gap")

@@ -11,6 +11,8 @@ import {
   TestTube2,
   Bot,
   Shield,
+  Activity,
+  Brain,
 } from "lucide-react";
 
 const NAV = [
@@ -21,6 +23,8 @@ const NAV = [
   { href: "/access-points", icon: DoorOpen, label: "Access Points" },
   { href: "/simulator", icon: TestTube2, label: "Simulator" },
   { href: "/ml-status", icon: Bot, label: "ML Status" },
+  { href: "/explainability", icon: Brain, label: "Explainability" },
+  { href: "/performance", icon: Activity, label: "Performance" },
 ];
 
 export default function Sidebar() {
