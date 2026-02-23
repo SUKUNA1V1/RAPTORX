@@ -20,10 +20,38 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+export function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError(err)) {
+    const detail = (err.response?.data as { detail?: string | { msg?: string }[] } | undefined)?.detail;
+    if (typeof detail === "string" && detail.trim()) {
+      return detail;
+    }
+    if (Array.isArray(detail) && detail.length > 0) {
+      const first = detail[0]?.msg;
+      if (typeof first === "string" && first.trim()) {
+        return first;
+      }
+    }
+    if (err.message) {
+      return err.message;
+    }
+  }
+
+  if (err instanceof Error && err.message) {
+    return err.message;
+  }
+
+  return fallback;
+}
+
 api.interceptors.response.use(
   (res) => res,
   (err: AxiosError) => {
-    console.error(`API Error: ${err.config?.url} -> ${err.message}`);
+    if (process.env.NODE_ENV !== "production") {
+      const status = err.response?.status ? ` [${err.response.status}]` : "";
+      const url = err.config?.url ?? "unknown-url";
+      console.warn(`API Error${status}: ${url} -> ${err.message}`);
+    }
     return Promise.reject(err);
   }
 );
@@ -51,6 +79,8 @@ export const getUsers = (params?: {
 
 export const createUser = (data: Partial<User>) => api.post<User>("/api/users", data).then((r) => r.data);
 
+export const getUser = (id: number) => api.get<User>(`/api/users/${id}`).then((r) => r.data);
+
 export const updateUser = (id: number, data: Partial<User>) =>
   api.put<User>(`/api/users/${id}`, data).then((r) => r.data);
 
@@ -63,6 +93,9 @@ export const getLogs = (params?: {
   skip?: number;
   limit?: number;
 }) => api.get<{ items: AccessLog[]; total: number }>("/api/access/logs", { params }).then((r) => r.data);
+
+export const clearAccessLogs = () =>
+  api.delete<{ deleted_logs: number; deleted_alerts: number }>("/api/access/logs").then((r) => r.data);
 
 export const requestAccess = (data: {
   badge_id: string;
@@ -86,5 +119,14 @@ export const markFalsePositive = (id: number, resolvedBy = 0) =>
 
 export const getAccessPointsList = (params?: { status?: string; building?: string }) =>
   api.get<AccessPoint[]>("/api/access-points", { params }).then((r) => r.data);
+
+export const createAccessPoint = (data: Partial<AccessPoint>) =>
+  api.post<AccessPoint>("/api/access-points", data).then((r) => r.data);
+
+export const getAccessPoint = (id: number) =>
+  api.get<AccessPoint>(`/api/access-points/${id}`).then((r) => r.data);
+
+export const updateAccessPoint = (id: number, data: Partial<AccessPoint>) =>
+  api.put<AccessPoint>(`/api/access-points/${id}`, data).then((r) => r.data);
 
 export const getMLStatus = () => api.get<MLStatus>("/api/ml/status").then((r) => r.data);

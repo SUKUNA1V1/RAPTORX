@@ -9,7 +9,7 @@ import ApiStatus from "@/components/ui/ApiStatus";
 import AccessTimelineChart from "@/components/charts/AccessTimelineChart";
 import AnomalyDistributionChart from "@/components/charts/AnomalyDistributionChart";
 import TopAccessPointsChart from "@/components/charts/TopAccessPointsChart";
-import { getOverview, getTimeline, getAnomalyDist, getLogs, getTopAccessPoints } from "@/lib/api";
+import { clearAccessLogs, getApiErrorMessage, getOverview, getTimeline, getAnomalyDist, getLogs, getTopAccessPoints } from "@/lib/api";
 import { MOCK_OVERVIEW, MOCK_LOGS } from "@/lib/constants";
 import type { StatsOverview, AccessLog, TimelinePoint, AnomalyDistItem, TopAccessPoint } from "@/lib/types";
 
@@ -21,11 +21,14 @@ export default function DashboardPage() {
   const [topPoints, setTopPoints] = useState<TopAccessPoint[]>([]);
   const [apiOnline, setApiOnline] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAll = async () => {
+  const fetchAll = async (background = false) => {
     try {
-      setLoading(true);
+      if (!background) {
+        setLoading(true);
+      }
       setError(null);
       const [ov, tl, an, lg, tp] = await Promise.allSettled([
         getOverview(),
@@ -56,7 +59,9 @@ export default function DashboardPage() {
       setApiOnline(false);
       setError("Cannot connect to server - showing demo data");
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      }
     }
   };
 
@@ -65,14 +70,20 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    const id = setInterval(() => {
+      fetchAll(true);
+    }, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     const id = setInterval(async () => {
       try {
         const data = await getLogs({ limit: 10 });
         if (data.items?.length) setLogs(data.items);
       } catch {
-        setApiOnline(false);
       }
-    }, 5000);
+    }, 10000);
     return () => clearInterval(id);
   }, []);
 
@@ -109,6 +120,23 @@ export default function DashboardPage() {
     },
     { label: "Active Users", value: overview.total_users, icon: Users, iconBg: "bg-purple-700" },
   ];
+
+  const handleClearLogs = async () => {
+    if (!window.confirm("Clear all access logs and alerts? This cannot be undone.")) {
+      return;
+    }
+    try {
+      setClearing(true);
+      setError(null);
+      await clearAccessLogs();
+      setLogs([]);
+      fetchAll(true);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to clear access logs"));
+    } finally {
+      setClearing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -158,10 +186,20 @@ export default function DashboardPage() {
           <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-white font-semibold">Live Access Feed</h2>
-              <span className="flex items-center gap-1.5 text-xs text-green-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                Live
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleClearLogs}
+                  disabled={clearing || logs.length === 0}
+                  className="btn btn-secondary btn-sm"
+                >
+                  {clearing ? "Clearing..." : "Clear Logs"}
+                </button>
+                <span className="flex items-center gap-1.5 text-xs text-green-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  Live
+                </span>
+              </div>
             </div>
 
             {logs.length === 0 ? (

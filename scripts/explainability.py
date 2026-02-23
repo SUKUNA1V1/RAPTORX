@@ -14,6 +14,7 @@ from typing import Dict, List, Any, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import json
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,12 @@ class ModelExplainer:
     
     def __init__(self, if_model_path: str = "ml/models/isolation_forest.pkl"):
         """Initialize explainer with trained models."""
-        self.if_model = joblib.load(if_model_path)
+        self.repo_root = Path(__file__).resolve().parent
+        model_path = Path(if_model_path)
+        if not model_path.is_absolute():
+            model_path = self.repo_root / model_path
+
+        self.if_model = joblib.load(model_path)
         if_data = self.if_model if isinstance(self.if_model, dict) else {"model": self.if_model}
         self.if_model_obj = if_data.get("model", self.if_model)
         self.if_min_score = if_data.get("min_score", -1.0)
@@ -76,7 +82,8 @@ class ModelExplainer:
         """Compute statistics for feature normalization."""
         # Load training data statistics
         try:
-            stats = joblib.load("ml/models/feature_stats.pkl")
+            stats_path = self.repo_root / "ml" / "models" / "feature_stats.pkl"
+            stats = joblib.load(stats_path)
             return stats
         except Exception:
             # Fallback: use approximate ranges

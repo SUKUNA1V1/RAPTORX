@@ -723,7 +723,7 @@ The runtime distance matrix defines km distances between zones for velocity calc
 
 ## Data Generation and Datasets
 
-Synthetic data is generated in [generate_data_fixed.py](generate_data_fixed.py) and [generate_data.py](generate_data.py). Key parameters:
+Synthetic data is generated in [generate_data_fixed.py](generate_data_fixed.py) (500 users, recommended) or [generate_data.py](generate_data.py) (100 users). Key parameters:
 
 - Total records: 500,000
 - Anomaly ratio: 0.07
@@ -1020,8 +1020,8 @@ npm run start
 
 ### Data Generation and Preparation
 
-- [generate_data.py](generate_data.py): synthetic access dataset generator
-- [generate_data_fixed.py](generate_data_fixed.py): tuned generator with more realistic distributions
+- [generate_data_fixed.py](generate_data_fixed.py): **RECOMMENDED** - improved generator with 500 users for better model generalization
+- [generate_data.py](generate_data.py): original generator with 100 users
 - [explore_and_prepare.py](explore_and_prepare.py): EDA, scaling, and artifact creation
 
 ### Model Training and Evaluation

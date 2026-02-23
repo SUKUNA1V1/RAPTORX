@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
 from ..models import AccessLog, AccessPoint, AnomalyAlert, User
-from ..schemas.access_point import AccessPointCreate, AccessPointResponse
+from ..schemas.access_point import AccessPointCreate, AccessPointResponse, AccessPointUpdate
 from ..services import AccessDecisionEngine, create_alert, extract_features
 from ..services.ml_service import FEATURE_COLS
 
@@ -108,15 +108,116 @@ def list_access_points(
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@access_points_router.get("/{access_point_id}", response_model=AccessPointResponse, status_code=status.HTTP_200_OK)
+def get_access_point(access_point_id: int, db: Session = Depends(get_db)):
+    """Return a single access point by id."""
+    access_point = (
+        db.query(AccessPoint)
+        .filter(AccessPoint.id == access_point_id)
+        .first()
+    )
+    if not access_point:
+        raise HTTPException(status_code=404, detail="Access point not found")
+    return access_point
+
+
 @access_points_router.post("", response_model=AccessPointResponse, status_code=status.HTTP_201_CREATED)
 def create_access_point(data: AccessPointCreate, db: Session = Depends(get_db)):
     """Create a new access point."""
     try:
-        access_point = AccessPoint(**data.model_dump())
+        payload = data.model_dump()
+        payload["building"] = payload.get("building", "").strip()
+        if not payload["building"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="building is required",
+            )
+
+        for field in ("floor", "room", "zone", "ip_address", "description"):
+            value = payload.get(field)
+            if isinstance(value, str):
+                value = value.strip()
+            payload[field] = value or None
+
+        payload["installed_at"] = payload.get("installed_at") or datetime.now(timezone.utc)
+
+        access_point = AccessPoint(**payload)
         db.add(access_point)
         db.commit()
         db.refresh(access_point)
         return access_point
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@access_points_router.put("/{access_point_id}", response_model=AccessPointResponse, status_code=status.HTTP_200_OK)
+def update_access_point(access_point_id: int, data: AccessPointUpdate, db: Session = Depends(get_db)):
+    """Update an access point."""
+    try:
+        access_point = (
+            db.query(AccessPoint)
+            .filter(AccessPoint.id == access_point_id)
+            .first()
+        )
+        if not access_point:
+            raise HTTPException(status_code=404, detail="Access point not found")
+
+        payload = data.model_dump(exclude_unset=True)
+
+        if "name" in payload:
+            name = (payload.get("name") or "").strip()
+            if not name:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="name is required",
+                )
+            payload["name"] = name
+
+        if "type" in payload:
+            device_type = (payload.get("type") or "").strip()
+            if not device_type:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="type is required",
+                )
+            payload["type"] = device_type
+
+        if "building" in payload:
+            building = (payload.get("building") or "").strip()
+            if not building:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="building is required",
+                )
+            payload["building"] = building
+
+        if "status" in payload:
+            status_value = (payload.get("status") or "").strip()
+            if not status_value:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="status is required",
+                )
+            payload["status"] = status_value
+
+        for field in ("floor", "room", "zone", "ip_address", "description"):
+            if field in payload and isinstance(payload[field], str):
+                value = payload[field].strip()
+                payload[field] = value or None
+
+        for key, value in payload.items():
+            setattr(access_point, key, value)
+
+        db.commit()
+        db.refresh(access_point)
+        return access_point
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as exc:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -483,4 +584,17 @@ def get_access_log(log_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.delete("/logs", status_code=status.HTTP_200_OK)
+def clear_access_logs(db: Session = Depends(get_db)):
+    """Delete all access logs and associated anomaly alerts."""
+    try:
+        deleted_alerts = db.query(AnomalyAlert).delete(synchronize_session=False)
+        deleted_logs = db.query(AccessLog).delete(synchronize_session=False)
+        db.commit()
+        return {"deleted_logs": deleted_logs, "deleted_alerts": deleted_alerts}
+    except Exception as exc:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(exc)) from exc

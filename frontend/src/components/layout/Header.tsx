@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Moon, Sun } from "lucide-react";
 
 export default function Header() {
   const [time, setTime] = useState<Date | null>(null);
   const [online, setOnline] = useState(true);
   const [mlMode, setMlMode] = useState("ensemble");
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -24,6 +25,19 @@ export default function Header() {
       })
       .catch(() => setOnline(false));
   }, []);
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? window.localStorage.getItem("theme") : null;
+    if (stored === "light" || stored === "dark") {
+      setTheme(stored);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.setAttribute("data-theme", theme);
+    window.localStorage.setItem("theme", theme);
+  }, [theme]);
 
   return (
     <header className="h-16 min-h-[64px] bg-[color:var(--surface)] border-b border-[color:var(--border)] flex items-center justify-between px-6 flex-shrink-0 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
@@ -66,6 +80,19 @@ export default function Header() {
               })
             : "--:--:--"}
         </span>
+
+        <button
+          type="button"
+          onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+          className="relative p-2 rounded-lg bg-[color:var(--surface-2)] hover:bg-[color:var(--accent-ghost)] transition-colors shadow-[0_0_14px_rgba(46,211,255,0.15)]"
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        >
+          {theme === "dark" ? (
+            <Sun size={16} className="text-slate-400" />
+          ) : (
+            <Moon size={16} className="text-slate-400" />
+          )}
+        </button>
 
         <button className="relative p-2 rounded-lg bg-[color:var(--surface-2)] hover:bg-[color:var(--accent-ghost)] transition-colors shadow-[0_0_14px_rgba(46,211,255,0.15)]">
           <Bell size={16} className="text-slate-400" />

@@ -39,8 +39,6 @@ export default function DetailedPerformanceMonitor() {
 
   useEffect(() => {
     fetchAllMetrics();
-    const interval = setInterval(fetchAllMetrics, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

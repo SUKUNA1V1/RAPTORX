@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import DecisionBadge from "@/components/ui/DecisionBadge";
 import RiskBar from "@/components/ui/RiskBar";
 import ApiStatus from "@/components/ui/ApiStatus";
-import DecisionExplainer from "@/components/explainability/DecisionExplainer";
 import { getLogs } from "@/lib/api";
 import { MOCK_LOGS } from "@/lib/constants";
 import type { AccessLog, Decision } from "@/lib/types";
@@ -21,12 +21,8 @@ export default function LogsPage() {
   const [filter, setFilter] = useState<Decision | "all">("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
-  const [explanation, setExplanation] = useState<any>(null);
-  const [explanationLoading, setExplanationLoading] = useState(false);
-  const [explanationError, setExplanationError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -57,35 +53,8 @@ export default function LogsPage() {
   }, [filter, search, page]);
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  const handleExplain = async (logId: number) => {
-    try {
-      setExplanationLoading(true);
-      setExplanationError(null);
-      setSelectedLogId(logId);
-      
-      const response = await fetch(`http://localhost:8000/api/explainations/decision/${logId}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch explanation: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setExplanation(data.explanation); // Extract the explanation from the response
-    } catch (err) {
-      setExplanationError(err instanceof Error ? err.message : "Failed to load explanation");
-      console.error("Error fetching explanation:", err);
-    } finally {
-      setExplanationLoading(false);
-    }
-  };
-
-  const handleCloseExplainer = () => {
-    setSelectedLogId(null);
-    setExplanation(null);
-    setExplanationError(null);
-  };
+    fetchLogs();
+  }, [fetchLogs]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -122,12 +91,12 @@ export default function LogsPage() {
             placeholder="Search user or badge ID..."
             className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-200 outline-none focus:border-blue-500 min-w-[220px]"
           />
-          <button onClick={fetch} className="btn btn-secondary">
+          <button onClick={fetchLogs} className="btn btn-secondary">
             Refresh
           </button>
         </div>
 
-        {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={fetch} />}
+        {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={fetchLogs} />}
 
         {!loading && (
           <>
@@ -188,14 +157,17 @@ export default function LogsPage() {
                         </td>
                         <td className="px-4 py-3 text-slate-400 text-sm capitalize">{log.method}</td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => log.id && handleExplain(log.id)}
-                            disabled={!log.id}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Explain
-                            <ChevronRight size={14} />
-                          </button>
+                          {log.id ? (
+                            <Link
+                              href={`/logs/${log.id}/explain`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 rounded text-xs font-medium transition-colors"
+                            >
+                              Explain
+                              <ChevronRight size={14} />
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-slate-500">N/A</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -230,45 +202,6 @@ export default function LogsPage() {
         )}
       </div>
 
-      {/* Explainability Drawer */}
-      {selectedLogId && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-slate-800/95 backdrop-blur border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Decision Explanation</h2>
-              <button
-                onClick={handleCloseExplainer}
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            {explanationLoading ? (
-              <div className="p-8 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="inline-block w-8 h-8 border-3 border-slate-600 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                  <p className="text-slate-400">Loading explanation...</p>
-                </div>
-              </div>
-            ) : explanationError ? (
-              <div className="p-8">
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                  <p className="text-red-400 text-sm">{explanationError}</p>
-                </div>
-              </div>
-            ) : explanation ? (
-              <div className="p-6">
-                <DecisionExplainer 
-                  logId={selectedLogId}
-                  explanation={explanation}
-                  onClose={handleCloseExplainer}
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

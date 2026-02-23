@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   ScrollText,
@@ -14,11 +15,12 @@ import {
   Activity,
   Brain,
 } from "lucide-react";
+import { getOverview } from "@/lib/api";
 
 const NAV = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/logs", icon: ScrollText, label: "Access Logs" },
-  { href: "/alerts", icon: AlertTriangle, label: "Alerts", badge: 3 },
+  { href: "/alerts", icon: AlertTriangle, label: "Alerts" },
   { href: "/users", icon: Users, label: "Users" },
   { href: "/access-points", icon: DoorOpen, label: "Access Points" },
   { href: "/simulator", icon: TestTube2, label: "Simulator" },
@@ -29,6 +31,31 @@ const NAV = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [activeAlerts, setActiveAlerts] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadActiveAlerts = async () => {
+      try {
+        const overview = await getOverview();
+        if (!cancelled) {
+          setActiveAlerts(overview.active_alerts_count);
+        }
+      } catch {
+        if (!cancelled) {
+          setActiveAlerts(null);
+        }
+      }
+    };
+
+    loadActiveAlerts();
+    const id = setInterval(loadActiveAlerts, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   return (
     <aside className="w-60 min-w-[240px] bg-[color:var(--surface)] border-r border-[color:var(--border)] flex flex-col h-screen shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
@@ -43,8 +70,9 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV.map(({ href, icon: Icon, label, badge }) => {
+        {NAV.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+          const badge = href === "/alerts" ? activeAlerts : null;
           return (
             <Link
               key={href}
@@ -62,7 +90,7 @@ export default function Sidebar() {
             >
               <Icon size={17} className="flex-shrink-0" />
               <span className="flex-1">{label}</span>
-              {badge ? (
+              {badge && badge > 0 ? (
                 <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {badge}
                 </span>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { getUsers } from "@/lib/api";
 import { MOCK_USERS, ROLE_COLORS } from "@/lib/constants";
 import ApiStatus from "@/components/ui/ApiStatus";
-import AddUserForm from "@/components/forms/AddUserForm";
 import type { User } from "@/lib/types";
 
 const ROLE_HEX: Record<string, string> = {
@@ -22,11 +22,12 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
-  const [showForm, setShowForm] = useState(false);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (background = false) => {
     try {
-      setLoading(true);
+      if (!background) {
+        setLoading(true);
+      }
       setError(null);
       const data = await getUsers({
         role: role !== "all" ? role : undefined,
@@ -37,12 +38,19 @@ export default function UsersPage() {
       setError("Cannot connect to server - showing demo data");
       setUsers(MOCK_USERS as User[]);
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      }
     }
   }, [role]);
 
   useEffect(() => {
     fetch();
+  }, [fetch]);
+
+  useEffect(() => {
+    const id = setInterval(() => fetch(true), 60000);
+    return () => clearInterval(id);
   }, [fetch]);
 
   const filtered = users.filter((u) => {
@@ -63,12 +71,9 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-white">Users Management</h1>
           <p className="text-slate-400 text-sm mt-1">{filtered.length} users</p>
         </div>
-        <button 
-          onClick={() => setShowForm(true)}
-          className="btn btn-primary"
-        >
+        <Link href="/users/new" className="btn btn-primary">
           Add User
-        </button>
+        </Link>
       </div>
 
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
@@ -91,7 +96,7 @@ export default function UsersPage() {
               </option>
             ))}
           </select>
-          <button onClick={fetch} className="btn btn-secondary">
+          <button onClick={() => fetch(true)} className="btn btn-secondary">
             Refresh
           </button>
         </div>
@@ -168,9 +173,9 @@ export default function UsersPage() {
                         {u.last_seen_at ? new Date(u.last_seen_at).toLocaleDateString() : "-"}
                       </td>
                       <td className="px-4 py-3">
-                        <button className="btn btn-secondary btn-sm">
+                        <Link href={`/users/${u.id}/edit`} className="btn btn-secondary btn-sm">
                           Edit
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   );
@@ -180,13 +185,6 @@ export default function UsersPage() {
           </div>
         )}
       </div>
-
-      {showForm && (
-        <AddUserForm 
-          onSuccess={() => fetch()} 
-          onClose={() => setShowForm(false)} 
-        />
-      )}
     </div>
   );
 }

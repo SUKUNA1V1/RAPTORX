@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import AddAccessPointForm from "@/components/forms/AddAccessPointForm";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import ApiStatus from "@/components/ui/ApiStatus";
+import { getAccessPointsList } from "@/lib/api";
+import type { AccessPoint } from "@/lib/types";
 
-const ACCESS_POINTS = [
+const ACCESS_POINTS: AccessPoint[] = [
   {
     id: 1,
     name: "Main Entrance - Building A",
@@ -15,6 +18,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 1,
     is_restricted: false,
+    ip_address: null,
   },
   {
     id: 2,
@@ -27,6 +31,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 1,
     is_restricted: false,
+    ip_address: null,
   },
   {
     id: 3,
@@ -39,6 +44,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 2,
     is_restricted: false,
+    ip_address: null,
   },
   {
     id: 4,
@@ -51,6 +57,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 5,
     is_restricted: true,
+    ip_address: null,
   },
   {
     id: 5,
@@ -63,6 +70,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 3,
     is_restricted: false,
+    ip_address: null,
   },
   {
     id: 6,
@@ -75,6 +83,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 1,
     is_restricted: false,
+    ip_address: null,
   },
   {
     id: 7,
@@ -87,6 +96,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 2,
     is_restricted: false,
+    ip_address: null,
   },
   {
     id: 8,
@@ -99,6 +109,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 4,
     is_restricted: true,
+    ip_address: null,
   },
   {
     id: 9,
@@ -111,6 +122,7 @@ const ACCESS_POINTS = [
     status: "active",
     required_clearance: 1,
     is_restricted: false,
+    ip_address: null,
   },
   {
     id: 10,
@@ -123,6 +135,7 @@ const ACCESS_POINTS = [
     status: "maintenance",
     required_clearance: 1,
     is_restricted: false,
+    ip_address: null,
   },
 ];
 
@@ -141,7 +154,31 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AccessPointsPage() {
-  const [showForm, setShowForm] = useState(false);
+  const [accessPoints, setAccessPoints] = useState<AccessPoint[]>(ACCESS_POINTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAccessPoints = useCallback(async (background = false) => {
+    try {
+      if (!background) {
+        setLoading(true);
+      }
+      setError(null);
+      const data = await getAccessPointsList();
+      setAccessPoints(data.length ? data : ACCESS_POINTS);
+    } catch {
+      setError("Cannot connect to server - showing demo data");
+      setAccessPoints(ACCESS_POINTS);
+    } finally {
+      if (!background) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAccessPoints();
+  }, [fetchAccessPoints]);
 
   return (
     <div className="space-y-6">
@@ -149,23 +186,27 @@ export default function AccessPointsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Access Points</h1>
           <p className="text-slate-400 text-sm mt-1">
-            {ACCESS_POINTS.length} access points across all buildings
+            {accessPoints.length} access points across all buildings
           </p>
         </div>
-        <button 
-          onClick={() => setShowForm(true)}
-          className="btn btn-primary"
-        >
-          Add Device
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => fetchAccessPoints()} className="btn btn-secondary">
+            Refresh
+          </button>
+          <Link href="/access-points/new" className="btn btn-primary">
+            Add Device
+          </Link>
+        </div>
       </div>
+
+      {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={() => fetchAccessPoints()} />}
 
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-700">
-                {["Name", "Type", "Location", "Zone", "Status", "Clearance", "Restricted"].map((h) => (
+                {["Name", "Type", "Location", "Zone", "Status", "Clearance", "Restricted", "Actions"].map((h) => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider"
@@ -176,7 +217,7 @@ export default function AccessPointsPage() {
               </tr>
             </thead>
             <tbody>
-              {ACCESS_POINTS.map((ap) => (
+              {accessPoints.map((ap) => (
                 <tr
                   key={ap.id}
                   className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors"
@@ -218,19 +259,20 @@ export default function AccessPointsPage() {
                       <span className="text-slate-500 text-sm">No</span>
                     )}
                   </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/access-points/${ap.id}/edit`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 rounded text-xs font-medium transition-colors"
+                    >
+                      Edit
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-
-      {showForm && (
-        <AddAccessPointForm 
-          onSuccess={() => setShowForm(false)}
-          onClose={() => setShowForm(false)} 
-        />
-      )}
     </div>
   );
 }

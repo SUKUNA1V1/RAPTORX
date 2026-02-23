@@ -269,6 +269,31 @@ class AccessDecisionEngine:
 
         return float(np.clip(score, 0.0, 1.0))
 
+    @staticmethod
+    def _clone_risk_bump(features: list) -> float:
+        (
+            hour,
+            day_of_week,
+            is_weekend,
+            access_frequency_24h,
+            time_since_last_access_min,
+            location_match,
+            role_level,
+            is_restricted_area,
+            is_first_access_today,
+            sequential_zone_violation,
+            access_attempt_count,
+            time_of_week,
+            hour_deviation_from_norm,
+        ) = features
+
+        bump = 0.0
+        if time_since_last_access_min and time_since_last_access_min < 5 and sequential_zone_violation:
+            bump += 0.25
+        if time_since_last_access_min and time_since_last_access_min < 5 and not location_match:
+            bump += 0.15
+        return float(np.clip(bump, 0.0, 0.5))
+
     def decide(
         self,
         features: list,
@@ -301,6 +326,12 @@ class AccessDecisionEngine:
             risk_score = scores["combined_score"]
             mode = scores["mode"]
 
+        clone_bump = 0.0
+        if raw_features is not None:
+            clone_bump = self._clone_risk_bump(raw_features)
+            if clone_bump:
+                risk_score = float(np.clip(risk_score + clone_bump, 0.0, 1.0))
+
         if risk_score < self.GRANT_THRESHOLD:
             decision = "granted"
             reasoning = (
@@ -314,6 +345,9 @@ class AccessDecisionEngine:
             reasoning = (
                 f"Risk score {risk_score:.4f} above deny threshold {self.DENY_THRESHOLD}"
             )
+
+        if clone_bump:
+            reasoning = f"{reasoning} (clone risk +{clone_bump:.2f})"
 
         result = {
             "decision": decision,

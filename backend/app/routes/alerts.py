@@ -160,9 +160,8 @@ def resolve_alert(
             raise HTTPException(status_code=404, detail="Alert not found")
 
         service = AlertService(db)
-        resolved = service.resolve_alert(
-            alert, resolved_by=(payload.resolved_by if payload else 0)
-        )
+        resolved_by = payload.resolved_by if payload and payload.resolved_by and payload.resolved_by > 0 else None
+        resolved = service.resolve_alert(alert, resolved_by=resolved_by)
         return {
             "id": resolved.id,
             "status": resolved.status,
@@ -189,9 +188,8 @@ def mark_false_positive(
             raise HTTPException(status_code=404, detail="Alert not found")
 
         service = AlertService(db)
-        resolved = service.mark_false_positive(
-            alert, resolved_by=(payload.resolved_by if payload else None)
-        )
+        resolved_by = payload.resolved_by if payload and payload.resolved_by and payload.resolved_by > 0 else None
+        resolved = service.mark_false_positive(alert, resolved_by=resolved_by)
         return {
             "id": resolved.id,
             "status": resolved.status,

@@ -7,13 +7,47 @@ import ApiStatus from "@/components/ui/ApiStatus";
 import { requestAccess, getUsers, getAccessPointsList } from "@/lib/api";
 import type { AccessDecision, User, AccessPoint } from "@/lib/types";
 
-const SCENARIOS = {
-  normal: { badge: "B001", point: 1, label: "Normal 9AM" },
-  afterhours: { badge: "B013", point: 3, label: "After Hours" },
-  wrongdept: { badge: "B019", point: 3, label: "Wrong Dept" },
-  highfreq: { badge: "B011", point: 1, label: "High Freq" },
-  cloning: { badge: "B005", point: 6, label: "Badge Clone" },
-  restricted: { badge: "B011", point: 4, label: "Restricted" },
+type DecisionType = AccessDecision["decision"];
+
+type ScenarioKey = "normal" | "afterhours" | "wrongdept" | "highfreq" | "cloning" | "restricted";
+
+type ScenarioConfig = {
+  badge: string;
+  point: number;
+  label: string;
+  expectedDecision: DecisionType;
+  hourUtc: number;
+  minuteUtc?: number;
+  steps?: number;
+  stepMinutes?: number;
+  pointSequence?: number[];
+  useDistinctZones?: boolean;
+};
+
+const SCENARIOS: Record<ScenarioKey, ScenarioConfig> = {
+  normal: { badge: "B001", point: 1, label: "Normal 9AM", expectedDecision: "granted", hourUtc: 9 },
+  afterhours: { badge: "B013", point: 3, label: "After Hours", expectedDecision: "delayed", hourUtc: 2 },
+  wrongdept: { badge: "B019", point: 3, label: "Wrong Dept", expectedDecision: "denied", hourUtc: 10 },
+  highfreq: {
+    badge: "B011",
+    point: 1,
+    label: "High Freq",
+    expectedDecision: "delayed",
+    hourUtc: 9,
+    steps: 12,
+    stepMinutes: 1,
+  },
+  cloning: {
+    badge: "B005",
+    point: 6,
+    label: "Badge Clone",
+    expectedDecision: "denied",
+    hourUtc: 2,
+    steps: 3,
+    stepMinutes: 1,
+    pointSequence: [3, 5, 3],
+  },
+  restricted: { badge: "B011", point: 4, label: "Restricted", expectedDecision: "denied", hourUtc: 11 },
 };
 
 const ICONS: Record<string, string> = { granted: "G", denied: "D", delayed: "L" };
@@ -35,11 +69,22 @@ export default function SimulatorPage() {
   const [pointId, setPointId] = useState(1);
   const [method, setMethod] = useState("badge");
   const [result, setResult] = useState<AccessDecision | null>(null);
-  const [history, setHistory] = useState<AccessDecision[]>([]);
+  const [history, setHistory] = useState<
+    Array<
+      AccessDecision & {
+        badgeId: string;
+        pointId: number;
+        timestamp: string;
+        scenarioLabel?: string;
+        expectedDecision?: DecisionType;
+      }
+    >
+  >([]);
   const [loading, setLoading] = useState(false);
   const [apiMode, setApiMode] = useState(true);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioKey | null>(null);
 
   const loadLists = async () => {
     try {
@@ -65,23 +110,89 @@ export default function SimulatorPage() {
     loadLists();
   }, []);
 
-  const loadScenario = (name: keyof typeof SCENARIOS) => {
+  const buildScenarioTimestamp = (scenario?: ScenarioConfig, offsetMinutes = 0) => {
+    const now = new Date();
+    if (!scenario) return new Date(now.getTime() + offsetMinutes * 60_000).toISOString();
+
+    const ts = new Date(now);
+    ts.setUTCHours(scenario.hourUtc, scenario.minuteUtc ?? 0, 0, 0);
+    if (offsetMinutes) ts.setTime(ts.getTime() + offsetMinutes * 60_000);
+    return ts.toISOString();
+  };
+
+  const resolveScenarioPointIds = (scenario?: ScenarioConfig) => {
+    if (!scenario) return [pointId];
+    if (scenario.pointSequence && scenario.pointSequence.length > 0) {
+      return scenario.pointSequence;
+    }
+    if (scenario.useDistinctZones && points.length > 1) {
+      const withZone = points.filter((p) => p.zone);
+      const source = withZone.length > 1 ? withZone : points;
+      for (let i = 0; i < source.length; i += 1) {
+        for (let j = i + 1; j < source.length; j += 1) {
+          const a = source[i];
+          const b = source[j];
+          if (!a || !b) continue;
+          if (a.zone && b.zone && a.zone !== b.zone) {
+            return [a.id, b.id, a.id];
+          }
+        }
+      }
+      return [source[0].id, source[1].id, source[0].id];
+    }
+    return [scenario.point];
+  };
+
+  const loadScenario = (name: ScenarioKey) => {
     const s = SCENARIOS[name];
     setBadge(s.badge);
-    setPointId(s.point);
+    const resolvedPoints = resolveScenarioPointIds(s);
+    setPointId(resolvedPoints[0] ?? s.point);
+    setSelectedScenario(name);
+  };
+
+  const pushHistory = (
+    entry: AccessDecision,
+    meta: {
+      badgeId: string;
+      pointId: number;
+      timestamp: string;
+      scenarioLabel?: string;
+      expectedDecision?: DecisionType;
+    }
+  ) => {
+    setHistory((prev) => [{ ...entry, ...meta }, ...prev].slice(0, 10));
   };
 
   const run = async () => {
     setLoading(true);
     try {
-      const r = await requestAccess({
-        badge_id: badge,
-        access_point_id: pointId,
-        method,
-        timestamp: new Date().toISOString(),
-      });
-      setResult(r);
-      setHistory((prev) => [r, ...prev].slice(0, 10));
+      const scenario = selectedScenario ? SCENARIOS[selectedScenario] : undefined;
+      const steps = scenario?.steps ?? 1;
+      const stepMinutes = scenario?.stepMinutes ?? 0;
+      const scenarioPointIds = resolveScenarioPointIds(scenario);
+      let latest: AccessDecision | null = null;
+
+      for (let i = 0; i < steps; i += 1) {
+        const timestamp = buildScenarioTimestamp(scenario, i * stepMinutes);
+        const accessPointId = scenarioPointIds[i] ?? scenarioPointIds[scenarioPointIds.length - 1];
+        const r = await requestAccess({
+          badge_id: badge,
+          access_point_id: accessPointId,
+          method,
+          timestamp,
+        });
+        latest = r;
+        pushHistory(r, {
+          badgeId: badge,
+          pointId: accessPointId,
+          timestamp,
+          scenarioLabel: scenario?.label,
+          expectedDecision: scenario?.expectedDecision,
+        });
+      }
+
+      if (latest) setResult(latest);
       setApiMode(true);
     } catch {
       setApiMode(false);
@@ -160,8 +271,16 @@ export default function SimulatorPage() {
           alert_created: false,
           reasoning: "Demo mode - backend offline",
         } as AccessDecision);
+      const scenario = selectedScenario ? SCENARIOS[selectedScenario] : undefined;
+      const timestamp = buildScenarioTimestamp(scenario);
       setResult(r);
-      setHistory((prev) => [r, ...prev].slice(0, 10));
+      pushHistory(r, {
+        badgeId: badge,
+        pointId,
+        timestamp,
+        scenarioLabel: scenario?.label,
+        expectedDecision: scenario?.expectedDecision,
+      });
     } finally {
       setLoading(false);
     }
@@ -224,7 +343,10 @@ export default function SimulatorPage() {
               <label className="block text-slate-400 text-xs font-medium mb-1.5">Badge ID</label>
               <select
                 value={badge}
-                onChange={(e) => setBadge(e.target.value)}
+                onChange={(e) => {
+                  setBadge(e.target.value);
+                  setSelectedScenario(null);
+                }}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-blue-500"
               >
                 {userOptions.map((o, i) => (
@@ -239,7 +361,10 @@ export default function SimulatorPage() {
               <label className="block text-slate-400 text-xs font-medium mb-1.5">Access Point</label>
               <select
                 value={pointId}
-                onChange={(e) => setPointId(Number(e.target.value))}
+                onChange={(e) => {
+                  setPointId(Number(e.target.value));
+                  setSelectedScenario(null);
+                }}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-blue-500"
               >
                 {pointOptions.map((o) => (
@@ -272,6 +397,23 @@ export default function SimulatorPage() {
         <div className="space-y-4">
           {result ? (
             <div className={`border-2 rounded-xl p-6 text-center ${COLORS[result.decision]}`}>
+              {selectedScenario && (
+                <div className="mb-4 rounded-lg border border-white/10 bg-black/20 p-3 text-left text-xs text-slate-300">
+                  <div className="flex items-center justify-between">
+                    <span className="uppercase tracking-wide text-slate-400">Expected</span>
+                    <span className="font-semibold text-slate-100">
+                      {LABELS[SCENARIOS[selectedScenario].expectedDecision]}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between">
+                    <span className="uppercase tracking-wide text-slate-400">Actual</span>
+                    <span className="font-semibold text-slate-100">{LABELS[result.decision]}</span>
+                  </div>
+                  {SCENARIOS[selectedScenario].expectedDecision !== result.decision && (
+                    <p className="mt-2 text-amber-300">Mismatch: scenario expectation not met.</p>
+                  )}
+                </div>
+              )}
               <div className="text-5xl mb-3">{ICONS[result.decision]}</div>
               <div
                 className={`text-xl font-bold mb-1 ${
@@ -316,19 +458,39 @@ export default function SimulatorPage() {
           )}
 
           <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <h3 className="text-white font-semibold mb-3">Simulation History</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-semibold">Simulation History</h3>
+              <button
+                type="button"
+                onClick={() => setHistory([])}
+                disabled={history.length === 0}
+                className="btn btn-secondary btn-sm"
+              >
+                Clear
+              </button>
+            </div>
             {history.length === 0 ? (
               <p className="text-slate-500 text-sm text-center py-4">No simulations yet</p>
             ) : (
               <div className="space-y-2">
                 {history.map((h, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-2 bg-slate-700/40 rounded-lg">
+                  <div key={i} className="flex flex-col gap-2 px-3 py-2 bg-slate-700/40 rounded-lg">
+                    <div className="flex items-center gap-3">
                     <span className="text-lg">{ICONS[h.decision]}</span>
-                    <span className="text-slate-300 text-sm flex-1">{badge}</span>
+                    <span className="text-slate-300 text-sm flex-1">{h.badgeId}</span>
                     <DecisionBadge decision={h.decision} />
                     <div className="w-16 flex-shrink-0">
                       <RiskBar score={h.risk_score} />
                     </div>
+                    </div>
+                    {h.expectedDecision && (
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>{h.scenarioLabel ?? "Scenario"}</span>
+                        <span>
+                          Expected: {LABELS[h.expectedDecision]} | Actual: {LABELS[h.decision]}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

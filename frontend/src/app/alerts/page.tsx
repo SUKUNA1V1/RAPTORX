@@ -3,41 +3,45 @@
 import { useState, useEffect, useCallback } from "react";
 import SeverityBadge from "@/components/ui/SeverityBadge";
 import ApiStatus from "@/components/ui/ApiStatus";
-import { getAlerts, markFalsePositive, resolveAlert } from "@/lib/api";
+import { getAlerts, getApiErrorMessage, markFalsePositive, resolveAlert } from "@/lib/api";
 import { MOCK_ALERTS, SEVERITY_BAR_COLORS } from "@/lib/constants";
 import type { AnomalyAlert, AlertSeverity } from "@/lib/types";
 
-type FilterType = "all" | "open" | AlertSeverity;
+type FilterType = "all" | "open" | "resolved" | AlertSeverity;
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<AnomalyAlert[]>(MOCK_ALERTS as AnomalyAlert[]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [filter, setFilter] = useState<FilterType>("open");
   const [resolving, setResolving] = useState<number | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetchAlerts = useCallback(async (background = false) => {
     try {
-      setLoading(true);
+      if (!background) {
+        setLoading(true);
+      }
       setError(null);
       const data = await getAlerts({ limit: 50 });
-      setAlerts(data.length ? data : (MOCK_ALERTS as AnomalyAlert[]));
+      setAlerts(data.length ? data : []);
     } catch {
       setError("Cannot connect to server - showing demo data");
       setAlerts(MOCK_ALERTS as AnomalyAlert[]);
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
+    fetchAlerts();
+  }, [fetchAlerts]);
 
   useEffect(() => {
-    const id = setInterval(fetch, 10000);
+    const id = setInterval(() => fetchAlerts(true), 60000);
     return () => clearInterval(id);
-  }, [fetch]);
+  }, [fetchAlerts]);
 
   const handleResolve = async (id: number) => {
     setResolving(id);
@@ -50,8 +54,9 @@ export default function AlertsPage() {
             : a
         )
       );
-    } catch {
-      setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, is_resolved: true } : a)));
+      setFilter("open");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to resolve alert"));
     } finally {
       setResolving(null);
     }
@@ -73,8 +78,9 @@ export default function AlertsPage() {
             : a
         )
       );
-    } catch {
-      setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, is_resolved: true } : a)));
+      setFilter("open");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to mark false positive"));
     } finally {
       setResolving(null);
     }
@@ -83,6 +89,7 @@ export default function AlertsPage() {
   const filtered = alerts.filter((a) => {
     if (filter === "all") return true;
     if (filter === "open") return !a.is_resolved;
+    if (filter === "resolved") return a.is_resolved;
     return a.severity === filter && !a.is_resolved;
   });
 
@@ -94,6 +101,7 @@ export default function AlertsPage() {
   const FILTER_TABS: Array<{ key: FilterType; label: string }> = [
     { key: "all", label: "All" },
     { key: "open", label: "Open" },
+    { key: "resolved", label: "Resolved" },
     { key: "critical", label: "Critical" },
     { key: "high", label: "High" },
     { key: "medium", label: "Medium" },
@@ -106,7 +114,7 @@ export default function AlertsPage() {
           <h1 className="text-2xl font-bold text-white">Anomaly Alerts</h1>
           <p className="text-slate-400 text-sm mt-1">Real-time security incident management</p>
         </div>
-        <button onClick={fetch} className="btn btn-secondary">
+        <button onClick={() => fetchAlerts()} className="btn btn-secondary">
           Refresh
         </button>
       </div>
@@ -138,7 +146,7 @@ export default function AlertsPage() {
         ))}
       </div>
 
-      {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={fetch} />}
+      {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={() => fetchAlerts()} />}
 
       {!loading && (
         <>

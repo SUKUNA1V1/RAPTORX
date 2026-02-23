@@ -7,11 +7,11 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import numpy as np
 
-# Add workspace root to path to import explainability module from root level
-workspace_root = Path(__file__).parent.parent.parent
+# Add workspace root to path to import explainability module from repository root
+workspace_root = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(workspace_root))
 
-from explainability import ModelExplainer, DecisionExplanation
+from explainability import ModelExplainer
 from ..database import get_db
 from ..models import AccessLog
 
@@ -46,8 +46,11 @@ def explain_access_decision(
                 detail=f"Access log {log_id} not found",
             )
         
-        # Get the features from metadata (or reconstruct if needed)
-        features_dict = log.features_metadata or {}
+        # Get features from log context (or reconstruct from direct columns)
+        context = log.context or {}
+        features_dict = context.get("features_raw") if isinstance(context, dict) else None
+        if not isinstance(features_dict, dict):
+            features_dict = {}
         
         # Convert to numpy array
         feature_names = [
@@ -58,14 +61,36 @@ def explain_access_decision(
             "access_attempt_count", "time_of_week", "hour_deviation_from_norm",
         ]
         
+        fallback_feature_values = {
+            "hour": log.hour,
+            "day_of_week": log.day_of_week,
+            "is_weekend": log.is_weekend,
+            "access_frequency_24h": log.access_frequency_24h,
+            "time_since_last_access_min": log.time_since_last_access_min,
+            "location_match": log.location_match,
+            "role_level": log.role_level,
+            "is_restricted_area": log.is_restricted_area,
+            "is_first_access_today": log.is_first_access_today,
+            "sequential_zone_violation": log.sequential_zone_violation,
+            "access_attempt_count": log.access_attempt_count,
+            "time_of_week": log.time_of_week,
+            "hour_deviation_from_norm": log.hour_deviation_from_norm,
+        }
+
         features = np.array([
-            float(features_dict.get(name, 0.5)) for name in feature_names
+            float(
+                features_dict.get(
+                    name,
+                    0.5 if fallback_feature_values.get(name) is None else fallback_feature_values.get(name),
+                )
+            )
+            for name in feature_names
         ]).reshape(1, -1)
         
-        # Get scores (these should be in the log)
-        if_score = log.ml_if_score or 0.5
-        ae_score = log.ml_ae_score or 0.5
-        combined_score = log.ml_combined_score or 0.5
+        # Get scores from context if available, else fall back to stored risk score
+        if_score = float(context.get("if_score", log.risk_score if log.risk_score is not None else 0.5))
+        ae_score = float(context.get("ae_score", log.risk_score if log.risk_score is not None else 0.5))
+        combined_score = float(context.get("combined_score", log.risk_score if log.risk_score is not None else 0.5))
         
         # Generate explanation
         explanation = explainer.explain_decision(
@@ -79,7 +104,7 @@ def explain_access_decision(
         return {
             "access_log_id": log_id,
             "user": {
-                "badge_id": log.badge_id,
+                "badge_id": log.badge_id_used,
                 "timestamp": log.timestamp.isoformat(),
             },
             "explanation": {
@@ -108,6 +133,8 @@ def explain_access_decision(
             },
         }
     
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(
             status_code=500,

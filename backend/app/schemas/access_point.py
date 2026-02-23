@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AccessPointBase(BaseModel):
     name: str
     type: str
-    building: Optional[str] = None
+    building: str = Field(min_length=1)
     floor: Optional[str] = None
     room: Optional[str] = None
     zone: Optional[str] = None

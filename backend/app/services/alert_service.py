@@ -30,7 +30,7 @@ class AlertService:
     def __init__(self, db: Session):
         self.db = db
 
-    def resolve_alert(self, alert: AnomalyAlert, resolved_by: int) -> AnomalyAlert:
+    def resolve_alert(self, alert: AnomalyAlert, resolved_by: int | None = None) -> AnomalyAlert:
         """Mark an alert as resolved and persist resolver metadata."""
         alert.status = "resolved"
         alert.is_resolved = True

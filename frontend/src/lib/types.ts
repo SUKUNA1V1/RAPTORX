@@ -41,6 +41,8 @@ export interface AccessPoint {
   required_clearance: number;
   is_restricted: boolean;
   ip_address: string | null;
+  installed_at?: string | null;
+  description?: string | null;
 }
 
 export interface AccessLog {
