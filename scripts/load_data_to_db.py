@@ -7,7 +7,7 @@ Handles user and access point creation for database integrity.
 import io
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Windows UTF-8 encoding support
@@ -176,7 +176,7 @@ def load_data_to_db(session):
     
     # Insert in batches
     print(f"\nInserting {len(df)} records in batches of {BATCH_SIZE}...")
-    base_timestamp = datetime.utcnow() - timedelta(days=30)
+    base_timestamp = datetime.now(timezone.utc) - timedelta(days=30)
     
     inserted = 0
     for idx, row in df.iterrows():
@@ -197,7 +197,7 @@ def load_data_to_db(session):
             user_id=user_id,
             access_point_id=access_point_id,
             timestamp=timestamp,
-            decision="approved" if row.get("label", 0) == 0 else "flagged",
+            decision="granted" if row.get("label", 0) == 0 else "denied",
             risk_score=float(row.get("label", 0)) * 0.9,  # Anomalies get higher risk
             method="badge",
             hour=int(row.get("hour", 12)),

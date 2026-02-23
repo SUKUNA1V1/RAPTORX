@@ -33,12 +33,15 @@ def run_test(script_name, description):
     """Run a test script and report results."""
     print(f"\n  Testing: {description}")
     print(f"  Script: {script_name}")
+    # Use scripts/ prefix if file is in scripts directory
+    script_path = f"scripts/{script_name}" if not script_name.startswith("scripts/") else script_name
     try:
         result = subprocess.run(
-            [".venv/Scripts/python.exe", script_name],
+            [sys.executable, script_path],
             capture_output=True,
             text=True,
-            timeout=180
+            timeout=180,
+            cwd="."
         )
         if result.returncode == 0:
             # Extract key metrics from stdout
@@ -85,9 +88,9 @@ def main():
     print_section("2. CODE VERIFICATION")
     
     code_files = [
-        ("model_registry.py", "Model versioning registry"),
-        ("threshold_utils.py", "Threshold resolution helper"),
-        ("decision_engine.py", "Standalone decision engine"),
+        ("scripts/model_registry.py", "Model versioning registry"),
+        ("scripts/threshold_utils.py", "Threshold resolution helper"),
+        ("scripts/decision_engine.py", "Standalone decision engine"),
         ("backend/app/services/decision_engine.py", "Backend decision engine"),
     ]
     
@@ -122,16 +125,16 @@ def main():
     # ========== QUICK VALIDATION TESTS ==========
     print_section("4. QUICK VALIDATION TESTS")
     
-    quick_test_ok = run_test("quick_test.py", "Quick F1/Precision/Recall check")
+    quick_test_ok = run_test("scripts/quick_test.py", "Quick F1/Precision/Recall check")
     results['quick_test'] = quick_test_ok
     
-    overfitting_ok = run_test("overfitting_check.py", "Overfitting diagnosis (train/test gap)")
+    overfitting_ok = run_test("scripts/overfitting_check.py", "Overfitting diagnosis (train/test gap)")
     results['overfitting_check'] = overfitting_ok
     
     # ========== THREAD SAFETY TEST ==========
     print_section("5. THREAD SAFETY VALIDATION")
     
-    thread_safety_ok = run_test("test_thread_safety.py", "Concurrent access (220 decisions across 26 threads)")
+    thread_safety_ok = run_test("scripts/test_thread_safety.py", "Concurrent access (220 decisions across 26 threads)")
     results['thread_safety'] = thread_safety_ok
     
     # ========== SUMMARY ==========

@@ -1,3 +1,4 @@
+import os
 import joblib
 import numpy as np
 import pandas as pd
@@ -18,6 +19,11 @@ FEATURE_COLS = [
 ]
 
 FEATURE_COLS_13 = FEATURE_COLS[:13]
+
+RANDOM_SEED = int(os.getenv("RAPTORX_RANDOM_SEED", "42"))
+TARGET_ANOMALY_RATIO = os.getenv("RAPTORX_TARGET_ANOMALY_RATIO")
+MIN_PRECISION = float(os.getenv("RAPTORX_MIN_PRECISION", "0.72"))
+MIN_RECALL = float(os.getenv("RAPTORX_MIN_RECALL", "0.80"))
 
 
 def load_validation_data() -> pd.DataFrame:
@@ -56,6 +62,42 @@ def compute_scores(X, if_data, ae_model, ae_config):
     return 0.3 * if_scores + 0.7 * ae_scores
 
 
+def rebalance_for_target_prevalence(
+    X: np.ndarray,
+    y: np.ndarray,
+    target_ratio: float,
+    random_seed: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    if not (0.0 < target_ratio < 0.5):
+        raise ValueError(f"Invalid target anomaly ratio {target_ratio}; expected 0 < ratio < 0.5")
+
+    normal_idx = np.where(y == 0)[0]
+    anomaly_idx = np.where(y == 1)[0]
+    if len(normal_idx) == 0 or len(anomaly_idx) == 0:
+        return X, y
+
+    rng = np.random.default_rng(random_seed)
+    current_ratio = float(y.mean())
+
+    if np.isclose(current_ratio, target_ratio, atol=1e-6):
+        return X, y
+
+    if target_ratio < current_ratio:
+        normals_keep = normal_idx
+        desired_anomaly_count = int(round((target_ratio / (1.0 - target_ratio)) * len(normals_keep)))
+        desired_anomaly_count = max(1, min(desired_anomaly_count, len(anomaly_idx)))
+        anomalies_keep = rng.choice(anomaly_idx, size=desired_anomaly_count, replace=False)
+    else:
+        anomalies_keep = anomaly_idx
+        desired_normal_count = int(round(((1.0 - target_ratio) / target_ratio) * len(anomalies_keep)))
+        desired_normal_count = max(1, min(desired_normal_count, len(normal_idx)))
+        normals_keep = rng.choice(normal_idx, size=desired_normal_count, replace=False)
+
+    keep_idx = np.concatenate([normals_keep, anomalies_keep])
+    rng.shuffle(keep_idx)
+    return X[keep_idx], y[keep_idx]
+
+
 # Load validation data
 val_df = load_validation_data()
 X_val = val_df[FEATURE_COLS_13].values
@@ -69,29 +111,55 @@ ae_config = joblib.load(resolve_model_artifact_path("autoencoder_config.pkl", "a
 # Get validation scores
 combined = compute_scores(X_val, if_data, ae_model, ae_config)
 
+X_tune = X_val
+y_tune = y_val
+if TARGET_ANOMALY_RATIO is not None:
+    target_ratio = float(TARGET_ANOMALY_RATIO)
+    X_tune, y_tune = rebalance_for_target_prevalence(X_val, y_val, target_ratio, RANDOM_SEED)
+    combined_tune = compute_scores(X_tune, if_data, ae_model, ae_config)
+else:
+    combined_tune = combined
+
 print("=" * 60)
 print("THRESHOLD TUNING ON VALIDATION SET")
 print("=" * 60)
+print(f"Validation anomaly ratio (original): {y_val.mean() * 100:.2f}%")
+print(f"Validation anomaly ratio (tuning)  : {y_tune.mean() * 100:.2f}%")
+print(f"Minimum precision target           : {MIN_PRECISION:.2f}")
+print(f"Minimum recall target              : {MIN_RECALL:.2f}")
 
 best_t = 0.5
 best_f1 = 0.0
+best_prec = 0.0
+best_rec = 0.0
+best_valid = False
+best_selection_score = -1.0
 results = []
 
 for t in np.arange(0.20, 0.90, 0.01):
-    preds = (combined >= t).astype(int)
-    f1 = f1_score(y_val, preds, zero_division=0)
-    prec = precision_score(y_val, preds, zero_division=0)
-    rec = recall_score(y_val, preds, zero_division=0)
+    preds = (combined_tune >= t).astype(int)
+    f1 = f1_score(y_tune, preds, zero_division=0)
+    prec = precision_score(y_tune, preds, zero_division=0)
+    rec = recall_score(y_tune, preds, zero_division=0)
+    valid = prec >= MIN_PRECISION and rec >= MIN_RECALL
+    selection_score = f1 + (0.05 if valid else 0.0)
 
     results.append({
         "threshold": round(float(t), 2),
         "f1": round(float(f1), 4),
         "precision": round(float(prec), 4),
         "recall": round(float(rec), 4),
+        "valid": bool(valid),
     })
 
-    if f1 > best_f1:
+    if selection_score > best_selection_score or (
+        np.isclose(selection_score, best_selection_score) and rec > best_rec
+    ):
+        best_selection_score = selection_score
         best_f1 = f1
+        best_prec = prec
+        best_rec = rec
+        best_valid = valid
         best_t = float(t)
 
 results_df = pd.DataFrame(results).sort_values("f1", ascending=False)
@@ -101,6 +169,9 @@ print(results_df.head(15).to_string(index=False))
 print("\n" + "=" * 60)
 print(f"BEST THRESHOLD: {best_t:.2f}")
 print(f"Validation F1:  {best_f1:.4f}")
+print(f"Validation Precision: {best_prec:.4f}")
+print(f"Validation Recall:    {best_rec:.4f}")
+print(f"Meets min targets:    {best_valid}")
 print("=" * 60)
 
 # Evaluate on test set
@@ -128,7 +199,9 @@ print("\n" + "=" * 60)
 print("FINAL VERDICT")
 print("=" * 60)
 
-if 0.85 <= f1_test <= 0.92:
+if f1_test > 0.95:
+    verdict = "VERY HIGH — likely too easy; increase overlap for realism"
+elif 0.85 <= f1_test <= 0.92:
     verdict = "EXCELLENT — Production-ready performance"
 elif 0.80 <= f1_test < 0.85:
     verdict = "GOOD — Acceptable for production with monitoring"

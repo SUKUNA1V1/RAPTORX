@@ -1,12 +1,27 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-02-22T04:56:24.120052+00:00",
+  "updated_at": "2026-02-23T21:23:22.213396+00:00",
   "current": {
     "ensemble": {
-      "version": "20260222T045624Z",
-      "updated_at": "2026-02-22T04:56:24.120047+00:00",
+      "version": "20260223T212322Z",
+      "updated_at": "2026-02-23T21:23:22.213381+00:00",
       "artifacts": {
-        "ensemble_config.pkl": "versions/ensemble/20260222T045624Z/ensemble_config.pkl"
+        "ensemble_config.pkl": "versions/ensemble/20260223T212322Z/ensemble_config.pkl"
+      }
+    },
+    "isolation_forest": {
+      "version": "20260223T212322Z",
+      "updated_at": "2026-02-23T21:23:22.196354+00:00",
+      "artifacts": {
+        "isolation_forest.pkl": "versions/isolation_forest/20260223T212322Z/isolation_forest.pkl"
+      }
+    },
+    "autoencoder": {
+      "version": "20260223T212210Z",
+      "updated_at": "2026-02-23T21:22:10.341978+00:00",
+      "artifacts": {
+        "autoencoder.keras": "versions/autoencoder/20260223T212210Z/autoencoder.keras",
+        "autoencoder_config.pkl": "versions/autoencoder/20260223T212210Z/autoencoder_config.pkl"
       }
     }
   }

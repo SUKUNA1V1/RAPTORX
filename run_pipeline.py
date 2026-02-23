@@ -15,5 +15,5 @@ from pathlib import Path
 
 # Run the full pipeline script from scripts/
 pipeline_script = Path(__file__).parent / "scripts" / "run_full_pipeline.py"
-result = subprocess.run([sys.executable, str(pipeline_script)])
+result = subprocess.run([sys.executable, str(pipeline_script), *sys.argv[1:]])
 sys.exit(result.returncode)

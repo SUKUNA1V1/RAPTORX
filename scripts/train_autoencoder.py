@@ -132,11 +132,10 @@ print("=" * 60)
 from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score
 
 param_grid = [
+    {"epochs": 30,  "batch_size": 32, "lr": 0.001},
     {"epochs": 50,  "batch_size": 32, "lr": 0.001},
-    {"epochs": 100, "batch_size": 32, "lr": 0.001},
-    {"epochs": 100, "batch_size": 64, "lr": 0.001},
-    {"epochs": 150, "batch_size": 32, "lr": 0.001},
-    {"epochs": 100, "batch_size": 32, "lr": 0.0001},
+    {"epochs": 50,  "batch_size": 64, "lr": 0.001},
+    {"epochs": 50,  "batch_size": 32, "lr": 0.0001},
 ]
 
 tuning_results = []
@@ -150,7 +149,7 @@ for params in param_grid:
 
     early_stop = keras.callbacks.EarlyStopping(
         monitor="val_loss",
-        patience=10,
+        patience=5,
         restore_best_weights=True,
         verbose=0
     )
@@ -205,7 +204,7 @@ print("=" * 60)
 
 best_row    = tuning_df.loc[tuning_df["f1_score"].idxmax()]
 best_params = {
-    "epochs":     int(best_row["epochs"]),
+    "epochs":     100,  # Use full training for final model
     "batch_size": int(best_row["batch_size"]),
     "lr":         float(best_row["lr"]),
 }
@@ -218,7 +217,7 @@ final_model = build_autoencoder(n_features, learning_rate=best_params["lr"])
 
 early_stop = keras.callbacks.EarlyStopping(
     monitor="val_loss",
-    patience=10,
+    patience=8,
     restore_best_weights=True,
     verbose=1
 )

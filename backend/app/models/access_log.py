@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -12,7 +12,16 @@ class AccessLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     access_point_id = Column(Integer, ForeignKey("access_points.id"), nullable=False)
     timestamp = Column(DateTime(timezone=True), nullable=False)
-    decision = Column(String, nullable=False)
+    decision = Column(
+        Enum(
+            "granted",
+            "delayed",
+            "denied",
+            name="access_result",
+            create_type=False,
+        ),
+        nullable=False,
+    )
     risk_score = Column(Float, nullable=False, default=0.0)
     method = Column(String, nullable=True)
     hour = Column(Integer, nullable=True)

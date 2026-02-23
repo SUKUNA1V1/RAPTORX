@@ -1,11 +1,12 @@
 import os
+import argparse
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-TOTAL_RECORDS = 500_000
-ANOMALY_RATIO = 0.07
-RANDOM_SEED = 42
+DEFAULT_TOTAL_RECORDS = 500_000
+DEFAULT_ANOMALY_RATIO = 0.07
+DEFAULT_RANDOM_SEED = 42
 OUTPUT_DIR = "data/raw"
 
 RESTRICTED_ZONES = {"server_room", "executive"}
@@ -16,7 +17,7 @@ CLEARANCE_REQUIREMENTS = {
 }
 
 ZONES = ["engineering", "hr", "finance", "marketing", "logistics", "it", "server_room", "executive"]
-NUM_USERS = 500  # IMPROVED: 5x more users for better diversity and generalization
+DEFAULT_NUM_USERS = 500  # IMPROVED: 5x more users for better diversity and generalization
 
 FEATURE_COLS = [
     "hour",
@@ -41,7 +42,11 @@ FEATURE_COLS = [
 ]
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-np.random.seed(RANDOM_SEED)
+
+PROFILE_DEFAULTS = {
+    "dev": 0.07,
+    "prod": 0.015,
+}
 
 
 def _build_zone_distances() -> dict[str, dict[str, float]]:
@@ -59,10 +64,10 @@ def _build_zone_distances() -> dict[str, dict[str, float]]:
     return out
 
 
-ZONE_DISTANCES = _build_zone_distances()
+ZONE_DISTANCES = {}
 
 
-def build_user_profiles(num_users: int = NUM_USERS) -> list[dict]:
+def build_user_profiles(num_users: int = DEFAULT_NUM_USERS) -> list[dict]:
     """IMPROVED: Enhanced user profiles with better role-based distributions"""
     profiles = []
     departments = ["engineering", "hr", "finance", "marketing", "logistics", "it"]
@@ -110,9 +115,21 @@ def build_user_profiles(num_users: int = NUM_USERS) -> list[dict]:
     return profiles
 
 
-USER_PROFILES = build_user_profiles(NUM_USERS)
-_PROFILE_WEIGHTS = np.array([p["activity_weight"] for p in USER_PROFILES], dtype=float)
-_PROFILE_WEIGHTS /= _PROFILE_WEIGHTS.sum()
+USER_PROFILES = []
+_PROFILE_WEIGHTS = np.array([], dtype=float)
+
+
+def initialize_generation_state(seed: int, num_users: int) -> None:
+    global ZONE_DISTANCES, USER_PROFILES, _PROFILE_WEIGHTS
+
+    np.random.seed(seed)
+    ZONE_DISTANCES = _build_zone_distances()
+    USER_PROFILES = build_user_profiles(num_users)
+    _PROFILE_WEIGHTS = np.array([p["activity_weight"] for p in USER_PROFILES], dtype=float)
+    _PROFILE_WEIGHTS /= _PROFILE_WEIGHTS.sum()
+
+
+initialize_generation_state(seed=DEFAULT_RANDOM_SEED, num_users=DEFAULT_NUM_USERS)
 
 
 def _sample_user() -> dict:
@@ -329,11 +346,47 @@ def generate_anomalous(n: int, prev_zone_by_user: dict[int, str]) -> list[dict]:
     return records
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate synthetic RaptorX access data")
+    parser.add_argument("--profile", choices=["dev", "prod", "custom"], default=os.getenv("RAPTORX_DATA_PROFILE", "dev"))
+    parser.add_argument("--total-records", type=int, default=None)
+    parser.add_argument("--anomaly-ratio", type=float, default=None)
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--num-users", type=int, default=None)
+    return parser.parse_args()
+
+
 def main() -> None:
-    normal_count = int(TOTAL_RECORDS * (1 - ANOMALY_RATIO))
-    anomaly_count = TOTAL_RECORDS - normal_count
+    args = _parse_args()
+
+    total_records = args.total_records or int(os.getenv("RAPTORX_TOTAL_RECORDS", DEFAULT_TOTAL_RECORDS))
+    seed = args.seed or int(os.getenv("RAPTORX_RANDOM_SEED", DEFAULT_RANDOM_SEED))
+    num_users = args.num_users or int(os.getenv("RAPTORX_NUM_USERS", DEFAULT_NUM_USERS))
+
+    env_ratio = os.getenv("RAPTORX_ANOMALY_RATIO")
+    if args.anomaly_ratio is not None:
+        anomaly_ratio = args.anomaly_ratio
+    elif env_ratio is not None:
+        anomaly_ratio = float(env_ratio)
+    else:
+        anomaly_ratio = PROFILE_DEFAULTS.get(args.profile, DEFAULT_ANOMALY_RATIO)
+
+    if not (0.0 < anomaly_ratio < 0.5):
+        raise ValueError(f"Invalid anomaly ratio {anomaly_ratio}; expected 0 < ratio < 0.5")
+    if total_records < 10_000:
+        raise ValueError(f"Invalid total records {total_records}; expected >= 10000")
+    if num_users < 10:
+        raise ValueError(f"Invalid num users {num_users}; expected >= 10")
+
+    initialize_generation_state(seed=seed, num_users=num_users)
+
+    normal_count = int(total_records * (1 - anomaly_ratio))
+    anomaly_count = total_records - normal_count
 
     print(f"Generating {normal_count} normal + {anomaly_count} anomalous records...")
+    print(f"Profile      : {args.profile}")
+    print(f"Anomaly ratio: {anomaly_ratio:.4f} ({anomaly_ratio * 100:.2f}%)")
+    print(f"Seed         : {seed}")
     print(f"User profiles: {len(USER_PROFILES)}")
 
     prev_zone_by_user: dict[int, str] = {}
@@ -341,7 +394,7 @@ def main() -> None:
     anomaly_records = generate_anomalous(anomaly_count, prev_zone_by_user)
 
     df = pd.DataFrame(normal_records + anomaly_records)
-    df = df[FEATURE_COLS + ["label"]].sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+    df = df[FEATURE_COLS + ["label"]].sample(frac=1, random_state=seed).reset_index(drop=True)
 
     access_data_path = os.path.join(OUTPUT_DIR, "access_data.csv")
     train_path = os.path.join(OUTPUT_DIR, "train.csv")
@@ -350,7 +403,7 @@ def main() -> None:
     df.to_csv(access_data_path, index=False)
 
     train_df, test_df = train_test_split(
-        df, test_size=0.2, random_state=RANDOM_SEED, stratify=df["label"]
+        df, test_size=0.2, random_state=seed, stratify=df["label"]
     )
     train_df.to_csv(train_path, index=False)
     test_df.to_csv(test_path, index=False)

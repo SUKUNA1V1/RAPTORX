@@ -23,6 +23,7 @@ import subprocess
 import sys
 import os
 import time
+import argparse
 from pathlib import Path
 from datetime import datetime
 
@@ -39,7 +40,8 @@ os.chdir(Path(__file__).parent.parent)
 class PipelineRunner:
     """Orchestrates the full ML pipeline with error handling and progress tracking."""
 
-    def __init__(self):
+    def __init__(self, mode: str = "dev"):
+        self.mode = mode
         self.start_time = datetime.now()
         self.step_times = {}
         self.failed_steps = []
@@ -151,7 +153,25 @@ class PipelineRunner:
         os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
         os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
         os.environ["PYTHONUNBUFFERED"] = "1"
+
+        if self.mode == "prod-like":
+            os.environ.setdefault("RAPTORX_DATA_PROFILE", "prod")
+            os.environ.setdefault("RAPTORX_TARGET_ANOMALY_RATIO", "0.015")
+        else:
+            os.environ.setdefault("RAPTORX_DATA_PROFILE", "dev")
+            os.environ.setdefault("RAPTORX_TARGET_ANOMALY_RATIO", "0.02")
+
+        os.environ.setdefault("RAPTORX_RANDOM_SEED", "42")
+        os.environ.setdefault("RAPTORX_MIN_PRECISION", "0.72")
+        os.environ.setdefault("RAPTORX_MIN_RECALL", "0.80")
+
         self.print_progress("Environment configured")
+        self.print_progress(f"Pipeline mode: {self.mode}")
+        self.print_progress(f"Data profile: {os.environ['RAPTORX_DATA_PROFILE']}")
+        self.print_progress(
+            f"Threshold tuning target anomaly ratio: {os.environ['RAPTORX_TARGET_ANOMALY_RATIO']}"
+        )
+        self.print_progress(f"Random seed: {os.environ['RAPTORX_RANDOM_SEED']}")
 
     def verify_prerequisite_files(self) -> bool:
         """Verify required input files exist."""
@@ -159,27 +179,27 @@ class PipelineRunner:
         self.print_substep("Checking prerequisite files")
 
         required_files = [
-            "scripts/generate_data_fixed.py",  # Use improved data generator with 500 users
-            "scripts/explore_and_prepare.py",
-            "scripts/train_isolation_forest.py",
-            "scripts/train_autoencoder.py",
-            "scripts/compare_and_ensemble.py",
-            "scripts/retune_threshold.py",
-            "scripts/quick_test.py",
-            "scripts/test_thread_safety.py",
-            "scripts/validate_system.py",
-            "model_registry.py",
-            "threshold_utils.py",
-            "decision_engine.py",
-            "explainability.py"
+            ("scripts/generate_data_fixed.py", ["scripts/generate_data_fixed.py"]),
+            ("scripts/explore_and_prepare.py", ["scripts/explore_and_prepare.py"]),
+            ("scripts/train_isolation_forest.py", ["scripts/train_isolation_forest.py"]),
+            ("scripts/train_autoencoder.py", ["scripts/train_autoencoder.py"]),
+            ("scripts/compare_and_ensemble.py", ["scripts/compare_and_ensemble.py"]),
+            ("scripts/retune_threshold.py", ["scripts/retune_threshold.py"]),
+            ("scripts/quick_test.py", ["scripts/quick_test.py"]),
+            ("scripts/test_thread_safety.py", ["scripts/test_thread_safety.py"]),
+            ("scripts/validate_system.py", ["scripts/validate_system.py"]),
+            ("scripts/model_registry.py", ["scripts/model_registry.py", "model_registry.py"]),
+            ("scripts/threshold_utils.py", ["scripts/threshold_utils.py", "threshold_utils.py"]),
+            ("scripts/decision_engine.py", ["scripts/decision_engine.py", "decision_engine.py"]),
+            ("scripts/explainability.py", ["scripts/explainability.py", "explainability.py"]),
         ]
 
         all_exist = True
-        for fpath in required_files:
-            if Path(fpath).exists():
-                self.print_progress(f"✓ {fpath}")
+        for display_path, candidates in required_files:
+            if any(Path(candidate).exists() for candidate in candidates):
+                self.print_progress(f"✓ {display_path}")
             else:
-                self.print_progress(f"✗ {fpath} NOT FOUND")
+                self.print_progress(f"✗ {display_path} NOT FOUND")
                 all_exist = False
 
         if not all_exist:
@@ -349,7 +369,16 @@ class PipelineRunner:
 
 def main():
     """Entry point."""
-    runner = PipelineRunner()
+    parser = argparse.ArgumentParser(description="Run the full RaptorX ML pipeline")
+    parser.add_argument(
+        "--mode",
+        choices=["dev", "prod-like"],
+        default=os.getenv("RAPTORX_PIPELINE_MODE", "dev"),
+        help="dev: training-focused defaults, prod-like: low-prevalence calibration defaults",
+    )
+    args = parser.parse_args()
+
+    runner = PipelineRunner(mode=args.mode)
     return runner.run()
 
 
