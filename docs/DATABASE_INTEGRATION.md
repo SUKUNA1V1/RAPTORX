@@ -106,20 +106,17 @@ The improved RaptorX pipeline now automatically saves generated synthetic data t
 
 **Get Recent Access Logs**
 ```bash
-curl http://localhost:8000/api/logs \
-  -H "Authorization: Bearer <token>"
+curl http://localhost:8000/api/access/logs
 ```
 
 **Filter by User**
 ```bash
-curl http://localhost:8000/api/logs?user_id=1 \
-  -H "Authorization: Bearer <token>"
+curl http://localhost:8000/api/access/logs?user_id=1
 ```
 
 **Get Flagged Anomalies**
 ```bash
-curl http://localhost:8000/api/logs?decision=flagged \
-  -H "Authorization: Bearer <token>"
+curl http://localhost:8000/api/access/logs?decision=denied
 ```
 
 ### Via Dashboard
@@ -212,7 +209,7 @@ ORDER BY al.hour;
 
 1. **Run Full Pipeline**: `python run_pipeline.py`
 2. **Start Backend**: `cd backend && uvicorn app.main:app --reload`
-3. **Explore Data**: Visit `/api/logs` endpoint
+3. **Explore Data**: Visit `/api/access/logs` endpoint
 4. **View Dashboard**: Open frontend in browser
 5. **Run Models**: Test trained anomaly detectors on database data
 

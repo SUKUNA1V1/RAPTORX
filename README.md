@@ -347,15 +347,19 @@ Base URL: http://localhost:8000
 - POST /api/access/request
 - GET /api/access/logs
 - GET /api/access/logs/{id}
+- DELETE /api/access/logs
 
 ### Access Points
 
 - GET /api/access-points
+- GET /api/access-points/{id}
 - POST /api/access-points
+- PUT /api/access-points/{id}
 
 ### Users
 
 - GET /api/users
+- GET /api/users/{id}
 - POST /api/users
 - PUT /api/users/{id}
 - DELETE /api/users/{id}
@@ -536,13 +540,13 @@ Analytics-only additions (6 more):
 
 - Grant threshold default: 0.30
 - Deny threshold default: 0.70
-- Central resolver: [threshold_utils.py](threshold_utils.py)
+- Central resolver: [scripts/threshold_utils.py](scripts/threshold_utils.py)
 
 ### Model Registry
 
 Artifacts are versioned in `ml/models/versions/` with an active pointer in `ml/models/current.json`.
 
-- Registry helper: [model_registry.py](model_registry.py)
+- Registry helper: [scripts/model_registry.py](scripts/model_registry.py)
 - Resolve artifact paths with `resolve_model_artifact_path()`
 - Register versions with `register_model_version()`
 
@@ -563,7 +567,7 @@ Inference is thread-safe:
 
 ### Explainability
 
-The explainability module in [explainability.py](explainability.py) provides:
+The explainability module in [scripts/explainability.py](scripts/explainability.py) provides:
 
 - Decision explanations (top features, warnings, confidence)
 - Global feature importance
@@ -591,7 +595,7 @@ When clearance is insufficient, the system logs a denial and creates an alert wi
   - Accepts 13 or 19 features
   - Uses ensemble scoring when models are available
   - Fallback to rule-based scoring when models are unavailable
-- Standalone engine: [decision_engine.py](decision_engine.py)
+- Standalone engine: [scripts/decision_engine.py](scripts/decision_engine.py)
   - Accepts 19 features
   - Adds hard-rule checks for impossible travel and concurrent badge use
   - Includes test harness with sample cases
@@ -723,7 +727,7 @@ The runtime distance matrix defines km distances between zones for velocity calc
 
 ## Data Generation and Datasets
 
-Synthetic data is generated in [generate_data_fixed.py](generate_data_fixed.py) (500 users, recommended) or [generate_data.py](generate_data.py) (100 users). Key parameters:
+Synthetic data is generated in [scripts/generate_data_fixed.py](scripts/generate_data_fixed.py) (500 users, recommended) or [scripts/generate_data.py](scripts/generate_data.py) (100 users). Key parameters:
 
 - Total records: 500,000
 - Anomaly ratio: 0.07
@@ -751,7 +755,7 @@ Processed datasets are saved under data/processed:
 
 ### Isolation Forest
 
-Training script: [train_isolation_forest.py](train_isolation_forest.py)
+Training script: [scripts/train_isolation_forest.py](scripts/train_isolation_forest.py)
 
 - Trained on normal-only samples
 - Hyperparameter grid includes n_estimators, contamination, max_samples
@@ -759,7 +763,7 @@ Training script: [train_isolation_forest.py](train_isolation_forest.py)
 
 ### Autoencoder
 
-Training script: [train_autoencoder.py](train_autoencoder.py)
+Training script: [scripts/train_autoencoder.py](scripts/train_autoencoder.py)
 
 Architecture (13 features):
 
@@ -786,7 +790,7 @@ Common artifacts under ml/models:
 
 ### Ensemble Evaluation
 
-The [compare_and_ensemble.py](compare_and_ensemble.py) script:
+The [scripts/compare_and_ensemble.py](scripts/compare_and_ensemble.py) script:
 
 - Computes IF and AE scores
 - Tests weighted ensembles and voting strategies
@@ -797,19 +801,19 @@ The [compare_and_ensemble.py](compare_and_ensemble.py) script:
 
 ### Retuning
 
-- Script: [retune_threshold.py](retune_threshold.py)
+- Script: [scripts/retune_threshold.py](scripts/retune_threshold.py)
 - Validation data split from train_scaled.csv if val is missing
 - Searches thresholds in [0.20, 0.90] with step 0.01
 - Updates model registry if F1 is within acceptable range
 
 ### Validation and Diagnostics
 
-- [quick_test.py](quick_test.py): fast precision/recall/F1 check
-- [overfitting_check.py](overfitting_check.py): train-test gap, edge cases, score separation
+- [scripts/quick_test.py](scripts/quick_test.py): fast precision/recall/F1 check
+- [scripts/overfitting_check.py](scripts/overfitting_check.py): train-test gap, edge cases, score separation
 
 ### Threshold Resolution Precedence
 
-Resolved by [threshold_utils.py](threshold_utils.py) in this order:
+Resolved by [scripts/threshold_utils.py](scripts/threshold_utils.py) in this order:
 
 1) ensemble_config.pkl -> best_threshold
 2) ensemble_config.pkl -> threshold
@@ -818,7 +822,7 @@ Resolved by [threshold_utils.py](threshold_utils.py) in this order:
 
 ## Explainability Internals
 
-Explainability is implemented in [explainability.py](explainability.py) and exposed by the backend API.
+Explainability is implemented in [scripts/explainability.py](scripts/explainability.py) and exposed by the backend API.
 
 The explainer computes:
 
@@ -979,6 +983,24 @@ Create `frontend/.env.local`:
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
+### ML Pipeline Bootstrap (Recommended for First Run)
+
+From workspace root:
+
+```bash
+python run_pipeline.py
+```
+
+This runs the full 10-step training/validation pipeline via `scripts/run_full_pipeline.py`, including database loading (`scripts/load_data_to_db.py`).
+
+Alternative interactive options:
+
+```bash
+python scripts/startup.py
+# or
+python scripts/run_pipeline_interactive.py
+```
+
 ## Run (Dev and Prod)
 
 ### Development
@@ -999,6 +1021,12 @@ npm run dev
 
 Open http://localhost:3000
 
+Optional quick launcher (root):
+
+```bash
+python scripts/startup.py
+```
+
 ### Production
 
 Backend:
@@ -1018,24 +1046,43 @@ npm run start
 
 ## Scripts and Utilities
 
+### Pipeline Orchestration
+
+- [run_pipeline.py](run_pipeline.py): root wrapper for the full pipeline (`scripts/run_full_pipeline.py`)
+- [scripts/run_full_pipeline.py](scripts/run_full_pipeline.py): automated 10-step end-to-end pipeline
+- [scripts/run_pipeline_interactive.py](scripts/run_pipeline_interactive.py): interactive step-by-step pipeline
+- [scripts/startup.py](scripts/startup.py): unified menu for pipeline/model verification/startup
+
 ### Data Generation and Preparation
 
-- [generate_data_fixed.py](generate_data_fixed.py): **RECOMMENDED** - improved generator with 500 users for better model generalization
-- [generate_data.py](generate_data.py): original generator with 100 users
-- [explore_and_prepare.py](explore_and_prepare.py): EDA, scaling, and artifact creation
+- [scripts/generate_data_fixed.py](scripts/generate_data_fixed.py): **RECOMMENDED** - improved generator with 500 users for better model generalization
+- [scripts/generate_data.py](scripts/generate_data.py): original generator with 100 users
+- [scripts/load_data_to_db.py](scripts/load_data_to_db.py): loads generated data into PostgreSQL
+- [scripts/load_data_to_db_simple.py](scripts/load_data_to_db_simple.py): simplified DB loading variant
+- [scripts/explore_and_prepare.py](scripts/explore_and_prepare.py): EDA, scaling, and artifact creation
+- [scripts/explore_database.py](scripts/explore_database.py): database exploration and statistics
 
 ### Model Training and Evaluation
 
-- [train_isolation_forest.py](train_isolation_forest.py)
-- [train_autoencoder.py](train_autoencoder.py)
-- [compare_and_ensemble.py](compare_and_ensemble.py)
-- [retune_threshold.py](retune_threshold.py)
-- [overfitting_check.py](overfitting_check.py)
-- [quick_test.py](quick_test.py)
+- [scripts/train_isolation_forest.py](scripts/train_isolation_forest.py)
+- [scripts/train_autoencoder.py](scripts/train_autoencoder.py)
+- [scripts/compare_and_ensemble.py](scripts/compare_and_ensemble.py)
+- [scripts/retune_threshold.py](scripts/retune_threshold.py)
+- [scripts/overfitting_check.py](scripts/overfitting_check.py)
+- [scripts/quick_test.py](scripts/quick_test.py)
+- [scripts/test_thread_safety.py](scripts/test_thread_safety.py)
+- [scripts/validate_system.py](scripts/validate_system.py)
 
 ### Standalone Decision Engine
 
-- [decision_engine.py](decision_engine.py): standalone engine with hard rules, thread safety, and audit logging
+- [scripts/decision_engine.py](scripts/decision_engine.py): standalone engine with hard rules, thread safety, and audit logging
+
+### Model & Threshold Utilities
+
+- [scripts/model_registry.py](scripts/model_registry.py): model artifact registry helpers
+- [scripts/threshold_utils.py](scripts/threshold_utils.py): threshold resolution utilities
+- [scripts/verify_setup.py](scripts/verify_setup.py): setup/artifact verification
+- [scripts/verify_upgrade.py](scripts/verify_upgrade.py): upgrade verification checks
 
 ### IoT Simulator
 
@@ -1066,3 +1113,5 @@ Key workflows in `.github/workflows/`:
 - CORS errors: backend allows http://localhost:3000 by default.
 - Empty dashboards: seed data or run the simulator to generate logs.
 - Explainability endpoints: ensure model artifacts exist and AccessLog data is populated.
+- Pipeline/import issues: run `python run_pipeline.py` from workspace root (or `python scripts/startup.py` for guided mode).
+- Database connection failures: verify `backend/.env` contains a valid `DATABASE_URL` and run `alembic upgrade head`.

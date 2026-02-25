@@ -8,7 +8,7 @@ Three comprehensive Python scripts have been created to automate the entire ML p
 
 ## Scripts Created
 
-### 1. **run_full_pipeline.py** ⭐ (RECOMMENDED)
+### 1. **run_pipeline.py** ⭐ (RECOMMENDED)
 **Purpose**: Complete automated pipeline execution
 
 **When to Use**: 
@@ -18,11 +18,11 @@ Three comprehensive Python scripts have been created to automate the entire ML p
 
 **How to Run**:
 ```bash
-python run_full_pipeline.py
+python run_pipeline.py
 ```
 
 **Features**:
-- ✓ Automatic execution of all 9 pipeline steps
+- ✓ Automatic execution of all 10 pipeline steps
 - ✓ Real-time progress reporting with colored output
 - ✓ Detailed timing for each step
 - ✓ Error handling and recovery
@@ -38,12 +38,12 @@ python run_full_pipeline.py
 Start time: 2026-02-23 14:32:15
 Working directory: e:\RAPTORX
 
-[STEP 1/9] Generate Synthetic Data
+[STEP 1/10] Generate Synthetic Data
 -----------...
   → Running: generate_data_fixed.py
   ✓ Generate Synthetic Data completed in 847.3s
 
-[STEP 2/9] Explore & Prepare Data
+[STEP 2/10] Load Data to Database
 ...
   ✓ All critical artifacts are ready for backend
 
@@ -71,7 +71,7 @@ ML Models are now ready. To test the complete system:
 
 ---
 
-### 2. **run_pipeline_interactive.py**
+### 2. **scripts/run_pipeline_interactive.py**
 **Purpose**: Step-by-step interactive pipeline execution
 
 **When to Use**:
@@ -82,7 +82,7 @@ ML Models are now ready. To test the complete system:
 
 **How to Run**:
 ```bash
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 ```
 
 **Features**:
@@ -106,7 +106,7 @@ PIPELINE OPTIONS:
 **Use Case Example**:
 ```
 # Run full pipeline with pauses
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 → Choose option 2
 → Run step 1 (generate data)
 → Inspect data/raw/ directory
@@ -116,7 +116,7 @@ python run_pipeline_interactive.py
 
 ---
 
-### 3. **startup.py**
+### 3. **scripts/startup.py**
 **Purpose**: Unified control center for pipeline and backend/frontend startup
 
 **When to Use**:
@@ -126,7 +126,7 @@ python run_pipeline_interactive.py
 
 **How to Run**:
 ```bash
-python startup.py
+python scripts/startup.py
 ```
 
 **Menu Options**:
@@ -142,7 +142,7 @@ python startup.py
 
 **Example Workflow**:
 ```
-python startup.py
+python scripts/startup.py
 → Choose 1 (full pipeline)
 → Wait for completion
 → Choose 4 (start backend)
@@ -159,14 +159,15 @@ The pipeline executes these stages sequentially:
 | Step | Name | Script | Input | Output | Time |
 |------|------|--------|-------|--------|------|
 | 1 | Generate Data | generate_data_fixed.py | - | train.csv, test.csv | 10-20m |
-| 2 | Prepare Data | explore_and_prepare.py | raw CSV | train_scaled.csv | 5-10m |
-| 3 | Train IF | train_isolation_forest.py | scaled data | isolation_forest.pkl | 10-20m |
-| 4 | Train AE | train_autoencoder.py | scaled data | autoencoder.keras | 20-40m |
-| 5 | Ensemble | compare_and_ensemble.py | both models | ensemble_config.pkl | 5-10m |
-| 6 | Tune Thresholds | retune_threshold.py | ensemble | current.json | 2-5m |
-| 7 | Quick Test | quick_test.py | all artifacts | metrics report | 1-2m |
-| 8 | Thread Safety | test_thread_safety.py | models | concurrency report | 2-5m |
-| 9 | Validate | validate_system.py | all | validation report | 2-5m |
+| 2 | Load to DB | scripts/load_data_to_db.py | train.csv | DB records | 5-10m |
+| 3 | Prepare Data | scripts/explore_and_prepare.py | raw CSV | train_scaled.csv | 5-10m |
+| 4 | Train IF | scripts/train_isolation_forest.py | scaled data | isolation_forest.pkl | 10-20m |
+| 5 | Train AE | scripts/train_autoencoder.py | scaled data | autoencoder.keras | 20-40m |
+| 6 | Ensemble | scripts/compare_and_ensemble.py | both models | ensemble_config.pkl | 5-10m |
+| 7 | Tune Thresholds | scripts/retune_threshold.py | ensemble | current.json | 2-5m |
+| 8 | Quick Test | scripts/quick_test.py | all artifacts | metrics report | 1-2m |
+| 9 | Thread Safety | scripts/test_thread_safety.py | models | concurrency report | 2-5m |
+| 10 | Validate | scripts/validate_system.py | all | validation report | 2-5m |
 
 ---
 
@@ -175,7 +176,7 @@ The pipeline executes these stages sequentially:
 ### Workflow A: Fresh Installation (First Time)
 ```bash
 # In workspace root
-python run_full_pipeline.py
+python run_pipeline.py
 
 # After completion (in new terminals):
 cd backend
@@ -191,7 +192,7 @@ npm run dev
 
 ### Workflow B: Using the Startup Menu
 ```bash
-python startup.py
+python scripts/startup.py
 → Choose [1] (full pipeline)
 → Wait for completion
 → Choose [4] (start backend)
@@ -200,7 +201,7 @@ python startup.py
 
 ### Workflow C: Interactive with Inspection
 ```bash
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 → Choose [2] (interactive mode)
 → Run step 1, inspect data/raw/
 → Run step 2, inspect data/processed/
@@ -210,7 +211,7 @@ python run_pipeline_interactive.py
 
 ### Workflow D: Re-run Only Validation (Models Already Trained)
 ```bash
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 → Choose [4] (verify models)
 → Confirm artifacts exist
 → Use [3] to run step 7 (quick test)
@@ -218,7 +219,7 @@ python run_pipeline_interactive.py
 
 ### Workflow E: Rebuild Only Ensemble (Keep Training Data)
 ```bash
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 → Choose [3]
 → Type 5 (run compare_and_ensemble.py)
 → Models are rebuild
@@ -230,10 +231,12 @@ python run_pipeline_interactive.py
 
 ```
 e:\RAPTORX\
-├── run_full_pipeline.py          ← New: Full automation
-├── run_pipeline_interactive.py    ← New: Interactive runner
-├── startup.py                     ← New: Unified menu
-├── PIPELINE_QUICKSTART.md         ← New: Quick reference
+├── run_pipeline.py                ← Root wrapper for full automation
+├── scripts/
+│   ├── run_full_pipeline.py       ← Full automation engine
+│   ├── run_pipeline_interactive.py← Interactive runner
+│   └── startup.py                 ← Unified menu
+├── docs/PIPELINE_QUICKSTART.md    ← Quick reference
 │
 ├── data/
 │   └── processed/
@@ -263,7 +266,7 @@ e:\RAPTORX\
 
 **Full Pipeline Script Output**:
 ```
-[STEP 1/9] Generate Synthetic Data
+[STEP 1/10] Generate Synthetic Data
   → Running: generate_data_fixed.py
   → Timeout: 600 seconds
   [Progress shown in real-time]
@@ -297,7 +300,7 @@ dir *.py | findstr "generate\|explore\|train\|compare\|retune\|quick\|thread\|va
 ### Models Missing After Pipeline
 **Solution**: Verify in interactive mode:
 ```bash
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 → Choose [4] (verify models)
 ```
 
@@ -364,9 +367,9 @@ cat frontend/.env.local
 ## Next Steps
 
 1. **Choose Your Runner**:
-   - First time? Use `python run_full_pipeline.py`
-   - Want control? Use `python run_pipeline_interactive.py`
-   - Prefer menus? Use `python startup.py`
+   - First time? Use `python run_pipeline.py`
+   - Want control? Use `python scripts/run_pipeline_interactive.py`
+   - Prefer menus? Use `python scripts/startup.py`
 
 2. **Wait for Completion** (45-90 minutes)
 

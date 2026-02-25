@@ -2,10 +2,11 @@
 
 ## Overview
 
-Two python scripts have been created to run the complete ML pipeline:
+Pipeline entry points for the complete ML pipeline:
 
-1. **`run_full_pipeline.py`** - Automated end-to-end execution (recommended)
-2. **`run_pipeline_interactive.py`** - Interactive step-by-step runner
+1. **`run_pipeline.py`** - Root wrapper for automated end-to-end execution (recommended)
+2. **`scripts/run_pipeline_interactive.py`** - Interactive step-by-step runner
+3. **`scripts/startup.py`** - Menu-driven launcher
 
 ## Quick Start (Recommended)
 
@@ -13,19 +14,20 @@ Two python scripts have been created to run the complete ML pipeline:
 
 ```bash
 # From workspace root
-python run_full_pipeline.py
+python run_pipeline.py
 ```
 
 This will:
 1. ✓ Generate 500k synthetic access records
-2. ✓ Load, explore, and scale the data
-3. ✓ Train Isolation Forest model
-4. ✓ Train Autoencoder model  
-5. ✓ Compare and build ensemble
-6. ✓ Tune decision thresholds
-7. ✓ Run validation tests
-8. ✓ Verify thread safety
-9. ✓ Final system validation
+2. ✓ Load generated data into database
+3. ✓ Explore and scale the data
+4. ✓ Train Isolation Forest model
+5. ✓ Train Autoencoder model  
+6. ✓ Compare and build ensemble
+7. ✓ Tune decision thresholds
+8. ✓ Run validation tests
+9. ✓ Verify thread safety
+10. ✓ Final system validation
 
 **Estimated time:** 45-90 minutes (depends on hardware)
 
@@ -38,8 +40,15 @@ This will:
 - **Purpose**: Create realistic access patterns with 7% anomalies
 - **Time**: 10-20 minutes
 
-### Step 2: Explore & Prepare Data
-- **Script**: `explore_and_prepare.py`
+### Step 2: Load Data to Database
+- **Script**: `scripts/load_data_to_db.py`
+- **Input**: `data/raw/train.csv`
+- **Output**: Populated `users`, `access_points`, `access_logs` tables
+- **Purpose**: Make generated data immediately available to backend and frontend
+- **Time**: 5-10 minutes
+
+### Step 3: Explore & Prepare Data
+- **Script**: `scripts/explore_and_prepare.py`
 - **Input**: Generated raw data
 - **Output**: 
   - `data/processed/train_scaled.csv` (scaled features)
@@ -48,22 +57,22 @@ This will:
 - **Purpose**: Scale features to [0,1] range for models
 - **Time**: 5-10 minutes
 
-### Step 3: Train Isolation Forest
-- **Script**: `train_isolation_forest.py`
+### Step 4: Train Isolation Forest
+- **Script**: `scripts/train_isolation_forest.py`
 - **Input**: Training data (normal samples only)
 - **Output**: `ml/models/isolation_forest.pkl`
 - **Purpose**: Tree-based anomaly detection
 - **Time**: 10-20 minutes
 
-### Step 4: Train Autoencoder
-- **Script**: `train_autoencoder.py`
+### Step 5: Train Autoencoder
+- **Script**: `scripts/train_autoencoder.py`
 - **Input**: Training data
 - **Output**: `ml/models/autoencoder.keras`
 - **Purpose**: Reconstruction-based anomaly detection
 - **Time**: 20-40 minutes (depends on GPU)
 
-### Step 5: Compare & Ensemble
-- **Script**: `compare_and_ensemble.py`
+### Step 6: Compare & Ensemble
+- **Script**: `scripts/compare_and_ensemble.py`
 - **Input**: Both trained models + test data
 - **Output**: 
   - `ml/models/ensemble_config.pkl`
@@ -71,29 +80,29 @@ This will:
 - **Purpose**: Weighted ensemble with IF=0.3, AE=0.7
 - **Time**: 5-10 minutes
 
-### Step 6: Retune Thresholds
-- **Script**: `retune_threshold.py`
+### Step 7: Retune Thresholds
+- **Script**: `scripts/retune_threshold.py`
 - **Input**: Validation data + ensemble
 - **Output**: Updated threshold in model registry
 - **Purpose**: Optimize grant/deny thresholds for F1 score
 - **Time**: 2-5 minutes
 
-### Step 7: Quick Validation
-- **Script**: `quick_test.py`
+### Step 8: Quick Validation
+- **Script**: `scripts/quick_test.py`
 - **Input**: Test data + final models
 - **Output**: Precision, Recall, F1 metrics
 - **Purpose**: Sanity check on model performance
 - **Time**: 1-2 minutes
 
-### Step 8: Thread Safety Test
-- **Script**: `test_thread_safety.py`
+### Step 9: Thread Safety Test
+- **Script**: `scripts/test_thread_safety.py`
 - **Input**: None (generates test data)
 - **Output**: Concurrent inference test results
 - **Purpose**: Verify backend can handle parallel requests
 - **Time**: 2-5 minutes
 
-### Step 9: System Validation
-- **Script**: `validate_system.py`
+### Step 10: System Validation
+- **Script**: `scripts/validate_system.py`
 - **Input**: All artifacts
 - **Output**: Comprehensive system health report
 - **Purpose**: Final verification before running backend
@@ -163,7 +172,7 @@ Visit: **http://localhost:3000**
 If you prefer step-by-step control:
 
 ```bash
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 ```
 
 This opens a menu where you can:
@@ -177,7 +186,7 @@ This opens a menu where you can:
 
 ### "Script not found" errors
 - Ensure you're in the workspace root directory
-- Check that all `.py` files mentioned exist in the root
+- Check that pipeline scripts exist under `scripts/`
 
 ### Out of memory during training
 - Autoencoder is memory-intensive
@@ -187,7 +196,7 @@ This opens a menu where you can:
 ### Models not found after pipeline
 - Check that directories exist: `data/processed/`, `ml/models/`
 - Verify the pipeline completed without errors
-- Run `python run_pipeline_interactive.py` and choose option 4 to verify artifacts
+- Run `python scripts/run_pipeline_interactive.py` and choose option 4 to verify artifacts
 
 ### Backend won't start
 - Ensure Postgres database is running
@@ -247,7 +256,7 @@ logs/
 2. **Run simulator** with various user profiles to understand model behavior
 3. **Check access logs** to see feature values and decision reasoning
 4. **Review ML status** to understand ensemble weights and thresholds
-5. **Experiment with threshold tuning** via `retune_threshold.py` for production
+5. **Experiment with threshold tuning** via `scripts/retune_threshold.py` for production
 
 ## Questions?
 

@@ -6,19 +6,19 @@ I've created a complete ML pipeline automation system with **3 Python scripts** 
 
 ### 📁 New Files Created
 
-1. **`run_full_pipeline.py`** (530 lines)
+1. **`scripts/run_full_pipeline.py`** (automation engine)
    - Fully automated end-to-end pipeline execution
-   - Runs all 9 steps sequentially with detailed progress tracking
+   - Runs all 10 steps sequentially with detailed progress tracking
    - Recommended for first-time setup
    - Shows real-time execution, timing, and final summary
 
-2. **`run_pipeline_interactive.py`** (350 lines)
+2. **`scripts/run_pipeline_interactive.py`** (interactive runner)
    - Interactive menu-driven pipeline runner
    - Pause between steps, run individual steps, or run all
    - Verify models without retraining
    - Great for inspection and experimentation
 
-3. **`startup.py`** (250 lines)
+3. **`scripts/startup.py`** (startup menu)
    - Unified entry point menu
    - Run pipeline, verify models, start backend, view guides
    - Single script for all RaptorX operations
@@ -44,7 +44,7 @@ I've created a complete ML pipeline automation system with **3 Python scripts** 
 
 ```bash
 # Run everything automatically
-python run_full_pipeline.py
+python run_pipeline.py
 
 # Wait for completion (45-90 minutes)
 
@@ -62,7 +62,7 @@ cd frontend && npm run dev
 
 ```bash
 # Launch interactive menu
-python startup.py
+python scripts/startup.py
 
 # Choose [1] to run full pipeline
 # After completion, choose [4] to start backend
@@ -72,7 +72,7 @@ python startup.py
 
 ```bash
 # Launch interactive pipeline runner
-python run_pipeline_interactive.py
+python scripts/run_pipeline_interactive.py
 
 # Choose [2] for interactive mode
 # Pause and inspect between each step
@@ -80,7 +80,7 @@ python run_pipeline_interactive.py
 
 ---
 
-## The Pipeline (9 Stages)
+## The Pipeline (10 Stages)
 
 When you run the pipeline, it automatically executes these stages:
 
@@ -88,28 +88,31 @@ When you run the pipeline, it automatically executes these stages:
 1. Generate Synthetic Data        (10-20 min)
    └─ Creates 500k realistic access records with 7% anomalies
 
-2. Explore & Prepare Data         (5-10 min)
+2. Load Data to Database          (5-10 min)
+   └─ Loads generated records into PostgreSQL for API/UI exploration
+
+3. Explore & Prepare Data         (5-10 min)
    └─ Scales features, creates train/test/val splits
 
-3. Train Isolation Forest         (10-20 min)
+4. Train Isolation Forest         (10-20 min)
    └─ Tree-based anomaly detection model
 
-4. Train Autoencoder             (20-40 min)
+5. Train Autoencoder             (20-40 min)
    └─ Deep learning reconstruction model
 
-5. Compare & Ensemble            (5-10 min)
+6. Compare & Ensemble            (5-10 min)
    └─ Weighted ensemble (IF=30%, AE=70%)
 
-6. Retune Thresholds             (2-5 min)
+7. Retune Thresholds             (2-5 min)
    └─ Optimize grant/deny decision boundaries
 
-7. Quick Validation Test         (1-2 min)
+8. Quick Validation Test         (1-2 min)
    └─ Precision, recall, F1 metrics
 
-8. Thread Safety Test            (2-5 min)
+9. Thread Safety Test            (2-5 min)
    └─ Concurrent inference verification
 
-9. Full System Validation        (2-5 min)
+10. Full System Validation       (2-5 min)
    └─ Complete artifact verification
 ```
 
@@ -152,19 +155,19 @@ logs/                     → Audit trails
 
 ## Which Script Should I Use?
 
-### Choose `run_full_pipeline.py` if:
+### Choose `python run_pipeline.py` if:
 - ✓ First time setting up RaptorX
 - ✓ You want it to "just work"
 - ✓ You prefer automated progress reporting
 - ✓ You don't need to inspect intermediate results
 
-### Choose `run_pipeline_interactive.py` if:
+### Choose `python scripts/run_pipeline_interactive.py` if:
 - ✓ You want to pause between steps
 - ✓ You want to inspect intermediate artifacts
 - ✓ You want to run specific steps only
 - ✓ You're debugging or experimenting
 
-### Choose `startup.py` if:
+### Choose `python scripts/startup.py` if:
 - ✓ You prefer a menu-driven interface
 - ✓ You want one entry point for everything
 - ✓ You want to quickly verify models
@@ -178,18 +181,19 @@ logs/                     → Audit trails
 
 ```powershell
 # Terminal 1: Run pipeline
-PS E:\RAPTORX> python run_full_pipeline.py
+PS E:\RAPTORX> python run_pipeline.py
 
 # [Watches progress for 45-90 minutes]
 # ✓ Step 1: Generate data - DONE
-# ✓ Step 2: Prepare data - DONE
-# ✓ Step 3: Train IF - DONE
-# ✓ Step 4: Train AE - DONE
-# ✓ Step 5: Ensemble - DONE
-# ✓ Step 6: Thresholds - DONE
-# ✓ Step 7: Quick test - DONE
-# ✓ Step 8: Thread test - DONE
-# ✓ Step 9: Validate - DONE
+# ✓ Step 2: Load DB - DONE
+# ✓ Step 3: Prepare data - DONE
+# ✓ Step 4: Train IF - DONE
+# ✓ Step 5: Train AE - DONE
+# ✓ Step 6: Ensemble - DONE
+# ✓ Step 7: Thresholds - DONE
+# ✓ Step 8: Quick test - DONE
+# ✓ Step 9: Thread test - DONE
+# ✓ Step 10: Validate - DONE
 
 # ✓ Pipeline completed successfully!
 
@@ -280,7 +284,7 @@ PASSED STEPS:
 → See `PIPELINE_SCRIPTS.md` for detailed troubleshooting
 
 ### Models Not Found After Completion
-→ Run: `python run_pipeline_interactive.py`
+→ Run: `python scripts/run_pipeline_interactive.py`
 → Choose option [4] to verify artifacts
 
 ### Backend Won't Start
@@ -314,7 +318,7 @@ Three guides are now available:
 
 ### ✅ Immediate Next Steps
 1. Choose a runner above
-2. Run: `python run_full_pipeline.py` (or your chosen option)
+2. Run: `python run_pipeline.py` (or your chosen option)
 3. Wait for completion (may take 45-90 minutes)
 4. Start backend and frontend as shown above
 5. Open http://localhost:3000
@@ -341,7 +345,7 @@ You now have:
 ✓ Unified menu-driven startup system
 ✓ Complete documentation and troubleshooting guides
 
-**To start**: `python run_full_pipeline.py`
+**To start**: `python run_pipeline.py`
 
 **Status**: Ready for production testing ✓
 
