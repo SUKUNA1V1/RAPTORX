@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import numpy as np
 
-# Add workspace root to path to import explainability module from repository root
-workspace_root = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(workspace_root))
+# Add scripts directory to path to import explainability module
+scripts_dir = Path(__file__).resolve().parents[3] / "scripts"
+sys.path.insert(0, str(scripts_dir))
 
 from explainability import ModelExplainer
 from ..database import get_db

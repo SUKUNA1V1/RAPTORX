@@ -55,7 +55,7 @@ class ModelExplainer:
     
     def __init__(self, if_model_path: str = "ml/models/isolation_forest.pkl"):
         """Initialize explainer with trained models."""
-        self.repo_root = Path(__file__).resolve().parent
+        self.repo_root = Path(__file__).resolve().parent.parent
         model_path = Path(if_model_path)
         if not model_path.is_absolute():
             model_path = self.repo_root / model_path

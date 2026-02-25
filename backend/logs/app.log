@@ -58,3 +58,76 @@
 2026-02-23 04:35:33 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 666.35ms (status: 200)
 2026-02-23 04:35:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 872.62ms (status: 200)
 2026-02-23 04:35:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 858.98ms (status: 200)
+2026-02-23 23:18:14 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 163.61ms
+2026-02-23 23:18:22 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 375.63ms
+2026-02-23 23:18:33 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 429.21ms
+2026-02-23 23:18:35 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 104.24ms
+2026-02-23 23:19:02 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 455.83ms
+2026-02-23 23:19:02 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 509.44ms (status: 200)
+2026-02-23 23:20:00 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 171.04ms
+2026-02-23 23:20:16 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 117.07ms
+2026-02-23 23:20:41 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 175.88ms
+2026-02-23 23:21:16 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/users took 668.15ms (status: 200)
+2026-02-23 23:22:05 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 170.18ms
+2026-02-23 23:22:11 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 166.11ms
+2026-02-23 23:22:14 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 597.88ms
+2026-02-23 23:22:14 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 604.61ms (status: 200)
+2026-02-23 23:22:16 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 169.84ms
+2026-02-23 23:22:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/top-access-points took 537.06ms (status: 200)
+2026-02-23 23:22:28 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 183.20ms
+2026-02-23 23:22:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 635.14ms (status: 200)
+2026-02-23 23:22:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 653.82ms (status: 200)
+2026-02-23 23:22:32 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 152.48ms
+2026-02-23 23:22:37 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 161.86ms
+2026-02-23 23:22:40 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 716.77ms
+2026-02-23 23:22:40 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 726.59ms (status: 200)
+2026-02-23 23:22:50 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 504.08ms (status: 200)
+2026-02-23 23:22:51 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 152.62ms
+2026-02-23 23:22:52 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 168.00ms
+2026-02-23 23:23:05 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 160.92ms
+2026-02-23 23:23:12 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 146.74ms
+2026-02-23 23:23:12 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 159.71ms
+2026-02-23 23:23:22 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 102.92ms
+2026-02-23 23:23:31 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 711.16ms
+2026-02-23 23:23:31 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 716.84ms (status: 200)
+2026-02-23 23:23:40 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 146.83ms
+2026-02-23 23:23:50 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 169.92ms
+2026-02-23 23:23:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: DELETE on ANOMALY_ALERTS took 484.83ms
+2026-02-23 23:24:01 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 2849.17ms
+2026-02-23 23:24:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 2859.52ms (status: 200)
+2026-02-23 23:24:03 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 1045.23ms
+2026-02-23 23:24:03 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 1051.71ms (status: 200)
+2026-02-23 23:24:03 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: DELETE on ACCESS_LOGS took 9465.75ms
+2026-02-23 23:24:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: DELETE /api/access/logs took 10421.47ms (status: 200)
+2026-02-23 23:24:09 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 1384.35ms
+2026-02-23 23:24:10 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 836.25ms
+2026-02-23 23:24:10 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 2224.89ms (status: 200)
+2026-02-23 23:24:11 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 1841.00ms
+2026-02-23 23:24:11 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 1854.78ms (status: 200)
+2026-02-23 23:24:11 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 163.14ms
+2026-02-23 23:24:12 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 161.61ms
+2026-02-23 23:24:42 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 165.01ms
+2026-02-23 23:24:46 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 164.14ms
+2026-02-23 23:24:52 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 165.25ms
+2026-02-23 23:25:02 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 161.41ms
+2026-02-23 23:25:12 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 739.75ms
+2026-02-23 23:25:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 744.44ms (status: 200)
+2026-02-23 23:25:22 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 183.71ms
+2026-02-23 23:25:32 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 691.87ms
+2026-02-23 23:25:32 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 696.71ms (status: 200)
+2026-02-25 17:29:22 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 470.51ms
+2026-02-25 17:29:22 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 463.60ms
+2026-02-25 17:29:22 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ANOMALY_ALERTS took 504.34ms
+2026-02-25 17:29:22 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/anomaly-distribution took 2589.51ms (status: 200)
+2026-02-25 17:29:23 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 545.14ms
+2026-02-25 17:29:23 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_POINTS took 589.61ms
+2026-02-25 17:29:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/top-access-points took 2622.14ms (status: 200)
+2026-02-25 17:29:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 2710.38ms (status: 200)
+2026-02-25 17:29:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 2701.81ms (status: 200)
+2026-02-25 17:29:23 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 153.22ms
+2026-02-25 17:29:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 2691.60ms (status: 200)
+2026-02-25 17:33:06 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on NORM, took 134.63ms
+2026-02-25 17:33:06 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on USERS took 148.73ms
+2026-02-25 17:33:10 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 731.08ms
+2026-02-25 17:33:10 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 739.10ms (status: 200)
+2026-02-25 17:33:48 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/60/resolve took 559.04ms (status: 200)
