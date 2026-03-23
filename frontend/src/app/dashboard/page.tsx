@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { DoorOpen, CheckCircle, XCircle, Clock, AlertTriangle, Users } from "lucide-react";
-import StatCard from "@/components/ui/StatCard";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import DecisionBadge from "@/components/ui/DecisionBadge";
 import RiskBar from "@/components/ui/RiskBar";
 import ApiStatus from "@/components/ui/ApiStatus";
 import AccessTimelineChart from "@/components/charts/AccessTimelineChart";
 import AnomalyDistributionChart from "@/components/charts/AnomalyDistributionChart";
-import TopAccessPointsChart from "@/components/charts/TopAccessPointsChart";
+import MagicBento from "@/components/MagicBento";
 import { clearAccessLogs, getApiErrorMessage, getOverview, getTimeline, getAnomalyDist, getLogs, getTopAccessPoints } from "@/lib/api";
 import { MOCK_OVERVIEW, MOCK_LOGS } from "@/lib/constants";
 import type { StatsOverview, AccessLog, TimelinePoint, AnomalyDistItem, TopAccessPoint } from "@/lib/types";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [overview, setOverview] = useState<StatsOverview>(MOCK_OVERVIEW);
   const [logs, setLogs] = useState<AccessLog[]>(MOCK_LOGS as AccessLog[]);
   const [timeline, setTimeline] = useState<TimelinePoint[]>([]);
@@ -69,6 +69,26 @@ export default function DashboardPage() {
     fetchAll();
   }, []);
 
+  const handleClearLogs = useCallback(async () => {
+    if (clearing) {
+      return;
+    }
+    if (!window.confirm("Clear all access logs and alerts? This cannot be undone.")) {
+      return;
+    }
+    try {
+      setClearing(true);
+      setError(null);
+      await clearAccessLogs();
+      setLogs([]);
+      fetchAll(true);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to clear access logs"));
+    } finally {
+      setClearing(false);
+    }
+  }, [clearing]);
+
   useEffect(() => {
     const id = setInterval(() => {
       fetchAll(true);
@@ -87,56 +107,109 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, []);
 
-  const stats = [
-    { label: "Total Today", value: overview.total_accesses_today, icon: DoorOpen, iconBg: "bg-blue-600" },
-    {
-      label: "Granted",
-      value: overview.granted_today,
-      icon: CheckCircle,
-      iconBg: "bg-green-700",
-      valueColor: "text-green-400",
-    },
-    {
-      label: "Denied",
-      value: overview.denied_today,
-      icon: XCircle,
-      iconBg: "bg-red-700",
-      valueColor: "text-red-400",
-    },
-    {
-      label: "Delayed",
-      value: overview.delayed_today,
-      icon: Clock,
-      iconBg: "bg-amber-700",
-      valueColor: "text-amber-400",
-    },
-    {
-      label: "Open Alerts",
-      value: overview.active_alerts_count,
-      icon: AlertTriangle,
-      iconBg: "bg-red-700",
-      valueColor: "text-red-400",
-      pulse: true,
-    },
-    { label: "Active Users", value: overview.total_users, icon: Users, iconBg: "bg-purple-700" },
-  ];
+  const bentoCards = useMemo(() => {
+    const topPoint = topPoints[0];
+    const latestLog = logs[0];
+    const latestUser = latestLog?.user
+      ? `${latestLog.user.first_name} ${latestLog.user.last_name}`
+      : latestLog?.badge_id_used ?? "No recent access";
+    const latestPoint = latestLog?.access_point?.name ?? "Unknown point";
+    const latestTime = latestLog
+      ? new Date(latestLog.timestamp).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "--:--";
+    const totalToday = Math.max(overview.total_accesses_today, 1);
+    const anomalyRate = `${((overview.active_alerts_count / totalToday) * 100).toFixed(1)}%`;
+    const anomalyTotal = anomaly.reduce((sum, item) => sum + item.count, 0);
+    const topAnomaly = [...anomaly].sort((first, second) => second.count - first.count)[0];
+    const topAnomalyPct = topAnomaly && anomalyTotal > 0 ? `${((topAnomaly.count / anomalyTotal) * 100).toFixed(1)}%` : "0.0%";
 
-  const handleClearLogs = async () => {
-    if (!window.confirm("Clear all access logs and alerts? This cannot be undone.")) {
-      return;
-    }
-    try {
-      setClearing(true);
-      setError(null);
-      await clearAccessLogs();
-      setLogs([]);
-      fetchAll(true);
-    } catch (err) {
-      setError(getApiErrorMessage(err, "Failed to clear access logs"));
-    } finally {
-      setClearing(false);
-    }
-  };
+    return [
+      {
+        label: "Accesses",
+        title: "Total Today",
+        description: `Total Today: ${overview.total_accesses_today} | Granted: ${overview.granted_today} | Denied: ${overview.denied_today} | Delayed: ${overview.delayed_today} | Open Alerts: ${overview.active_alerts_count}`,
+        value: overview.total_accesses_today.toLocaleString(),
+      },
+      {
+        label: "Grants",
+        title: "Approved Entries",
+        description: "Requests allowed by policy engine",
+        value: overview.granted_today.toLocaleString(),
+      },
+      {
+        label: "Live Feed",
+        title: latestUser,
+        description: `${latestPoint} at ${latestTime}`,
+        value: clearing ? "Clearing..." : "Click to clear",
+        onClick: handleClearLogs,
+        content:
+          logs.length === 0 ? (
+            <p className="text-slate-500 text-xs text-center py-4 w-full">No access logs yet today</p>
+          ) : (
+            <div className="w-full h-full flex flex-col justify-between gap-1.5">
+              {logs.slice(0, 10).map((log, index) => (
+                <div
+                  key={log.id ?? index}
+                  className="flex items-center gap-2 px-2.5 py-2 bg-slate-700/40 rounded-md"
+                >
+                  <span className="text-slate-400 text-xs font-mono w-14 flex-shrink-0">
+                    {new Date(log.timestamp).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span className="text-slate-200 text-sm flex-1 truncate">
+                    {log.user ? `${log.user.first_name} ${log.user.last_name}` : log.badge_id_used ?? "-"}
+                  </span>
+                  <span className="text-slate-400 text-xs flex-1 truncate hidden xl:block">
+                    {log.access_point?.name ?? "-"}
+                  </span>
+                  <div className="scale-90 origin-center">
+                    <DecisionBadge decision={log.decision} />
+                  </div>
+                  <div className="w-10 flex-shrink-0">
+                    <RiskBar score={log.risk_score} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ),
+      },
+      {
+        label: "Anomaly",
+        title: "Distribution",
+        description: topAnomaly ? `${topAnomaly.category} is the most frequent class` : "No anomaly buckets available",
+        value: topAnomalyPct,
+        content: (
+          <div className="h-[190px] w-full flex items-center justify-center">
+            <AnomalyDistributionChart
+              data={anomaly.length ? anomaly : undefined}
+              height={190}
+              innerRadius={46}
+              outerRadius={70}
+              showLegend={false}
+            />
+          </div>
+        ),
+      },
+      {
+        label: "Top Point",
+        title: topPoint?.name ?? "No Access Point Data",
+        description: "Most used entry location today",
+        value: topPoint ? `${topPoint.count} hits` : "0 hits",
+        onClick: () => router.push("/top-points"),
+      },
+      {
+        label: "Latest",
+        title: latestUser,
+        description: `Most recent access event at ${latestTime}`,
+        value: anomalyRate,
+      },
+    ];
+  }, [overview, topPoints, logs, anomaly, router, handleClearLogs, clearing]);
 
   return (
     <div className="space-y-6">
@@ -155,85 +228,28 @@ export default function DashboardPage() {
 
       {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={fetchAll} />}
 
+      <MagicBento
+        cards={bentoCards}
+        textAutoHide={true}
+        enableStars
+        enableSpotlight
+        enableBorderGlow={true}
+        enableTilt={false}
+        enableMagnetism={false}
+        clickEffect
+        spotlightRadius={400}
+        particleCount={12}
+        glowColor="148, 163, 184"
+        disableAnimations={false}
+      />
+
       {!loading && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {stats.map((s) => (
-            <StatCard key={s.label} {...s} />
-          ))}
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+          <h2 className="text-white font-semibold mb-4">Access Activity - Last 24 Hours</h2>
+          <AccessTimelineChart data={timeline.length ? timeline : undefined} />
         </div>
       )}
 
-      {!loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <h2 className="text-white font-semibold mb-4">Access Activity - Last 24 Hours</h2>
-            <AccessTimelineChart data={timeline.length ? timeline : undefined} />
-          </div>
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <h2 className="text-white font-semibold mb-4">Anomaly Distribution</h2>
-            <AnomalyDistributionChart data={anomaly.length ? anomaly : undefined} />
-          </div>
-        </div>
-      )}
-
-      {!loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <h2 className="text-white font-semibold mb-4">Top Access Points Today</h2>
-            <TopAccessPointsChart data={topPoints.length ? topPoints : undefined} />
-          </div>
-
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white font-semibold">Live Access Feed</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleClearLogs}
-                  disabled={clearing || logs.length === 0}
-                  className="btn btn-secondary btn-sm"
-                >
-                  {clearing ? "Clearing..." : "Clear Logs"}
-                </button>
-                <span className="flex items-center gap-1.5 text-xs text-green-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  Live
-                </span>
-              </div>
-            </div>
-
-            {logs.length === 0 ? (
-              <p className="text-slate-500 text-sm text-center py-8">No access logs yet today</p>
-            ) : (
-              <div className="space-y-2">
-                {logs.slice(0, 8).map((log, i) => (
-                  <div
-                    key={log.id ?? i}
-                    className="flex items-center gap-3 px-3 py-2.5 bg-slate-700/40 rounded-lg"
-                  >
-                    <span className="text-slate-500 text-xs font-mono w-12 flex-shrink-0">
-                      {new Date(log.timestamp).toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    <span className="text-slate-300 text-sm flex-1 truncate">
-                      {log.user ? `${log.user.first_name} ${log.user.last_name}` : log.badge_id_used ?? "-"}
-                    </span>
-                    <span className="text-slate-500 text-xs flex-1 truncate hidden md:block">
-                      {log.access_point?.name ?? "-"}
-                    </span>
-                    <DecisionBadge decision={log.decision} />
-                    <div className="w-20 flex-shrink-0">
-                      <RiskBar score={log.risk_score} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

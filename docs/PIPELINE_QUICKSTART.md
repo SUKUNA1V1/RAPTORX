@@ -19,15 +19,14 @@ python run_pipeline.py
 
 This will:
 1. ✓ Generate 500k synthetic access records
-2. ✓ Load generated data into database
-3. ✓ Explore and scale the data
-4. ✓ Train Isolation Forest model
-5. ✓ Train Autoencoder model  
-6. ✓ Compare and build ensemble
-7. ✓ Tune decision thresholds
-8. ✓ Run validation tests
-9. ✓ Verify thread safety
-10. ✓ Final system validation
+2. ✓ Explore and scale the data
+3. ✓ Train Isolation Forest model
+4. ✓ Train Autoencoder model  
+5. ✓ Compare and build ensemble
+6. ✓ Tune decision thresholds
+7. ✓ Run validation tests
+8. ✓ Verify thread safety
+9. ✓ Final system validation
 
 **Estimated time:** 45-90 minutes (depends on hardware)
 
@@ -40,14 +39,7 @@ This will:
 - **Purpose**: Create realistic access patterns with 7% anomalies
 - **Time**: 10-20 minutes
 
-### Step 2: Load Data to Database
-- **Script**: `scripts/load_data_to_db.py`
-- **Input**: `data/raw/train.csv`
-- **Output**: Populated `users`, `access_points`, `access_logs` tables
-- **Purpose**: Make generated data immediately available to backend and frontend
-- **Time**: 5-10 minutes
-
-### Step 3: Explore & Prepare Data
+### Step 2: Explore & Prepare Data
 - **Script**: `scripts/explore_and_prepare.py`
 - **Input**: Generated raw data
 - **Output**: 
@@ -57,21 +49,21 @@ This will:
 - **Purpose**: Scale features to [0,1] range for models
 - **Time**: 5-10 minutes
 
-### Step 4: Train Isolation Forest
+### Step 3: Train Isolation Forest
 - **Script**: `scripts/train_isolation_forest.py`
 - **Input**: Training data (normal samples only)
 - **Output**: `ml/models/isolation_forest.pkl`
 - **Purpose**: Tree-based anomaly detection
 - **Time**: 10-20 minutes
 
-### Step 5: Train Autoencoder
+### Step 4: Train Autoencoder
 - **Script**: `scripts/train_autoencoder.py`
 - **Input**: Training data
 - **Output**: `ml/models/autoencoder.keras`
 - **Purpose**: Reconstruction-based anomaly detection
 - **Time**: 20-40 minutes (depends on GPU)
 
-### Step 6: Compare & Ensemble
+### Step 5: Compare & Ensemble
 - **Script**: `scripts/compare_and_ensemble.py`
 - **Input**: Both trained models + test data
 - **Output**: 
@@ -80,28 +72,28 @@ This will:
 - **Purpose**: Weighted ensemble with IF=0.3, AE=0.7
 - **Time**: 5-10 minutes
 
-### Step 7: Retune Thresholds
+### Step 6: Retune Thresholds
 - **Script**: `scripts/retune_threshold.py`
 - **Input**: Validation data + ensemble
 - **Output**: Updated threshold in model registry
 - **Purpose**: Optimize grant/deny thresholds for F1 score
 - **Time**: 2-5 minutes
 
-### Step 8: Quick Validation
+### Step 7: Quick Validation
 - **Script**: `scripts/quick_test.py`
 - **Input**: Test data + final models
 - **Output**: Precision, Recall, F1 metrics
 - **Purpose**: Sanity check on model performance
 - **Time**: 1-2 minutes
 
-### Step 9: Thread Safety Test
+### Step 8: Thread Safety Test
 - **Script**: `scripts/test_thread_safety.py`
 - **Input**: None (generates test data)
 - **Output**: Concurrent inference test results
 - **Purpose**: Verify backend can handle parallel requests
 - **Time**: 2-5 minutes
 
-### Step 10: System Validation
+### Step 9: System Validation
 - **Script**: `scripts/validate_system.py`
 - **Input**: All artifacts
 - **Output**: Comprehensive system health report

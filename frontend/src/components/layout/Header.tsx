@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, Moon, Sun } from "lucide-react";
 
 export default function Header() {
   const [time, setTime] = useState<Date | null>(null);
   const [online, setOnline] = useState(true);
   const [mlMode, setMlMode] = useState("ensemble");
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -26,21 +24,8 @@ export default function Header() {
       .catch(() => setOnline(false));
   }, []);
 
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? window.localStorage.getItem("theme") : null;
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem("theme", theme);
-  }, [theme]);
-
   return (
-    <header className="h-16 min-h-[64px] bg-[color:var(--surface)] border-b border-[color:var(--border)] flex items-center justify-between px-6 flex-shrink-0 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
+    <header className="relative h-16 min-h-[64px] bg-[color:var(--surface)] border-b border-[color:var(--border)] flex items-center justify-between px-6 flex-shrink-0 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
       <div>
         <p className="text-slate-400 text-sm">
           {time
@@ -54,23 +39,23 @@ export default function Header() {
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          {online ? (
-            <>
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-xs font-medium">
-                {mlMode === "ensemble" ? "Ensemble Active" : "AI Active"}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <span className="text-amber-400 text-xs font-medium">Demo Mode</span>
-            </>
-          )}
-        </div>
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
+        {online ? (
+          <>
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-green-400 text-xs font-medium">
+              {mlMode === "ensemble" ? "Ensemble Active" : "AI Active"}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="text-amber-400 text-xs font-medium">Demo Mode</span>
+          </>
+        )}
+      </div>
 
+      <div className="flex items-center gap-4">
         <span className="font-mono text-sm text-slate-300">
           {time
             ? time.toLocaleTimeString("en-US", {
@@ -80,24 +65,6 @@ export default function Header() {
               })
             : "--:--:--"}
         </span>
-
-        <button
-          type="button"
-          onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
-          className="relative p-2 rounded-lg bg-[color:var(--surface-2)] hover:bg-[color:var(--accent-ghost)] transition-colors shadow-[0_0_14px_rgba(46,211,255,0.15)]"
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        >
-          {theme === "dark" ? (
-            <Sun size={16} className="text-slate-400" />
-          ) : (
-            <Moon size={16} className="text-slate-400" />
-          )}
-        </button>
-
-        <button className="relative p-2 rounded-lg bg-[color:var(--surface-2)] hover:bg-[color:var(--accent-ghost)] transition-colors shadow-[0_0_14px_rgba(46,211,255,0.15)]">
-          <Bell size={16} className="text-slate-400" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
       </div>
     </header>
   );

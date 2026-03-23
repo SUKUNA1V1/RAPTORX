@@ -36,62 +36,55 @@ class QuickStarter:
             },
             {
                 "num": 2,
-                "name": "Load to Database",
-                "script": "scripts/load_data_to_db.py",
-                "description": "Saves generated data to database for exploration and analysis",
-                "timeout": 300
-            },
-            {
-                "num": 3,
                 "name": "Prepare Data",
                 "script": "scripts/explore_and_prepare.py",
                 "description": "Loads, analyzes, scales, and splits training data",
                 "timeout": 300
             },
             {
-                "num": 4,
+                "num": 3,
                 "name": "Train Isolation Forest",
                 "script": "scripts/train_isolation_forest.py",
                 "description": "Trains anomaly detection using isolation trees",
                 "timeout": 600
             },
             {
-                "num": 5,
+                "num": 4,
                 "name": "Train Autoencoder",
                 "script": "scripts/train_autoencoder.py",
                 "description": "Trains reconstruction-based anomaly detector",
                 "timeout": 900
             },
             {
-                "num": 6,
+                "num": 5,
                 "name": "Build Ensemble",
                 "script": "scripts/compare_and_ensemble.py",
                 "description": "Compares models and creates weighted ensemble",
                 "timeout": 600
             },
             {
-                "num": 7,
+                "num": 6,
                 "name": "Tune Thresholds",
                 "script": "scripts/retune_threshold.py",
                 "description": "Optimizes decision thresholds on validation set",
                 "timeout": 300
             },
             {
-                "num": 8,
+                "num": 7,
                 "name": "Quick Test",
                 "script": "scripts/quick_test.py",
                 "description": "Validates model with quick precision/recall test",
                 "timeout": 120
             },
             {
-                "num": 9,
+                "num": 8,
                 "name": "Thread Safety Test",
                 "script": "scripts/test_thread_safety.py",
                 "description": "Verifies concurrent inference is thread-safe",
                 "timeout": 300
             },
             {
-                "num": 10,
+                "num": 9,
                 "name": "Full System Validation",
                 "script": "scripts/validate_system.py",
                 "description": "Complete system validation and artifact verification",
@@ -213,7 +206,7 @@ class QuickStarter:
         self.show_steps()
         
         try:
-            choice = int(input("Enter step number (1-8): ").strip())
+            choice = int(input("Enter step number (1-9): ").strip())
             
             step = next((s for s in self.steps if s['num'] == choice), None)
             if not step:

@@ -26,7 +26,6 @@ print()
 # Check critical scripts
 scripts_to_check = [
     "scripts/generate_data_fixed.py",
-    "scripts/load_data_to_db.py",
     "scripts/train_isolation_forest.py",
     "scripts/train_autoencoder.py",
     "scripts/compare_and_ensemble.py",

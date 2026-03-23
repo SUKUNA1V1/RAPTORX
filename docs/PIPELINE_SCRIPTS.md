@@ -159,15 +159,14 @@ The pipeline executes these stages sequentially:
 | Step | Name | Script | Input | Output | Time |
 |------|------|--------|-------|--------|------|
 | 1 | Generate Data | generate_data_fixed.py | - | train.csv, test.csv | 10-20m |
-| 2 | Load to DB | scripts/load_data_to_db.py | train.csv | DB records | 5-10m |
-| 3 | Prepare Data | scripts/explore_and_prepare.py | raw CSV | train_scaled.csv | 5-10m |
-| 4 | Train IF | scripts/train_isolation_forest.py | scaled data | isolation_forest.pkl | 10-20m |
-| 5 | Train AE | scripts/train_autoencoder.py | scaled data | autoencoder.keras | 20-40m |
-| 6 | Ensemble | scripts/compare_and_ensemble.py | both models | ensemble_config.pkl | 5-10m |
-| 7 | Tune Thresholds | scripts/retune_threshold.py | ensemble | current.json | 2-5m |
-| 8 | Quick Test | scripts/quick_test.py | all artifacts | metrics report | 1-2m |
-| 9 | Thread Safety | scripts/test_thread_safety.py | models | concurrency report | 2-5m |
-| 10 | Validate | scripts/validate_system.py | all | validation report | 2-5m |
+| 2 | Prepare Data | scripts/explore_and_prepare.py | raw CSV | train_scaled.csv | 5-10m |
+| 3 | Train IF | scripts/train_isolation_forest.py | scaled data | isolation_forest.pkl | 10-20m |
+| 4 | Train AE | scripts/train_autoencoder.py | scaled data | autoencoder.keras | 20-40m |
+| 5 | Ensemble | scripts/compare_and_ensemble.py | both models | ensemble_config.pkl | 5-10m |
+| 6 | Tune Thresholds | scripts/retune_threshold.py | ensemble | current.json | 2-5m |
+| 7 | Quick Test | scripts/quick_test.py | all artifacts | metrics report | 1-2m |
+| 8 | Thread Safety | scripts/test_thread_safety.py | models | concurrency report | 2-5m |
+| 9 | Validate | scripts/validate_system.py | all | validation report | 2-5m |
 
 ---
 

@@ -7,7 +7,7 @@ Your RaptorX ML pipeline now **automatically saves all generated synthetic data 
 ### Key Changes
 
 1. **Created New Database Loading Script**
-   - `scripts/load_data_to_db.py` (340 lines)
+   - *(removed from current pipeline)*
    - Reads generated CSV data
    - Creates sample users and access points
    - Inserts 500k access logs to database
@@ -248,7 +248,7 @@ python explore_database.py
 
 | File | Created/Updated | Purpose |
 |------|---|---|
-| `scripts/load_data_to_db.py` | ✅ NEW | Database loading logic |
+| *(removed)* | - | Database loading script removed from current pipeline |
 | `scripts/run_full_pipeline.py` | 📝 UPDATED | 10 steps with DB loading |
 | `scripts/run_pipeline_interactive.py` | 📝 UPDATED | 10 interactive steps |
 | `explore_database.py` | ✅ NEW | Statistics and exploration |
@@ -263,7 +263,7 @@ python explore_database.py
 python verify_setup.py
 
 # Output:
-✓ scripts/load_data_to_db.py
+✓ Database loading step removed from current pipeline
 ✓ All 10 pipeline steps configured
 ✓ Database integration ready
 ```

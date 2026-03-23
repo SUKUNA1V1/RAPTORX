@@ -49,47 +49,21 @@ const FEATURES = [
   ["concurrent_session_detected", "Overlapping badge sessions", "0", "1"],
 ];
 
-function ModelCard({
-  title,
-  weight,
-  metrics,
-  extra,
-  active,
-}: {
-  title: string;
-  weight: string;
-  metrics: [string, string, boolean][];
-  extra?: React.ReactNode;
-  active?: boolean;
-}) {
-  return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h3 className="text-white font-semibold text-base">{title}</h3>
-          <p className="text-slate-500 text-xs mt-0.5">Weight: {weight}</p>
-        </div>
-        <span
-          className={`w-3 h-3 rounded-full ${active ? "bg-green-400 animate-pulse" : "bg-red-400"}`}
-        />
-      </div>
-      <div className="space-y-2">
-        {metrics.map(([k, v, highlight]) => (
-          <div
-            key={k}
-            className="flex justify-between items-center py-2 border-b border-slate-700/50 last:border-0"
-          >
-            <span className="text-slate-400 text-sm">{k}</span>
-            <span className={`text-sm font-medium font-mono ${highlight ? "text-green-400" : "text-slate-200"}`}>
-              {v}
-            </span>
-          </div>
-        ))}
-      </div>
-      {extra}
-    </div>
-  );
-}
+const ENSEMBLE_METRICS = [
+  ["F1-Score", "1.0000"],
+  ["AUC-ROC", "1.0000"],
+  ["Precision", "100%"],
+  ["Recall", "100%"],
+  ["FPR", "0.00%"],
+];
+
+const DATASET_STATS = [
+  { label: "Total Records", value: "500,000", color: "text-white" },
+  { label: "Normal", value: "465,000", color: "text-green-400" },
+  { label: "Anomalous", value: "35,000", color: "text-red-400" },
+  { label: "Train / Test", value: "80% / 20%", color: "text-slate-200" },
+  { label: "Features", value: "19", color: "text-slate-200" },
+];
 
 export default function MLStatusPage() {
   const [status, setStatus] = useState<MLStatus | null>(null);
@@ -119,11 +93,65 @@ export default function MLStatusPage() {
   const artifactsReady =
     status?.if_artifact_found !== false && status?.ae_artifact_found !== false;
 
+  const ifMetricMap = new Map(IF_METRICS.map(([k, v]) => [k, v]));
+  const aeMetricMap = new Map(AE_METRICS.map(([k, v]) => [k, v]));
+  const ensembleMetricMap = new Map(ENSEMBLE_METRICS);
+  const metricOrder = Array.from(
+    new Set([
+      ...IF_METRICS.map(([k]) => k),
+      ...AE_METRICS.map(([k]) => k),
+      ...ENSEMBLE_METRICS.map(([k]) => k),
+    ])
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">AI Model Status</h1>
-        <p className="text-slate-400 text-sm mt-1">Ensemble model performance and configuration</p>
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 md:p-6 shadow-[0_16px_38px_rgba(0,0,0,0.2)]">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-2">Model Operations</p>
+        <h1 className="text-2xl font-bold text-white">ML Status</h1>
+        <p className="text-slate-400 text-sm mt-1">Live ensemble readiness, thresholds, and model health snapshot.</p>
+
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-700 bg-slate-900/60">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Component</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-slate-700/50">
+                <td className="px-4 py-3 text-slate-300 text-sm">Mode</td>
+                <td className={`px-4 py-3 text-sm font-semibold ${isEnsemble ? "text-green-400" : "text-amber-400"}`}>
+                  {isEnsemble ? "Ensemble" : "Rule-based"}
+                </td>
+                <td className="px-4 py-3 text-slate-400 text-sm">Decisioning strategy currently in use</td>
+              </tr>
+              <tr className="border-b border-slate-700/50">
+                <td className="px-4 py-3 text-slate-300 text-sm">Isolation Forest</td>
+                <td className={`px-4 py-3 text-sm font-semibold ${ifActive ? "text-green-400" : "text-red-400"}`}>
+                  {ifActive ? "Active" : "Offline"}
+                </td>
+                <td className="px-4 py-3 text-slate-400 text-sm">Weight 30% in ensemble</td>
+              </tr>
+              <tr className="border-b border-slate-700/50">
+                <td className="px-4 py-3 text-slate-300 text-sm">Autoencoder</td>
+                <td className={`px-4 py-3 text-sm font-semibold ${aeActive ? "text-green-400" : "text-red-400"}`}>
+                  {aeActive ? "Active" : "Offline"}
+                </td>
+                <td className="px-4 py-3 text-slate-400 text-sm">Weight 70% in ensemble</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 text-slate-300 text-sm">Artifacts</td>
+                <td className={`px-4 py-3 text-sm font-semibold ${artifactsReady ? "text-green-400" : "text-amber-400"}`}>
+                  {artifactsReady ? "Ready" : "Missing"}
+                </td>
+                <td className="px-4 py-3 text-slate-400 text-sm">Model files availability check</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {(loading || error) && <ApiStatus loading={loading} error={error} onRetry={fetchStatus} />}
@@ -137,75 +165,73 @@ export default function MLStatusPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <ModelCard
-          title="Isolation Forest"
-          weight="30%"
-          metrics={IF_METRICS as [string, string, boolean][]}
-          active={ifActive}
-        />
-        <ModelCard
-          title="Autoencoder"
-          weight="70%"
-          metrics={AE_METRICS as [string, string, boolean][]}
-          active={aeActive}
-        />
-        <div className="bg-slate-800 border-2 border-blue-600/50 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-white font-semibold text-base">Ensemble</h3>
-              <p className="text-slate-500 text-xs mt-0.5">IF x 0.3 + AE x 0.7</p>
-            </div>
-            <span
-              className={`w-3 h-3 rounded-full ${isEnsemble ? "bg-green-400 animate-pulse" : "bg-red-400"}`}
-            />
-          </div>
-
-          {[
-            ["F1-Score", "1.0000", true],
-            ["AUC-ROC", "1.0000", true],
-            ["Precision", "100%", true],
-            ["Recall", "100%", true],
-            ["FPR", "0.00%", true],
-          ].map(([k, v]) => (
-            <div
-              key={k as string}
-              className="flex justify-between items-center py-2 border-b border-slate-700/50 last:border-0"
-            >
-              <span className="text-slate-400 text-sm">{k as string}</span>
-              <span className="text-sm font-bold font-mono text-green-400">{v as string}</span>
-            </div>
-          ))}
-
-          <div className="mt-5 bg-slate-900 rounded-lg p-4">
-            <p className="text-slate-400 text-xs font-medium mb-3">Decision Thresholds</p>
-            <div className="flex rounded-lg overflow-hidden h-10 mb-2">
-              <div className="flex items-center justify-center text-xs font-bold text-white bg-green-700" style={{ flex: "30%" }}>
-                GRANT
-              </div>
-              <div className="flex items-center justify-center text-xs font-bold text-white bg-amber-700" style={{ flex: "30%" }}>
-                DELAY
-              </div>
-              <div className="flex items-center justify-center text-xs font-bold text-white bg-red-700" style={{ flex: "40%" }}>
-                DENY
-              </div>
-            </div>
-            <div className="flex justify-between text-xs text-slate-500">
-              <span>0.0</span>
-              <span>{(status?.grant_threshold ?? 0.3).toFixed(2)}</span>
-              <span>{(status?.deny_threshold ?? 0.7).toFixed(2)}</span>
-              <span>1.0</span>
-            </div>
-          </div>
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+        <h2 className="text-white font-semibold mb-4">Model Metrics Comparison</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-700 bg-slate-900/60">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Metric</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Isolation Forest</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Autoencoder</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ensemble</th>
+              </tr>
+            </thead>
+            <tbody>
+              {metricOrder.map((metric) => (
+                <tr key={metric} className="border-b border-slate-700/50 last:border-0 hover:bg-slate-700/20 transition-colors">
+                  <td className="px-4 py-3 text-slate-300 text-sm">{metric}</td>
+                  <td className="px-4 py-3 text-slate-200 text-sm font-mono">{ifMetricMap.get(metric) ?? "-"}</td>
+                  <td className="px-4 py-3 text-slate-200 text-sm font-mono">{aeMetricMap.get(metric) ?? "-"}</td>
+                  <td className="px-4 py-3 text-green-400 text-sm font-mono font-semibold">{ensembleMetricMap.get(metric) ?? "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-        <h2 className="text-white font-semibold mb-4">ML Features ({FEATURES.length} total)</h2>
+        <h2 className="text-white font-semibold mb-4">Decision Thresholds</h2>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-700">
+              <tr className="border-b border-slate-700 bg-slate-900/60">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Decision</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rule</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Range</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-slate-700/50">
+                <td className="px-4 py-3 text-green-400 text-sm font-semibold">Grant</td>
+                <td className="px-4 py-3 text-slate-300 text-sm">score &lt; grant_threshold</td>
+                <td className="px-4 py-3 text-slate-200 text-sm font-mono">0.00 - {(status?.grant_threshold ?? 0.3).toFixed(2)}</td>
+              </tr>
+              <tr className="border-b border-slate-700/50">
+                <td className="px-4 py-3 text-yellow-400 text-sm font-semibold">Delay</td>
+                <td className="px-4 py-3 text-slate-300 text-sm">grant_threshold ≤ score &lt; deny_threshold</td>
+                <td className="px-4 py-3 text-slate-200 text-sm font-mono">{(status?.grant_threshold ?? 0.3).toFixed(2)} - {(status?.deny_threshold ?? 0.7).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 text-red-400 text-sm font-semibold">Deny</td>
+                <td className="px-4 py-3 text-slate-300 text-sm">score ≥ deny_threshold</td>
+                <td className="px-4 py-3 text-slate-200 text-sm font-mono">{(status?.deny_threshold ?? 0.7).toFixed(2)} - 1.00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-white font-semibold">ML Features</h2>
+          <span className="text-xs text-slate-400">{FEATURES.length} total</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-700 bg-slate-900/60">
                 {["#", "Feature", "Description", "Normal Range", "Anomaly Indicator"].map((h) => (
                   <th
                     key={h}
@@ -224,7 +250,7 @@ export default function MLStatusPage() {
                 >
                   <td className="px-4 py-3 text-slate-500 text-sm">{i + 1}</td>
                   <td className="px-4 py-3">
-                    <code className="text-blue-400 text-xs bg-blue-400/10 px-2 py-0.5 rounded">{feature}</code>
+                    <code className="text-slate-200 text-xs bg-slate-700/70 px-2 py-0.5 rounded">{feature}</code>
                   </td>
                   <td className="px-4 py-3 text-slate-400 text-sm">{desc}</td>
                   <td className="px-4 py-3 text-slate-300 text-sm">{normal}</td>
@@ -238,19 +264,23 @@ export default function MLStatusPage() {
 
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
         <h2 className="text-white font-semibold mb-4">Training Dataset Statistics</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {[
-            { label: "Total Records", value: "500,000", color: "text-white" },
-            { label: "Normal", value: "465,000", color: "text-green-400" },
-            { label: "Anomalous", value: "35,000", color: "text-red-400" },
-            { label: "Train / Test", value: "80% / 20%", color: "text-blue-400" },
-            { label: "Features", value: "19", color: "text-purple-400" },
-          ].map((s) => (
-            <div key={s.label} className="bg-slate-900 rounded-lg p-4 text-center">
-              <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-slate-500 text-xs mt-1">{s.label}</div>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-700 bg-slate-900/60">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Statistic</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {DATASET_STATS.map((s) => (
+                <tr key={s.label} className="border-b border-slate-700/50 last:border-0">
+                  <td className="px-4 py-3 text-slate-300 text-sm">{s.label}</td>
+                  <td className={`px-4 py-3 text-sm font-semibold ${s.color}`}>{s.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

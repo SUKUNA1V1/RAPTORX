@@ -13,18 +13,28 @@ const MOCK: AnomalyDistItem[] = [
 
 interface Props {
   data?: AnomalyDistItem[];
+  height?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  showLegend?: boolean;
 }
 
-export default function AnomalyDistributionChart({ data = MOCK }: Props) {
+export default function AnomalyDistributionChart({
+  data = MOCK,
+  height = 220,
+  innerRadius = 55,
+  outerRadius = 80,
+  showLegend = true,
+}: Props) {
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Pie
           data={data}
           cx="50%"
           cy="50%"
-          innerRadius={55}
-          outerRadius={80}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius}
           dataKey="count"
           nameKey="severity"
           paddingAngle={3}
@@ -41,10 +51,12 @@ export default function AnomalyDistributionChart({ data = MOCK }: Props) {
             color: "#f1f5f9",
           }}
         />
-        <Legend
-          wrapperStyle={{ fontSize: "12px", color: "#94a3b8" }}
-          formatter={(value) => value.charAt(0).toUpperCase() + value.slice(1)}
-        />
+        {showLegend && (
+          <Legend
+            wrapperStyle={{ fontSize: "12px", color: "#94a3b8" }}
+            formatter={(value) => value.charAt(0).toUpperCase() + value.slice(1)}
+          />
+        )}
       </PieChart>
     </ResponsiveContainer>
   );

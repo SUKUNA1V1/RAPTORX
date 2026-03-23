@@ -10,7 +10,7 @@ export const ROLE_COLORS: Record<string, string> = {
 export const DECISION_COLORS: Record<string, string> = {
   granted: "bg-green-500/20 text-green-400 border-green-500/30",
   denied: "bg-red-500/20 text-red-400 border-red-500/30",
-  delayed: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+  delayed: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
 };
 
 export const SEVERITY_COLORS: Record<string, string> = {
@@ -30,7 +30,7 @@ export const SEVERITY_BAR_COLORS: Record<string, string> = {
 export const CHART_COLORS = {
   granted: "#22c55e",
   denied: "#ef4444",
-  delayed: "#f59e0b",
+  delayed: "#eab308",
   grid: "#1e293b",
   text: "#64748b",
   tooltip: { bg: "#1e293b", border: "#334155" },

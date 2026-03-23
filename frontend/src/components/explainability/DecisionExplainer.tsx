@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, AlertTriangle, Shield, TrendingUp } from "lucide-react";
+import { ChevronDown, AlertTriangle, Shield } from "lucide-react";
 
 interface Feature {
   name: string;
@@ -31,7 +31,7 @@ interface DecisionExplainerProps {
   onClose?: () => void;
 }
 
-export default function DecisionExplainer({ logId, explanation, onClose }: DecisionExplainerProps) {
+export default function DecisionExplainer({ logId, explanation }: DecisionExplainerProps) {
   const [expanded, setExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "features" | "factors">("overview");
 
@@ -45,7 +45,7 @@ export default function DecisionExplainer({ logId, explanation, onClose }: Decis
   const decisionColors: Record<string, string> = {
     granted: "bg-green-500/20 text-green-400 border-green-500/30",
     denied: "bg-red-500/20 text-red-400 border-red-500/30",
-    delayed: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+    delayed: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
   };
 
   return (
@@ -54,7 +54,16 @@ export default function DecisionExplainer({ logId, explanation, onClose }: Decis
       <div className="bg-slate-700/50 border-b border-slate-700 p-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/70 transition-colors"
         onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-3">
-          <Shield size={18} className={explanation.decision === "granted" ? "text-green-400" : "text-red-400"} />
+          <Shield
+            size={18}
+            className={
+              explanation.decision === "granted"
+                ? "text-green-400"
+                : explanation.decision === "delayed"
+                ? "text-yellow-400"
+                : "text-red-400"
+            }
+          />
           <div>
             <h3 className="font-semibold text-white">Decision Explanation</h3>
             <p className="text-xs text-slate-400">Access Log #{logId}</p>

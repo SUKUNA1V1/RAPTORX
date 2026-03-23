@@ -7,7 +7,7 @@ The improved RaptorX pipeline now automatically saves generated synthetic data t
 ## What Changed
 
 ### New Pipeline Step
-- **Step 2**: "Load Data to Database" (`scripts/load_data_to_db.py`)
+- **Step 2**: "Load Data to Database" (**removed in current pipeline**)
 - Runs automatically after data generation
 - Imports generated CSV data into PostgreSQL
 - Creates sample users and access points automatically

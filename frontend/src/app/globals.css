@@ -2,40 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg: #07090e;
-  --surface: #0f141f;
-  --surface-2: #141a28;
-  --border: #243046;
-  --muted: #9aa6bf;
-  --text: #e6edf7;
-  --accent: #2ed3ff;
-  --accent-strong: #53e0ff;
-  --accent-ghost: rgba(46, 211, 255, 0.16);
-  --scrollbar-track: #0f172a;
-  --scrollbar-thumb: #475569;
-  --scrollbar-thumb-hover: #64748b;
-  --chart-bg: #1e293b;
-  --chart-border: #334155;
-  --chart-text: #f1f5f9;
+@font-face {
+  font-family: "Aretha";
+  src: url("/fonts/aretha/Aretha-8O1W0.otf") format("opentype"),
+    url("/fonts/aretha/Aretha-BLwyx.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
 }
 
-[data-theme="light"] {
-  --bg: #f6f7fb;
-  --surface: #ffffff;
-  --surface-2: #f0f3f8;
-  --border: #d6dde8;
-  --muted: #54627a;
-  --text: #0f172a;
-  --accent: #0ea5e9;
-  --accent-strong: #0284c7;
-  --accent-ghost: rgba(14, 165, 233, 0.16);
-  --scrollbar-track: #e6ebf4;
-  --scrollbar-thumb: #b5c0d3;
-  --scrollbar-thumb-hover: #94a3b8;
-  --chart-bg: #ffffff;
-  --chart-border: #cbd5e1;
-  --chart-text: #0f172a;
+:root {
+  --bg: #0b0d10;
+  --surface: rgba(18, 22, 28, 0.86);
+  --surface-2: rgba(26, 31, 39, 0.76);
+  --border: #2a313d;
+  --muted: #9ba6b5;
+  --text: #e8edf5;
+  --accent: #7f8ca0;
+  --accent-strong: #9ba9bc;
+  --accent-ghost: rgba(127, 140, 160, 0.16);
+  --scrollbar-track: #11161d;
+  --scrollbar-thumb: #3a4656;
+  --scrollbar-thumb-hover: #556479;
+  --chart-bg: #171c24;
+  --chart-border: #2d3745;
+  --chart-text: #e8edf5;
 }
 
 * {
@@ -45,21 +36,20 @@
 html,
 body {
   background-color: var(--bg);
-  background-image: radial-gradient(1200px circle at 18% -8%, rgba(46, 211, 255, 0.16), transparent 60%),
-    radial-gradient(900px circle at 90% 0%, rgba(92, 106, 131, 0.25), transparent 55%);
+  background-image: radial-gradient(1200px circle at 18% -8%, rgba(127, 140, 160, 0.14), transparent 60%),
+    radial-gradient(900px circle at 90% 0%, rgba(54, 63, 77, 0.22), transparent 55%);
   color: var(--text);
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-}
-
-[data-theme="light"] body {
-  background-image: radial-gradient(1200px circle at 10% -12%, rgba(14, 165, 233, 0.14), transparent 60%),
-    radial-gradient(900px circle at 95% 10%, rgba(148, 163, 184, 0.28), transparent 55%);
 }
 
 h1,
 h2,
 h3 {
   letter-spacing: 0.02em;
+}
+
+.font-aretha {
+  font-family: "Aretha", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 ::-webkit-scrollbar {
@@ -96,7 +86,7 @@ h3 {
 }
 
 .bg-slate-700 {
-  background-color: #222a3a !important;
+  background-color: #2a313d !important;
 }
 
 .border-slate-700 {
@@ -153,14 +143,14 @@ h3 {
 }
 
 .btn-primary {
-  border-color: rgba(46, 211, 255, 0.55);
-  background: linear-gradient(135deg, rgba(46, 211, 255, 0.22), rgba(46, 211, 255, 0.05));
-  color: #e9fbff;
+  border-color: rgba(127, 140, 160, 0.6);
+  background: linear-gradient(135deg, rgba(127, 140, 160, 0.28), rgba(127, 140, 160, 0.08));
+  color: #edf2f8;
 }
 
 .btn-primary:hover {
-  border-color: rgba(46, 211, 255, 0.85);
-  background: linear-gradient(135deg, rgba(46, 211, 255, 0.35), rgba(46, 211, 255, 0.08));
+  border-color: rgba(127, 140, 160, 0.85);
+  background: linear-gradient(135deg, rgba(127, 140, 160, 0.38), rgba(127, 140, 160, 0.12));
 }
 
 .btn-secondary {
@@ -178,7 +168,7 @@ h3 {
 
 .btn-ghost:hover {
   color: var(--text);
-  background: rgba(46, 211, 255, 0.08);
+  background: rgba(127, 140, 160, 0.08);
 }
 
 .btn-sm {

@@ -59,7 +59,7 @@ const LABELS: Record<string, string> = {
 const COLORS: Record<string, string> = {
   granted: "border-green-500/40 bg-green-500/10",
   denied: "border-red-500/40 bg-red-500/10",
-  delayed: "border-amber-500/40 bg-amber-500/10",
+  delayed: "border-yellow-500/40 bg-yellow-500/10",
 };
 
 export default function SimulatorPage() {
@@ -421,7 +421,7 @@ export default function SimulatorPage() {
                     ? "text-green-400"
                     : result.decision === "denied"
                     ? "text-red-400"
-                    : "text-amber-400"
+                    : "text-yellow-400"
                 }`}
               >
                 {LABELS[result.decision]}

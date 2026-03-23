@@ -7,14 +7,14 @@ Executes all steps sequentially with detailed progress reporting.
 
 Pipeline Steps:
   1. Generate synthetic data (500k access records)
-  2. Explore and prepare data (load, scale, split)
-  3. Train Isolation Forest model
-  4. Train Autoencoder model
-  5. Compare models and create ensemble
-  6. Retune decision thresholds
-  7. Quick validation test
-  8. Thread-safety validation
-  9. Full system validation
+    2. Explore and prepare data (load, scale, split)
+    3. Train Isolation Forest model
+    4. Train Autoencoder model
+    5. Compare models and create ensemble
+    6. Retune decision thresholds
+    7. Quick validation test
+    8. Thread-safety validation
+    9. Full system validation
 
 After completion, models are ready for backend testing.
 """
@@ -46,7 +46,7 @@ class PipelineRunner:
         self.step_times = {}
         self.failed_steps = []
         self.passed_steps = []
-        self.total_steps = 10
+        self.total_steps = 9
 
     def print_banner(self, text: str) -> None:
         """Print formatted banner section."""
@@ -254,15 +254,14 @@ class PipelineRunner:
         # Run pipeline steps
         steps = [
             (1, "Generate Synthetic Data", "scripts/generate_data_fixed.py", 600),
-            (2, "Load Data to Database", "scripts/load_data_to_db.py", 300),
-            (3, "Explore & Prepare Data", "scripts/explore_and_prepare.py", 300),
-            (4, "Train Isolation Forest", "scripts/train_isolation_forest.py", 600),
-            (5, "Train Autoencoder", "scripts/train_autoencoder.py", 900),
-            (6, "Compare & Ensemble", "scripts/compare_and_ensemble.py", 600),
-            (7, "Retune Thresholds", "scripts/retune_threshold.py", 300),
-            (8, "Quick Validation Test", "scripts/quick_test.py", 120),
-            (9, "Thread Safety Test", "scripts/test_thread_safety.py", 300),
-            (10, "Full System Validation", "scripts/validate_system.py", 300),
+            (2, "Explore & Prepare Data", "scripts/explore_and_prepare.py", 300),
+            (3, "Train Isolation Forest", "scripts/train_isolation_forest.py", 600),
+            (4, "Train Autoencoder", "scripts/train_autoencoder.py", 900),
+            (5, "Compare & Ensemble", "scripts/compare_and_ensemble.py", 600),
+            (6, "Retune Thresholds", "scripts/retune_threshold.py", 300),
+            (7, "Quick Validation Test", "scripts/quick_test.py", 120),
+            (8, "Thread Safety Test", "scripts/test_thread_safety.py", 300),
+            (9, "Full System Validation", "scripts/validate_system.py", 300),
         ]
 
         for step_num, title, script, timeout in steps:

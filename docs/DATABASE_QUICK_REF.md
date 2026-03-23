@@ -16,7 +16,6 @@ Your RaptorX pipeline now automatically saves all generated data to PostgreSQL.
 ## 📁 Key Files
 
 ```
-scripts/load_data_to_db.py       ← New database loader
 scripts/run_full_pipeline.py     ← Updated (10 steps)
 scripts/run_pipeline_interactive.py ← Updated (10 steps)
 explore_database.py              ← New: exploration tool

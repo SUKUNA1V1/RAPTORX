@@ -7,7 +7,7 @@ Your RaptorX pipeline now saves all generated synthetic data to the PostgreSQL d
 ## What Was Added
 
 ### 1. New Pipeline Step
-**File**: `scripts/load_data_to_db.py`
+**File**: (removed from current pipeline)
 
 Features:
 - ✓ Reads generated CSV data from `data/raw/train.csv`
@@ -179,7 +179,7 @@ SELECT * FROM access_logs LIMIT 10;
 
 ### No Data in Database
 - Check pipeline completed without errors
-- Verify load_data_to_db.py ran (step 2)
+- Verify pipeline step 2 status in current logs
 - Check database permissions
 - Look at logs for errors
 
@@ -233,7 +233,7 @@ ORDER BY idx_scan DESC;
 
 | File | Purpose |
 |------|---------|
-| `scripts/load_data_to_db.py` | Main database loading logic |
+| *(removed)* | Database loading script removed from current pipeline |
 | `scripts/run_full_pipeline.py` | Updated: 10 steps with DB insert |
 | `scripts/run_pipeline_interactive.py` | Updated: 10 interactive steps |
 | `explore_database.py` | Statistics and exploration script |

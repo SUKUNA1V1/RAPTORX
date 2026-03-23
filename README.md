@@ -991,7 +991,7 @@ From workspace root:
 python run_pipeline.py
 ```
 
-This runs the full 10-step training/validation pipeline via `scripts/run_full_pipeline.py`, including database loading (`scripts/load_data_to_db.py`).
+This runs the full 9-step training/validation pipeline via `scripts/run_full_pipeline.py`.
 
 Alternative interactive options:
 
@@ -1049,7 +1049,7 @@ npm run start
 ### Pipeline Orchestration
 
 - [run_pipeline.py](run_pipeline.py): root wrapper for the full pipeline (`scripts/run_full_pipeline.py`)
-- [scripts/run_full_pipeline.py](scripts/run_full_pipeline.py): automated 10-step end-to-end pipeline
+- [scripts/run_full_pipeline.py](scripts/run_full_pipeline.py): automated 9-step end-to-end pipeline
 - [scripts/run_pipeline_interactive.py](scripts/run_pipeline_interactive.py): interactive step-by-step pipeline
 - [scripts/startup.py](scripts/startup.py): unified menu for pipeline/model verification/startup
 
@@ -1057,8 +1057,6 @@ npm run start
 
 - [scripts/generate_data_fixed.py](scripts/generate_data_fixed.py): **RECOMMENDED** - improved generator with 500 users for better model generalization
 - [scripts/generate_data.py](scripts/generate_data.py): original generator with 100 users
-- [scripts/load_data_to_db.py](scripts/load_data_to_db.py): loads generated data into PostgreSQL
-- [scripts/load_data_to_db_simple.py](scripts/load_data_to_db_simple.py): simplified DB loading variant
 - [scripts/explore_and_prepare.py](scripts/explore_and_prepare.py): EDA, scaling, and artifact creation
 - [scripts/explore_database.py](scripts/explore_database.py): database exploration and statistics
 
