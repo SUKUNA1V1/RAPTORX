@@ -60,12 +60,13 @@ const Login = () => {
         <TextField
           id="username"
           name="username"
-          type="text"
+          type="email"
           value={user.username}
           onChange={handleInputChange}
           variant="filled"
-          placeholder="Username"
-          autoComplete="username"
+          placeholder="Email Address"
+          label="Email"
+          autoComplete="email"
           fullWidth
           autoFocus
           required
@@ -98,7 +99,7 @@ const Login = () => {
         />
         <Stack mt={-1.5} alignItems="center" justifyContent="space-between">
           <Typography variant="caption" color="text.secondary">
-            Default admin account: admin / admin
+            Default: admin@system.local / admin
           </Typography>
         </Stack>
         <Button type="submit" variant="contained" size="medium" fullWidth>

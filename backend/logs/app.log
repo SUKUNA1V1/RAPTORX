@@ -51,3 +51,14 @@
 2026-04-02 14:15:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 861.52ms (status: 200)
 2026-04-02 14:37:00 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on USERS took 172.21ms
 2026-04-02 14:37:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 4670.06ms (status: 200)
+2026-04-04 08:37:19 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 309.41ms
+2026-04-04 08:37:19 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 327.06ms
+2026-04-04 08:37:19 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 364.79ms
+2026-04-04 08:37:19 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 359.08ms
+2026-04-04 08:37:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 3275.74ms (status: 200)
+2026-04-04 08:37:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 3297.87ms (status: 200)
+2026-04-04 08:37:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 3337.96ms (status: 200)
+2026-04-04 08:37:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 540.90ms
+2026-04-04 08:37:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 220.46ms
+2026-04-04 08:37:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 3432.97ms (status: 200)
+2026-04-04 08:37:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 3424.10ms (status: 200)

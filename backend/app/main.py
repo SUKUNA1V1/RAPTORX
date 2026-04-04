@@ -67,7 +67,7 @@ def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    from app.routes.access import get_engine
+    from .routes.access import get_engine
 
     engine = get_engine()
     print(f"Decision Engine loaded: {engine.status()}")

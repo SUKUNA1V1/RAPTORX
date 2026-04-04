@@ -22,7 +22,7 @@ class AdminCreateRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 
@@ -45,8 +45,15 @@ def admin_login(
 ):
     """Authenticate admin user with email and password."""
     try:
+        # Normalize email input
+        email = credentials.email.strip().lower() if credentials.email else ""
+        password = credentials.password.strip() if credentials.password else ""
+        
+        if not email or not password:
+            raise HTTPException(status_code=422, detail="Email and password are required")
+        
         # Find user by email
-        user = db.query(User).filter(User.email == credentials.email).first()
+        user = db.query(User).filter(User.email.ilike(email)).first()
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
@@ -59,7 +66,7 @@ def admin_login(
             raise HTTPException(status_code=401, detail="User account is inactive")
         
         # Verify password
-        if not verify_password(credentials.password, user.pin_hash or ""):
+        if not user.pin_hash or not verify_password(password, user.pin_hash):
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
         return LoginResponse(
