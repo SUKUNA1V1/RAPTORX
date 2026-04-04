@@ -309,7 +309,6 @@ plt.legend(loc="lower right", fontsize=10)
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "roc_curves_comparison.png"), dpi=150)
-plt.show()
 print("Saved: roc_curves_comparison.png")
 
 # --- Plot 2: Side-by-side confusion matrices ---
@@ -331,7 +330,6 @@ for ax, cm_val, title, cmap in zip(axes, cms, titles, colors):
 plt.suptitle("Confusion Matrices — Model Comparison", fontsize=15)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "confusion_matrices_comparison.png"), dpi=150)
-plt.show()
 print("Saved: confusion_matrices_comparison.png")
 
 # --- Plot 3: Bar chart comparing F1, Precision, Recall ---
@@ -363,7 +361,6 @@ ax.legend(fontsize=10)
 ax.grid(axis="y", alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "metrics_comparison_bar.png"), dpi=150)
-plt.show()
 print("Saved: metrics_comparison_bar.png")
 
 # --- Plot 4: Score distributions all 3 models ---
@@ -387,7 +384,6 @@ for ax, scores, title, color in zip(
 plt.suptitle("Risk Score Distributions — All Models", fontsize=14)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "score_distributions_comparison.png"), dpi=150)
-plt.show()
 print("Saved: score_distributions_comparison.png")
 
 # ============================================================

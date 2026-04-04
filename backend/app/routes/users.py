@@ -20,7 +20,7 @@ def list_users(
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(10000, ge=1),
     db: Session = Depends(get_db),
 ):
     """List users with optional filters."""

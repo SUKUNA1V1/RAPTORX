@@ -381,7 +381,6 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "training_loss.png"), dpi=150)
-plt.show()
 print("Saved: training_loss.png")
 
 # --- Plot 2: Confusion Matrix ---
@@ -391,7 +390,6 @@ disp.plot(cmap="Oranges", colorbar=False)
 plt.title("Autoencoder — Confusion Matrix")
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "confusion_matrix.png"), dpi=150)
-plt.show()
 print("Saved: confusion_matrix.png")
 
 # --- Plot 3: ROC Curve ---
@@ -406,7 +404,6 @@ plt.legend(loc="lower right")
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "roc_curve.png"), dpi=150)
-plt.show()
 print("Saved: roc_curve.png")
 
 # --- Plot 4: Reconstruction Error Distribution ---
@@ -424,7 +421,6 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "reconstruction_error_dist.png"), dpi=150)
-plt.show()
 print("Saved: reconstruction_error_dist.png")
 
 # --- Plot 5: Reconstructed vs Original (3 anomalous samples) ---
@@ -444,7 +440,6 @@ for i, idx in enumerate(anomaly_indices):
 plt.suptitle("Autoencoder — Original vs Reconstructed (Anomalous Samples)", fontsize=13)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "reconstruction_comparison.png"), dpi=150)
-plt.show()
 print("Saved: reconstruction_comparison.png")
 
 # ============================================================

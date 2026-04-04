@@ -49,7 +49,7 @@ def get_overview(db: Session = Depends(get_db)):
         active_alerts_count = (
             db.query(func.count(AnomalyAlert.id))
             .filter(AnomalyAlert.is_resolved.is_(False))
-            .filter(AnomalyAlert.status.in_(["open", "acknowledged"]))
+            .filter(AnomalyAlert.status == "open")
             .scalar()
         )
         total_users = db.query(func.count(User.id)).scalar()
@@ -104,6 +104,42 @@ def get_access_timeline(db: Session = Depends(get_db)):
                 }
             )
 
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/monthly-timeline", status_code=status.HTTP_200_OK)
+def get_monthly_timeline(db: Session = Depends(get_db)):
+    """Return monthly access decision counts for the current year."""
+    try:
+        now = datetime.now(timezone.utc)
+        result = []
+        for month in range(1, 13):
+            start = datetime(now.year, month, 1, tzinfo=timezone.utc)
+            if month < 12:
+                end = datetime(now.year, month + 1, 1, tzinfo=timezone.utc)
+            else:
+                end = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
+            granted = (
+                db.query(func.count(AccessLog.id))
+                .filter(AccessLog.timestamp >= start, AccessLog.timestamp < end)
+                .filter(AccessLog.decision == "granted")
+                .scalar()
+            )
+            denied = (
+                db.query(func.count(AccessLog.id))
+                .filter(AccessLog.timestamp >= start, AccessLog.timestamp < end)
+                .filter(AccessLog.decision == "denied")
+                .scalar()
+            )
+            delayed = (
+                db.query(func.count(AccessLog.id))
+                .filter(AccessLog.timestamp >= start, AccessLog.timestamp < end)
+                .filter(AccessLog.decision == "delayed")
+                .scalar()
+            )
+            result.append({"month": month, "granted": granted, "denied": denied, "delayed": delayed})
         return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

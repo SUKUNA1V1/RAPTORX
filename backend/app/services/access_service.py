@@ -52,13 +52,16 @@ class AccessService:
         last_log = (
             self.db.query(AccessLog)
             .filter(AccessLog.user_id == user.id)
+            .filter(AccessLog.timestamp <= timestamp)
             .order_by(desc(AccessLog.timestamp))
             .first()
         )
         time_since_last_access_min = None
         if last_log and last_log.timestamp:
             delta = timestamp - last_log.timestamp
-            time_since_last_access_min = int(delta.total_seconds() / 60)
+            delta_minutes = int(delta.total_seconds() / 60)
+            if delta_minutes >= 0:
+                time_since_last_access_min = delta_minutes
 
         location_match = self._location_match(user.department, access_point.zone)
         role_level = self._role_level(user.role)
@@ -153,11 +156,14 @@ class AccessService:
     @staticmethod
     def _severity_from_score(score: float) -> str:
         """Convert risk score to alert severity tier."""
+        # Granted decisions are never critical, even if features are unusual
+        if score < 0.30:
+            return "low"
         if score >= 0.85:
             return "critical"
-        if score >= 0.7:
+        if score >= 0.70:
             return "high"
-        if score >= 0.6:
+        if score >= 0.60:
             return "medium"
         return "low"
 

@@ -103,7 +103,6 @@ plt.xticks(range(0, 24))
 plt.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(PROCESSED_DIR, "plot_access_hours.png"), dpi=150)
-plt.show()
 print(" Saved: plot_access_hours.png")
 
 # --- Plot 2: Box plot of access frequency ---
@@ -120,7 +119,6 @@ plt.ylabel("Access Frequency (24h)")
 plt.title("Access Frequency — Normal vs Anomalous")
 plt.tight_layout()
 plt.savefig(os.path.join(PROCESSED_DIR, "plot_frequency_boxplot.png"), dpi=150)
-plt.show()
 print(" Saved: plot_frequency_boxplot.png")
 
 # --- Plot 3: Correlation heatmap ---
@@ -138,7 +136,6 @@ sns.heatmap(
 plt.title("Feature Correlation Heatmap")
 plt.tight_layout()
 plt.savefig(os.path.join(PROCESSED_DIR, "plot_correlation_heatmap.png"), dpi=150)
-plt.show()
 print(" Saved: plot_correlation_heatmap.png")
 
 # ============================================================

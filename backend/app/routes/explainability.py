@@ -153,7 +153,12 @@ def get_feature_importance():
     
     try:
         importance_data = explainer.explain_feature_importance()
-        return importance_data
+        # Return just the features array (what frontend expects)
+        features = importance_data.get("features", [])
+        # Add rank to each feature
+        for idx, feature in enumerate(features):
+            feature["rank"] = idx + 1
+        return features
     except Exception as exc:
         raise HTTPException(
             status_code=500,
@@ -182,7 +187,7 @@ def get_threshold_behavior():
 
 @explainability_router.get("/model-insights")
 def get_model_insights():
-    """Get general model insights and behavior patterns."""
+    """Get model architecture insights and descriptions."""
     if not explainer:
         raise HTTPException(
             status_code=503,
@@ -191,30 +196,48 @@ def get_model_insights():
     
     try:
         return {
-            "timestamp": str(__import__("datetime").datetime.utcnow().isoformat()),
-            "model_type": "Isolation Forest + Autoencoder Ensemble",
-            "ensemble_method": "Weighted average of anomaly scores",
-            "weights": {
-                "isolation_forest": 0.5,
-                "autoencoder": 0.5,
+            "isolation_forest": {
+                "description": "Tree-based ensemble anomaly detection using isolation algorithm. Constructs random forests where anomalies are isolated in fewer splits than normal observations.",
+                "architecture": "100 trees, max_samples='auto', max_features=1.0, contamination=0.1",
+                "features": [
+                    "hour",
+                    "day_of_week",
+                    "access_frequency_24h",
+                    "time_since_last_access_min",
+                    "location_match",
+                    "role_level",
+                    "is_restricted_area",
+                    "access_attempt_count",
+                    "is_weekend",
+                    "is_first_access_today",
+                    "sequential_zone_violation",
+                    "time_of_week",
+                    "hour_deviation_from_norm"
+                ]
             },
-            "feature_count": 13,
-            "decision_threshold": float(explainer.best_threshold),
-            "model_behavior": {
-                "sensitivity": "High sensitivity to early detections",
-                "false_positive_strategy": "Conservative (prefer false positives over false negatives)",
-                "false_negative_strategy": "Critical security incidents must not be missed",
+            "autoencoder": {
+                "description": "Deep neural network for unsupervised anomaly detection. Learns compressed representation of normal access patterns; reconstruction error indicates anomalies.",
+                "architecture": "Input(13) → Dense(26,relu) → Dense(13,relu) → Dense(6,relu) → Dense(13,relu) → Dense(26,relu) → Output(13)",
+                "features": [
+                    "hour",
+                    "day_of_week",
+                    "access_frequency_24h",
+                    "time_since_last_access_min",
+                    "location_match",
+                    "role_level",
+                    "is_restricted_area",
+                    "access_attempt_count",
+                    "is_weekend",
+                    "is_first_access_today",
+                    "sequential_zone_violation",
+                    "time_of_week",
+                    "hour_deviation_from_norm"
+                ]
             },
-            "strengths": [
-                "Detects unusual patterns in feature combinations",
-                "Unsupervised learning handles evolving threats",
-                "Ensemble approach provides robustness",
-            ],
-            "limitations": [
-                "Requires sufficient historical data for training",
-                "Feature engineering crucial for performance",
-                "May flag legitimate but unusual access patterns",
-            ],
+            "ensemble": {
+                "description": "Combines Isolation Forest (50%) and Autoencoder (50%) anomaly scores. Weighted averaging provides robust detection by leveraging diverse algorithmic strengths.",
+                "method": "Weighted Average (IF: 50%, AE: 50%)"
+            }
         }
     except Exception as exc:
         raise HTTPException(

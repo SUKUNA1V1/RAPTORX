@@ -3,6 +3,7 @@ from .alerts import router as alerts_router
 from .stats import router as stats_router
 from .users import router as users_router
 from .explainability import explainability_router
+from .admin import router as admin_router
 
 # Purpose: Central route exports consumed by FastAPI app registration.
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
 	"stats_router",
 	"access_points_router",
 	"explainability_router",
+	"admin_router",
 ]

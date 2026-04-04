@@ -136,9 +136,12 @@ def get_scaler():
     global _SCALER
     if _SCALER is None:
         scaler_path_13 = os.path.join(_models_dir(), "scaler_13.pkl")
+        scaler_path_19 = os.path.join(_models_dir(), "scaler_19.pkl")
         scaler_path_legacy = os.path.join(_models_dir(), "scaler.pkl")
         if os.path.exists(scaler_path_13):
             _SCALER = joblib.load(scaler_path_13)
+        elif os.path.exists(scaler_path_19):
+            _SCALER = joblib.load(scaler_path_19)
         elif os.path.exists(scaler_path_legacy):
             _SCALER = joblib.load(scaler_path_legacy)
         else:
@@ -191,13 +194,16 @@ def extract_features(user, access_point, timestamp: datetime, db: Session, faile
         db.query(AccessLog)
         .options(joinedload(AccessLog.access_point))
         .filter(AccessLog.user_id == user.id)
+        .filter(AccessLog.timestamp <= timestamp)
         .order_by(desc(AccessLog.timestamp))
         .first()
     )
     time_since_last_access_min = None
     if last_log and last_log.timestamp:
         delta = timestamp - last_log.timestamp
-        time_since_last_access_min = int(delta.total_seconds() / 60)
+        delta_minutes = int(delta.total_seconds() / 60)
+        if delta_minutes >= 0:
+            time_since_last_access_min = delta_minutes
 
     location_match = _location_match(user.department, access_point.zone)
     role_level = ROLE_LEVEL_MAP.get(user.role, 1)
@@ -232,6 +238,7 @@ def extract_features(user, access_point, timestamp: datetime, db: Session, faile
     recent_logs = (
         db.query(AccessLog)
         .filter(AccessLog.user_id == user.id)
+        .filter(AccessLog.timestamp <= timestamp)
         .order_by(desc(AccessLog.timestamp))
         .limit(50)
         .all()
@@ -293,6 +300,12 @@ def extract_features(user, access_point, timestamp: datetime, db: Session, faile
         "access_attempt_count": access_attempt_count,
         "time_of_week": time_of_week,
         "hour_deviation_from_norm": hour_deviation_from_norm,
+        "velocity_km_per_min": velocity_km_per_min,
+        "distance_between_scans_km": distance_between_scans_km,
+        "geographic_impossibility": geographic_impossibility,
+        "zone_clearance_mismatch": zone_clearance_mismatch,
+        "department_zone_mismatch": department_zone_mismatch,
+        "concurrent_session_detected": concurrent_session_detected,
     }
 
     clipped = {name: _clip_value(name, float(raw[name])) for name in FEATURE_COLS}
@@ -332,6 +345,9 @@ def determine_alert_type(features_raw: Dict, risk_score: float) -> str:
 
 def determine_alert_severity(risk_score: float) -> str:
     """Convert numeric risk score to severity bucket used by alert UI and triage."""
+    # Granted decisions are never critical, even if features are unusual
+    if risk_score < 0.30:
+        return "low"
     if risk_score >= 0.85:
         return "critical"
     if risk_score >= 0.70:

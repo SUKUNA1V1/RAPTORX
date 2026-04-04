@@ -1,0 +1,12 @@
+2026-04-01 20:46:42 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 409.07ms
+2026-04-01 20:46:46 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4.91ms
+2026-04-01 20:46:46 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4.53ms
+2026-04-01 20:46:47 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 3.89ms
+2026-04-01 20:46:47 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4.56ms
+2026-04-01 20:48:49 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 7.38ms
+2026-04-01 20:48:49 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 7.77ms
+2026-04-01 20:48:52 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 9.39ms
+2026-04-01 20:48:52 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4.73ms
+2026-04-01 20:49:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 12.02ms
+2026-04-01 20:49:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 12.88ms
+2026-04-01 20:49:54 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 3.48ms

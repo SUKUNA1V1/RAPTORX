@@ -81,7 +81,7 @@ class PipelineRunner:
         step_num: int, 
         title: str, 
         script_path: str,
-        timeout: int = 3600
+        timeout: int = None
     ) -> bool:
         """Run a pipeline step (script) and track results."""
         self.print_step(step_num, title)
@@ -92,7 +92,8 @@ class PipelineRunner:
             return False
 
         self.print_substep(f"Running: {script_path}")
-        self.print_substep(f"Timeout: {timeout} seconds")
+        timeout_str = f"Timeout: {timeout} seconds" if timeout else "Timeout: NONE (unlimited)"
+        self.print_substep(timeout_str)
 
         step_start = time.time()
         
@@ -253,15 +254,15 @@ class PipelineRunner:
 
         # Run pipeline steps
         steps = [
-            (1, "Generate Synthetic Data", "scripts/generate_data_fixed.py", 600),
-            (2, "Explore & Prepare Data", "scripts/explore_and_prepare.py", 300),
-            (3, "Train Isolation Forest", "scripts/train_isolation_forest.py", 600),
-            (4, "Train Autoencoder", "scripts/train_autoencoder.py", 900),
-            (5, "Compare & Ensemble", "scripts/compare_and_ensemble.py", 600),
-            (6, "Retune Thresholds", "scripts/retune_threshold.py", 300),
-            (7, "Quick Validation Test", "scripts/quick_test.py", 120),
-            (8, "Thread Safety Test", "scripts/test_thread_safety.py", 300),
-            (9, "Full System Validation", "scripts/validate_system.py", 300),
+            (1, "Generate Synthetic Data", "scripts/generate_data_fixed.py", None),
+            (2, "Explore & Prepare Data", "scripts/explore_and_prepare.py", None),
+            (3, "Train Isolation Forest", "scripts/train_isolation_forest.py", None),
+            (4, "Train Autoencoder", "scripts/train_autoencoder.py", None),
+            (5, "Compare & Ensemble", "scripts/compare_and_ensemble.py", None),
+            (6, "Retune Thresholds", "scripts/retune_threshold.py", None),
+            (7, "Quick Validation Test", "scripts/quick_test.py", None),
+            (8, "Thread Safety Test", "scripts/test_thread_safety.py", None),
+            (9, "Full System Validation", "scripts/validate_system.py", None),
         ]
 
         for step_num, title, script, timeout in steps:

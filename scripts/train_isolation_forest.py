@@ -327,7 +327,6 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "threshold_curve.png"), dpi=150)
-plt.show()
 print("Saved: threshold_curve.png")
 
 # Final predictions using best threshold
@@ -403,7 +402,6 @@ disp.plot(cmap="Blues", colorbar=False)
 plt.title("Isolation Forest — Confusion Matrix")
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "confusion_matrix.png"), dpi=150)
-plt.show()
 print(" Saved: confusion_matrix.png")
 
 # --- Plot 2: ROC Curve ---
@@ -418,7 +416,6 @@ plt.legend(loc="lower right")
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "roc_curve.png"), dpi=150)
-plt.show()
 print(" Saved: roc_curve.png")
 
 # --- Plot 3: Anomaly Score Distribution ---
@@ -435,7 +432,6 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "score_distribution.png"), dpi=150)
-plt.show()
 print(" Saved: score_distribution.png")
 
 # --- Plot 4: Feature Importance (permutation — custom scorer) ---
@@ -466,7 +462,6 @@ plt.axvline(x=0, color="black", lw=0.8)
 plt.grid(axis="x", alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "feature_importance.png"), dpi=150)
-plt.show()
 print(" Saved: feature_importance.png")
 
 # ============================================================
@@ -581,5 +576,5 @@ plt.legend(loc="upper right")
 plt.grid(alpha=0.3)
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, "decision_zones.png"), dpi=150)
-plt.show()
+
 print("Saved: decision_zones.png")

@@ -260,7 +260,7 @@ class AccessDecisionEngine:
             score += 0.30
         if access_frequency_24h > 10:
             score += 0.25
-        if time_since_last_access_min and time_since_last_access_min < 5:
+        if time_since_last_access_min is not None and time_since_last_access_min < 5:
             score += 0.30
         if sequential_zone_violation:
             score += 0.20
@@ -288,10 +288,12 @@ class AccessDecisionEngine:
         ) = features
 
         bump = 0.0
-        if time_since_last_access_min and time_since_last_access_min < 5 and sequential_zone_violation:
+        if time_since_last_access_min is not None and time_since_last_access_min < 5 and sequential_zone_violation:
             bump += 0.25
-        if time_since_last_access_min and time_since_last_access_min < 5 and not location_match:
+        if time_since_last_access_min is not None and time_since_last_access_min < 5 and not location_match:
             bump += 0.15
+        if time_since_last_access_min is not None and time_since_last_access_min <= 1 and sequential_zone_violation:
+            bump += 0.25
         return float(np.clip(bump, 0.0, 0.5))
 
     def decide(

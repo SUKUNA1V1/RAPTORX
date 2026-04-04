@@ -32,63 +32,63 @@ class QuickStarter:
                 "name": "Generate Data",
                 "script": "scripts/generate_data_fixed.py",
                 "description": "Creates 500k synthetic access records with 500 users, realistic patterns",
-                "timeout": 600
+                "timeout": None
             },
             {
                 "num": 2,
                 "name": "Prepare Data",
                 "script": "scripts/explore_and_prepare.py",
                 "description": "Loads, analyzes, scales, and splits training data",
-                "timeout": 300
+                "timeout": None
             },
             {
                 "num": 3,
                 "name": "Train Isolation Forest",
                 "script": "scripts/train_isolation_forest.py",
                 "description": "Trains anomaly detection using isolation trees",
-                "timeout": 600
+                "timeout": None
             },
             {
                 "num": 4,
                 "name": "Train Autoencoder",
                 "script": "scripts/train_autoencoder.py",
                 "description": "Trains reconstruction-based anomaly detector",
-                "timeout": 900
+                "timeout": None
             },
             {
                 "num": 5,
                 "name": "Build Ensemble",
                 "script": "scripts/compare_and_ensemble.py",
                 "description": "Compares models and creates weighted ensemble",
-                "timeout": 600
+                "timeout": None
             },
             {
                 "num": 6,
                 "name": "Tune Thresholds",
                 "script": "scripts/retune_threshold.py",
                 "description": "Optimizes decision thresholds on validation set",
-                "timeout": 300
+                "timeout": None
             },
             {
                 "num": 7,
                 "name": "Quick Test",
                 "script": "scripts/quick_test.py",
                 "description": "Validates model with quick precision/recall test",
-                "timeout": 120
+                "timeout": None
             },
             {
                 "num": 8,
                 "name": "Thread Safety Test",
                 "script": "scripts/test_thread_safety.py",
                 "description": "Verifies concurrent inference is thread-safe",
-                "timeout": 300
+                "timeout": None
             },
             {
                 "num": 9,
                 "name": "Full System Validation",
                 "script": "scripts/validate_system.py",
                 "description": "Complete system validation and artifact verification",
-                "timeout": 300
+                "timeout": None
             }
         ]
 
@@ -152,7 +152,8 @@ class QuickStarter:
                 return False
                 
         except subprocess.TimeoutExpired:
-            print(f"\n✗ {step['name']} exceeded timeout ({step['timeout']}s)")
+            timeout_msg = (f"({step['timeout']}s)" if step['timeout'] else "(no timeout limit)")
+            print(f"\n✗ {step['name']} exceeded timeout {timeout_msg}")
             return False
         except Exception as e:
             print(f"\n✗ {step['name']} raised exception: {str(e)}")

@@ -1,132 +1,244 @@
-import axios, { AxiosError } from "axios";
-import type {
-  User,
-  AccessPoint,
-  AccessLog,
-  AnomalyAlert,
-  StatsOverview,
-  TimelinePoint,
-  AnomalyDistItem,
-  TopAccessPoint,
-  MLStatus,
-  AccessDecision,
-} from "./types";
+import axios from 'axios';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = envApiBaseUrl && envApiBaseUrl.trim() ? envApiBaseUrl : '/api';
 
-export const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
-  headers: { "Content-Type": "application/json" },
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
 });
 
-export function getApiErrorMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string | { msg?: string }[] } | undefined)?.detail;
-    if (typeof detail === "string" && detail.trim()) {
-      return detail;
-    }
-    if (Array.isArray(detail) && detail.length > 0) {
-      const first = detail[0]?.msg;
-      if (typeof first === "string" && first.trim()) {
-        return first;
-      }
-    }
-    if (err.message) {
-      return err.message;
-    }
-  }
-
-  if (err instanceof Error && err.message) {
-    return err.message;
-  }
-
-  return fallback;
+export interface OverviewStats {
+  total_accesses_today: number;
+  granted_today: number;
+  denied_today: number;
+  delayed_today: number;
+  active_alerts_count: number;
+  total_users: number;
+  total_access_points: number;
 }
 
-api.interceptors.response.use(
-  (res) => res,
-  (err: AxiosError) => {
-    if (process.env.NODE_ENV !== "production") {
-      const status = err.response?.status ? ` [${err.response.status}]` : "";
-      const url = err.config?.url ?? "unknown-url";
-      console.warn(`API Error${status}: ${url} -> ${err.message}`);
-    }
-    return Promise.reject(err);
-  }
-);
+export interface AccessLogItem {
+  id: number;
+  timestamp: string;
+  decision: string;
+  risk_score: number;
+  method?: string;
+  badge_id_used?: string;
+  user?: {
+    first_name: string;
+    last_name: string;
+    badge_id: string;
+    role: string;
+  } | null;
+  access_point?: {
+    name: string;
+    building: string;
+    room?: string | null;
+  } | null;
+}
 
-export const getHealth = () => api.get("/health").then((r) => r.data);
+export interface AccessLogsResponse {
+  items: AccessLogItem[];
+  total: number;
+}
 
-export const getOverview = () => api.get<StatsOverview>("/api/stats/overview").then((r) => r.data);
+export interface AlertItem {
+  id: number;
+  alert_type: string;
+  severity: string;
+  status: string;
+  created_at: string;
+  description: string;
+  confidence: number;
+  user?: {
+    id: number;
+    name: string;
+    role: string;
+  } | null;
+  access_point?: {
+    id: number;
+    name: string;
+    building: string;
+  } | null;
+}
 
-export const getTimeline = () => api.get<TimelinePoint[]>("/api/stats/access-timeline").then((r) => r.data);
+export interface UserItem {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  badge_id: string;
+  role: string;
+  department?: string;
+  clearance_level?: number;
+  is_active: boolean;
+}
 
-export const getAnomalyDist = () =>
-  api.get<AnomalyDistItem[]>("/api/stats/anomaly-distribution").then((r) => r.data);
-
-export const getTopAccessPoints = () =>
-  api.get<TopAccessPoint[]>("/api/stats/top-access-points").then((r) => r.data);
-
-export const getUsers = (params?: {
-  role?: string;
+export interface CreateUserPayload {
+  first_name: string;
+  last_name: string;
+  badge_id: string;
+  role: string;
   department?: string;
   is_active?: boolean;
-  search?: string;
-  skip?: number;
-  limit?: number;
-}) => api.get<User[]>("/api/users", { params }).then((r) => r.data);
+}
 
-export const createUser = (data: Partial<User>) => api.post<User>("/api/users", data).then((r) => r.data);
+export interface AccessPointItem {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+  building: string;
+  floor?: string | null;
+  room?: string | null;
+  zone?: string | null;
+  required_clearance?: number;
+  is_restricted?: boolean;
+}
 
-export const getUser = (id: number) => api.get<User>(`/api/users/${id}`).then((r) => r.data);
+export interface CreateAccessPointPayload {
+  name: string;
+  type: string;
+  status: string;
+  building: string;
+  floor?: string;
+  room?: string;
+  zone?: string;
+  required_clearance?: number;
+  is_restricted?: boolean;
+}
 
-export const updateUser = (id: number, data: Partial<User>) =>
-  api.put<User>(`/api/users/${id}`, data).then((r) => r.data);
-
-export const getLogs = (params?: {
-  user_id?: number;
-  access_point_id?: number;
-  decision?: string;
-  date_from?: string;
-  date_to?: string;
-  skip?: number;
-  limit?: number;
-}) => api.get<{ items: AccessLog[]; total: number }>("/api/access/logs", { params }).then((r) => r.data);
-
-export const clearAccessLogs = () =>
-  api.delete<{ deleted_logs: number; deleted_alerts: number }>("/api/access/logs").then((r) => r.data);
-
-export const requestAccess = (data: {
+export interface AccessRequestPayload {
   badge_id: string;
   access_point_id: number;
   timestamp?: string;
   method?: string;
-}) => api.post<AccessDecision>("/api/access/request", data).then((r) => r.data);
+}
 
-export const getAlerts = (params?: {
-  severity?: string;
-  status?: string;
-  skip?: number;
-  limit?: number;
-}) => api.get<AnomalyAlert[]>("/api/alerts", { params }).then((r) => r.data);
+export interface AccessDecision {
+  decision: string;
+  risk_score: number;
+  if_score?: number | null;
+  ae_score?: number | null;
+  log_id?: number | null;
+  user_name?: string | null;
+  access_point_name?: string | null;
+  mode?: string | null;
+  reasoning?: string | null;
+  alert_created: boolean;
+}
 
-export const resolveAlert = (id: number, resolvedBy = 0) =>
-  api.put(`/api/alerts/${id}/resolve`, { resolved_by: resolvedBy }).then((r) => r.data);
+export interface MlStatus {
+  [key: string]: unknown;
+}
 
-export const markFalsePositive = (id: number, resolvedBy = 0) =>
-  api.put(`/api/alerts/${id}/false-positive`, { resolved_by: resolvedBy }).then((r) => r.data);
+export interface FeatureImportanceItem {
+  feature: string;
+  importance: number;
+  rank?: number;
+}
 
-export const getAccessPointsList = (params?: { status?: string; building?: string }) =>
-  api.get<AccessPoint[]>("/api/access-points", { params }).then((r) => r.data);
+export interface HourlyTimelineItem {
+  hour: number;
+  granted: number;
+  denied: number;
+  delayed: number;
+}
 
-export const createAccessPoint = (data: Partial<AccessPoint>) =>
-  api.post<AccessPoint>("/api/access-points", data).then((r) => r.data);
+export interface MonthlyTimelineItem {
+  month: number;
+  granted: number;
+  denied: number;
+  delayed: number;
+}
 
-export const getAccessPoint = (id: number) =>
-  api.get<AccessPoint>(`/api/access-points/${id}`).then((r) => r.data);
+export interface TopAccessPointItem {
+  name: string;
+  building: string;
+  total: number;
+  granted: number;
+  denied: number;
+}
 
-export const updateAccessPoint = (id: number, data: Partial<AccessPoint>) =>
-  api.put<AccessPoint>(`/api/access-points/${id}`, data).then((r) => r.data);
+export interface SystemHealth {
+  timestamp: string;
+  process: {
+    cpu_percent: number;
+    memory_mb: number;
+    threads: number;
+  };
+  system: {
+    cpu_percent: number;
+    memory_percent: number;
+    memory_available_mb: number;
+    disk_percent: number;
+  };
+}
 
-export const getMLStatus = () => api.get<MLStatus>("/api/ml/status").then((r) => r.data);
+export const apiClient = {
+  getOverview: async () => (await api.get<OverviewStats>('/stats/overview')).data,
+  getAccessLogs: async () =>
+    (await api.get<AccessLogsResponse>('/access/logs', { params: { limit: 10000 } })).data,
+  getAlerts: async (limit = 10000) => (await api.get<AlertItem[]>('/alerts', { params: { limit } })).data,
+
+  getOpenAlertsCount: async (): Promise<number> => {
+    const data = await api.get<AlertItem[]>('/alerts', { params: { limit: 10000 } });
+    return data.data.filter(a => a.status === 'open').length;
+  },
+  resolveAlert: async (alertId: number) =>
+    (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/resolve`)).data,
+  markAlertFalsePositive: async (alertId: number) =>
+    (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/false-positive`)).data,
+  getUsers: async () => (await api.get<UserItem[]>('/users', { params: { limit: 10000 } })).data,
+  createUser: async (payload: CreateUserPayload) =>
+    (await api.post<UserItem>('/users', payload)).data,
+  updateUser: async (userId: number, payload: CreateUserPayload) =>
+    (await api.put<UserItem>(`/users/${userId}`, payload)).data,
+  getAccessPoints: async () => (await api.get<AccessPointItem[]>('/access-points')).data,
+  createAccessPoint: async (payload: CreateAccessPointPayload) =>
+    (await api.post<AccessPointItem>('/access-points', payload)).data,
+  updateAccessPoint: async (accessPointId: number, payload: CreateAccessPointPayload) =>
+    (await api.put<AccessPointItem>(`/access-points/${accessPointId}`, payload)).data,
+  getMlStatus: async () => (await api.get<MlStatus>('/ml/status')).data,
+  getFeatureImportance: async () =>
+    (await api.get<FeatureImportanceItem[]>('/explainations/feature-importance')).data,
+  getModelInsights: async () => (await api.get<Record<string, unknown>>('/explainations/model-insights')).data,
+  getDecisionExplanation: async (logId: number) =>
+    (await api.get<Record<string, unknown>>(`/explainations/decision/${logId}`)).data,
+  getAccessTimeline: async () =>
+    (await api.get<HourlyTimelineItem[]>('/stats/access-timeline')).data,
+  getMonthlyTimeline: async () =>
+    (await api.get<MonthlyTimelineItem[]>('/stats/monthly-timeline')).data,
+  getTopAccessPoints: async () =>
+    (await api.get<TopAccessPointItem[]>('/stats/top-access-points')).data,
+  getDatabasePerformance: async () =>
+    (await api.get<Record<string, unknown>>('/stats/database-performance')).data,
+  getApiPerformance: async () => (await api.get<Record<string, unknown>>('/stats/api-performance')).data,
+  getSystemHealth: async () => (await api.get<SystemHealth>('/stats/system-health')).data,
+  requestAccess: async (payload: AccessRequestPayload) => (await api.post<AccessDecision>('/access/request', payload)).data,
+  
+  // Admin endpoints
+  getAdminProfile: async (adminId: number) =>
+    (await api.get<UserItem>('/admin/profile', { params: { admin_id: adminId } })).data,
+  updateAdminUsername: async (adminId: number, newEmail: string) =>
+    (await api.put<UserItem>('/admin/profile/username', null, { params: { admin_id: adminId, new_email: newEmail } })).data,
+  changeAdminPassword: async (adminId: number, currentPassword: string, newPassword: string) =>
+    (await api.put<{ message: string }>('/admin/profile/password', null, {
+      params: { admin_id: adminId, current_password: currentPassword, new_password: newPassword }
+    })).data,
+  listAdmins: async () =>
+    (await api.get<UserItem[]>('/admin/list')).data,
+  createAdmin: async (email: string, tempPassword: string, role: string, firstName: string = 'Admin', lastName: string = 'User') =>
+    (await api.post<UserItem>('/admin', {
+      email,
+      temp_password: tempPassword,
+      role,
+      first_name: firstName,
+      last_name: lastName
+    })).data,
+  deleteAdmin: async (adminId: number) =>
+    (await api.delete<{ message: string }>(`/admin/${adminId}`)).data,
+};
+
+export default api;

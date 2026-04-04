@@ -25,7 +25,7 @@ def list_alerts(
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(10000, ge=1),
     db: Session = Depends(get_db),
 ):
     """List alerts with optional filters."""

@@ -80,7 +80,7 @@ def _rule_based_score(features: list) -> float:
         score += 0.30
     if access_frequency_24h > 10:
         score += 0.25
-    if time_since_last_access_min and time_since_last_access_min < 5:
+    if time_since_last_access_min is not None and time_since_last_access_min < 5:
         score += 0.30
     if sequential_zone_violation:
         score += 0.20
@@ -480,7 +480,7 @@ def list_access_logs(
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(10000, ge=1),
     db: Session = Depends(get_db),
 ):
     """List access logs with optional filters."""

@@ -13,3 +13,4 @@ joblib
 numpy
 pandas
 psutil
+bcrypt

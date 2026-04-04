@@ -279,8 +279,12 @@ class ModelExplainer:
         self, score: float, warnings: List[str]
     ) -> str:
         """Determine overall risk level."""
+        # Risk level is primarily based on anomaly score, not warnings
+        # Warnings provide context but should not dramatically inflate risk
         risk_score = score
-        risk_score += len(warnings) * 0.1
+        # Cap warning contribution at 0.1 total (not per warning)
+        warning_bonus = min(len(warnings) * 0.02, 0.1)
+        risk_score += warning_bonus
         
         if risk_score > 0.7:
             return "critical"
@@ -294,12 +298,34 @@ class ModelExplainer:
     def explain_feature_importance(self) -> Dict[str, Any]:
         """Explain global feature importance across all decisions."""
         
-        # Use Isolation Forest feature importance
+        # Compute feature importances from Isolation Forest using decision path depth
         importances = []
         
+        # Get feature importances from the model
+        try:
+            if hasattr(self.if_model_obj, 'estimators_'):
+                # Ensemble of trees - aggregate feature importances
+                feature_importances = np.zeros(len(self.feature_names))
+                for estimator in self.if_model_obj.estimators_:
+                    if hasattr(estimator, 'feature_importances_'):
+                        feature_importances += estimator.feature_importances_
+                feature_importances /= len(self.if_model_obj.estimators_)
+            elif hasattr(self.if_model_obj, 'feature_importances_'):
+                # Single estimator
+                feature_importances = self.if_model_obj.feature_importances_
+            else:
+                # Fallback: Use permutation importance
+                feature_importances = self._compute_permutation_importance()
+        except Exception:
+            # Fallback: Use permutation importance
+            feature_importances = self._compute_permutation_importance()
+        
+        # Normalize to 0-1 range
+        if np.max(feature_importances) > 0:
+            feature_importances = feature_importances / np.max(feature_importances)
+        
         for i, feature_name in enumerate(self.feature_names):
-            # Estimate importance via permutation
-            importance = float(np.random.random())  # Placeholder
+            importance = float(feature_importances[i]) if i < len(feature_importances) else 0.0
             importances.append({
                 "feature": feature_name,
                 "importance": importance,
@@ -313,9 +339,38 @@ class ModelExplainer:
             "timestamp": datetime.utcnow().isoformat(),
             "model": "isolation_forest_ensemble",
             "features": importances,
-            "methodology": "Permutation importance and decision path analysis",
+            "methodology": "Decision tree feature importance analysis",
             "top_3_features": [f["feature"] for f in importances[:3]],
         }
+    
+    def _compute_permutation_importance(self, n_samples: int = 100) -> np.ndarray:
+        """Compute permutation-based feature importance."""
+        try:
+            # Load test data to compute importance
+            test_path = self.repo_root / "data" / "processed" / "test_scaled.csv"
+            if test_path.exists():
+                test_df = __import__('pandas').read_csv(test_path)
+                X_test = test_df.iloc[:, :len(self.feature_names)].values
+                if len(X_test) > n_samples:
+                    X_test = X_test[:n_samples]
+                
+                # Baseline score
+                baseline_scores = self.if_model_obj.decision_function(X_test)
+                
+                # Permutation importance
+                importances = np.zeros(len(self.feature_names))
+                for i in range(len(self.feature_names)):
+                    X_permuted = X_test.copy()
+                    np.random.shuffle(X_permuted[:, i])
+                    permuted_scores = self.if_model_obj.decision_function(X_permuted)
+                    importances[i] = np.mean(np.abs(baseline_scores - permuted_scores))
+                
+                return importances / (np.max(importances) + 1e-9)
+        except Exception:
+            pass
+        
+        # Fallback: Equal importance
+        return np.ones(len(self.feature_names)) / len(self.feature_names)
     
     def _feature_description(self, feature_name: str) -> str:
         """Get human-readable description of a feature."""
