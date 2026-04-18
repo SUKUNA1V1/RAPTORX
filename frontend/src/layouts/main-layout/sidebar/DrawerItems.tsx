@@ -6,12 +6,10 @@ import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
-import Image from 'components/base/Image';
 
 import CollapseListItem from './list-items/CollapseListItem';
 import ProfileListItem from './list-items/ProfileListItem';
 import ListItem from './list-items/ListItem';
-import LogoImg from 'assets/images/Logo.png';
 import { topListData, bottomListData, profileListData } from 'data/sidebarListData';
 import { MenuItem } from 'routes/sitemap';
 import { apiClient } from 'lib/api';
@@ -55,7 +53,6 @@ const DrawerItems = () => {
         zIndex={1000}
       >
         <ButtonBase component={Link} href="/" disableRipple>
-          <Image src={LogoImg} alt="logo" height={24} width={24} sx={{ mr: 1 }} />
           <Typography variant="h5" color="text.primary" fontWeight={600} letterSpacing={1}>
             Raptor X
           </Typography>

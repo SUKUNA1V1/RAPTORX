@@ -1,44 +1,103 @@
 import { SxProps, useTheme } from '@mui/material';
 import { fontFamily } from 'theme/typography';
-import { useMemo } from 'react';
-import { graphic } from 'echarts';
-import * as echarts from 'echarts/core';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import Stack from '@mui/material/Stack';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import * as echarts from 'echarts';
+import EChartsReactCore from 'echarts-for-react/lib/core';
 import ReactEchart from 'components/base/ReactEchart';
-import { HourlyTimelineItem } from 'lib/api';
+import { TimelineItem } from 'lib/api';
+
+type RangeHours = 1 | 3 | 6 | 12 | 24;
+const RANGES: { label: string; hours: RangeHours }[] = [
+  { label: '1H', hours: 1 },
+  { label: '3H', hours: 3 },
+  { label: '6H', hours: 6 },
+  { label: '12H', hours: 12 },
+  { label: '24H', hours: 24 },
+];
 
 interface CompletedTaskChartProps {
   sx?: SxProps;
-  timeline: HourlyTimelineItem[];
+  timeline: TimelineItem[];
 }
 
 const CompletedTaskChart = ({ timeline, ...rest }: CompletedTaskChartProps) => {
   const theme = useTheme();
+  const [activeRange, setActiveRange] = useState<RangeHours>(24);
+  const chartRef = useRef<EChartsReactCore>(null);
+  // Track the first timestamp of the loaded window; when it changes, re-apply zoom
+  const windowKeyRef = useRef<string>('');
+  const rangeRef = useRef<RangeHours>(24);
 
-  const option = useMemo(() => {
-    const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-    const totalByHour = hours.map((_, i) => {
-      const entry = timeline.find((t) => t.hour === i);
-      return entry ? entry.granted + entry.denied + entry.delayed : 0;
+  const seriesData = useMemo(
+    () => timeline.map((entry) => [entry.timestamp, entry.granted + entry.denied + entry.delayed]),
+    [timeline],
+  );
+
+  const maxVal = useMemo(() => {
+    const vals = seriesData.map((d) => Number(d[1]));
+    return vals.length ? Math.max(...vals, 10) : 10;
+  }, [seriesData]);
+
+  /** Imperatively set zoom so data-updates (polling) never reset user's zoom */
+  const applyZoom = (rangeHours: RangeHours, data: (string | number)[][]) => {
+    if (!chartRef.current || data.length === 0) return;
+    const instance = chartRef.current.getEchartsInstance();
+    const lastTs = new Date(data[data.length - 1][0] as string).getTime();
+    const firstTs = new Date(data[0][0] as string).getTime();
+    const windowStart = Math.max(firstTs, lastTs - rangeHours * 60 * 60 * 1000);
+    instance.dispatchAction({
+      type: 'dataZoom',
+      dataZoomIndex: 0,
+      startValue: windowStart,
+      endValue: lastTs + 60_000,
     });
-    const maxVal = Math.max(...totalByHour, 10);
+  };
 
-    return {
+  // Re-apply zoom only when the data window changes (i.e., date changed or first load)
+  useEffect(() => {
+    if (seriesData.length === 0) return;
+    const newKey = seriesData[0][0] as string;
+    if (newKey !== windowKeyRef.current) {
+      windowKeyRef.current = newKey;
+      // Small timeout to ensure chart has rendered the new data first
+      const t = setTimeout(() => applyZoom(rangeRef.current, seriesData), 150);
+      return () => clearTimeout(t);
+    }
+  }, [seriesData]);
+
+  const handleRangeChange = (hours: RangeHours) => {
+    setActiveRange(hours);
+    rangeRef.current = hours;
+    applyZoom(hours, seriesData);
+  };
+
+  // The option intentionally has NO startValue/endValue in dataZoom —
+  // zoom is controlled imperatively via dispatchAction so polling never resets it.
+  const option = useMemo(
+    () => ({
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'none' },
-        formatter: (params: { name: string; value: number }[]) => {
+        formatter: (params: { value: [string, number] }[]) => {
           const p = params[0];
-          return `${p.name}: ${p.value} decisions`;
+          const date = new Date(p.value[0]);
+          const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          return `${time}: ${p.value[1]} decisions`;
         },
       },
-      grid: { top: 30, bottom: 70, left: 30, right: 0 },
+      grid: { top: 10, bottom: 20, left: 35, right: 10 },
+      dataZoom: [{ type: 'inside', zoomLock: false }],
       xAxis: {
-        type: 'category',
-        data: hours.filter((_, i) => i % 3 === 0), // show every 3h for readability
+        type: 'time',
         axisTick: { show: false },
         axisLine: { show: false },
+        splitLine: { show: false },
         axisLabel: {
-          margin: 10,
+          margin: 8,
           color: theme.palette.text.secondary,
           fontSize: theme.typography.caption.fontSize,
           fontFamily: fontFamily.monaSans,
@@ -57,22 +116,67 @@ const CompletedTaskChart = ({ timeline, ...rest }: CompletedTaskChartProps) => {
       },
       series: [
         {
-          data: totalByHour.filter((_, i) => i % 3 === 0),
+          data: seriesData,
           type: 'line',
-          showSymbol: false,
-          lineStyle: { color: theme.palette.secondary.main, width: 1.2 },
+          showSymbol: true,
+          symbolSize: 4,
+          lineStyle: { color: theme.palette.secondary.main, width: 1.5 },
+          itemStyle: { color: theme.palette.secondary.main },
           areaStyle: {
-            color: new graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(0, 194, 255, 0.2)' },
-              { offset: 1, color: 'rgba(0, 194, 255, 0)' },
-            ]),
+            color: {
+              type: 'linear',
+              x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: 'rgba(0, 194, 255, 0.25)' },
+                { offset: 1, color: 'rgba(0, 194, 255, 0)' },
+              ],
+            },
           },
         },
       ],
-    };
-  }, [theme, timeline]);
+    }),
+    [theme, seriesData, maxVal],
+  );
 
-  return <ReactEchart echarts={echarts} option={option} {...rest} />;
+  return (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Range buttons */}
+      <Stack direction="row" justifyContent="flex-end" sx={{ px: 1, pt: 0.5, pb: 0.5 }}>
+        <ButtonGroup size="small" disableElevation sx={{ '& .MuiButtonGroup-grouped': { minWidth: 36 } }}>
+          {RANGES.map(({ label, hours }) => (
+            <Button
+              key={hours}
+              onClick={() => handleRangeChange(hours)}
+              sx={{
+                py: 0.3,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                fontFamily: fontFamily.monaSans,
+                letterSpacing: 0.5,
+                ...(activeRange === hours
+                  ? { bgcolor: 'rgba(0,194,255,0.2)', color: '#00c2ff', borderColor: 'rgba(0,194,255,0.4)' }
+                  : { borderColor: 'rgba(255,255,255,0.08)', color: 'text.secondary', bgcolor: 'transparent' }),
+                '&:hover': { bgcolor: 'rgba(0,194,255,0.1)', borderColor: 'rgba(0,194,255,0.3)' },
+              }}
+            >
+              {label}
+            </Button>
+          ))}
+        </ButtonGroup>
+      </Stack>
+
+      {/* Chart */}
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <ReactEchart
+          ref={chartRef}
+          echarts={echarts}
+          option={option}
+          sx={{ height: '100% !important' }}
+          {...rest}
+        />
+      </Box>
+    </Box>
+  );
 };
 
 export default CompletedTaskChart;

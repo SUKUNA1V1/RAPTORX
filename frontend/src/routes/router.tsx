@@ -71,11 +71,19 @@ const router = createBrowserRouter(
             },
             {
               path: paths.mlStatus,
-              element: <MlStatusPage />,
+              element: (
+                <RequireAdmin>
+                  <MlStatusPage />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.explainability,
-              element: <ExplainabilityPage />,
+              element: (
+                <RequireAdmin>
+                  <ExplainabilityPage />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.performance,

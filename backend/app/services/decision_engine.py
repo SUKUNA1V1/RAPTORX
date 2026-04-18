@@ -26,23 +26,16 @@ class AccessDecisionEngine:
     Combines Isolation Forest + Autoencoder to make
     real-time access control decisions.
 
-    Decision thresholds (configurable):
-        risk_score < GRANT_THRESHOLD  -> GRANTED
-        risk_score < DENY_THRESHOLD   -> DELAYED
-        risk_score >= DENY_THRESHOLD  -> DENIED
+    Decision thresholds (loaded from model files, with env var override):
+        risk_score < grant_threshold  -> GRANTED
+        risk_score < deny_threshold   -> DELAYED
+        risk_score >= deny_threshold  -> DENIED
     
     Thread Safety:
         - Model loading protected by class-level lock (one-time initialization)
         - Predictions protected by instance-level RLock (re-entrant for nested calls)
         - Safe for concurrent FastAPI requests
     """
-
-    GRANT_THRESHOLD = float(
-        os.getenv("DECISION_THRESHOLD_GRANT", os.getenv("GRANT_THRESHOLD", "0.30"))
-    )
-    DENY_THRESHOLD = float(
-        os.getenv("DECISION_THRESHOLD_DENY", os.getenv("DENY_THRESHOLD", "0.70"))
-    )
 
     IF_WEIGHT = 0.3
     AE_WEIGHT = 0.7
@@ -63,6 +56,9 @@ class AccessDecisionEngine:
         self.if_data = None
         self.ae_config = None
         self.is_loaded = False
+        # Instance-level thresholds (loaded from model files)
+        self.grant_threshold = 0.30
+        self.deny_threshold = 0.70
         # Instance-level RLock for thread-safe predictions (allows re-entrant access)
         self._predict_lock = threading.RLock()
         self.audit_logger = self._build_audit_logger()
@@ -70,10 +66,12 @@ class AccessDecisionEngine:
         with AccessDecisionEngine._init_lock:
             if not AccessDecisionEngine._initialized:
                 self.load_models()
+                self._load_thresholds()
                 AccessDecisionEngine._initialized = True
             else:
                 # Models already loaded by another thread, verify they're accessible
                 self._load_models_verify()
+                self._load_thresholds()
 
     def _build_audit_logger(self) -> logging.Logger:
         logger = logging.getLogger("raptorx.access_audit")
@@ -168,6 +166,80 @@ class AccessDecisionEngine:
             print("Only Autoencoder loaded - single model")
         else:
             print("No models loaded - rule-based decisions")
+
+    def _load_thresholds(self) -> None:
+        """Load optimized thresholds from saved model files with env var override."""
+        default_grant = 0.30
+        default_deny = 0.70
+        
+        # Try to load from ensemble config first
+        try:
+            ensemble_path = resolve_model_artifact_path("ensemble_config.pkl", "ensemble", self.models_dir)
+            if os.path.exists(ensemble_path):
+                ensemble = joblib.load(ensemble_path)
+                loaded_grant = ensemble.get("best_threshold") or ensemble.get("grant_threshold")
+                loaded_deny = ensemble.get("deny_threshold")
+                
+                if loaded_grant is not None:
+                    self.grant_threshold = float(loaded_grant)
+                    print(f"Loaded grant threshold from ensemble_config: {self.grant_threshold:.2f}")
+                
+                if loaded_deny is not None:
+                    self.deny_threshold = float(loaded_deny)
+                    print(f"Loaded deny threshold from ensemble_config: {self.deny_threshold:.2f}")
+                
+                if loaded_grant is not None or loaded_deny is not None:
+                    # Validate that grant < deny
+                    if self.grant_threshold >= self.deny_threshold:
+                        print(f"⚠ Warning: grant_threshold ({self.grant_threshold}) >= deny_threshold ({self.deny_threshold})")
+                        self.deny_threshold = min(0.99, self.grant_threshold + 0.25)
+                        print(f"  Adjusted deny_threshold to: {self.deny_threshold:.2f}")
+                    return
+        except Exception as e:
+            print(f"Could not load ensemble thresholds: {e}")
+        
+        # Fall back to isolation forest
+        if self.if_data:
+            loaded_grant = self.if_data.get("best_threshold")
+            loaded_deny = self.if_data.get("deny_threshold")
+            
+            if loaded_grant is not None:
+                self.grant_threshold = float(loaded_grant)
+                print(f"Loaded grant threshold from isolation_forest: {self.grant_threshold:.2f}")
+            
+            if loaded_deny is not None:
+                self.deny_threshold = float(loaded_deny)
+                print(f"Loaded deny threshold from isolation_forest: {self.deny_threshold:.2f}")
+            
+            if loaded_grant is not None or loaded_deny is not None:
+                # Validate that grant < deny
+                if self.grant_threshold >= self.deny_threshold:
+                    print(f"⚠ Warning: grant_threshold ({self.grant_threshold}) >= deny_threshold ({self.deny_threshold})")
+                    self.deny_threshold = min(0.99, self.grant_threshold + 0.25)
+                    print(f"  Adjusted deny_threshold to: {self.deny_threshold:.2f}")
+                return
+        
+        # Allow env var override for both thresholds
+        env_grant = os.getenv("DECISION_THRESHOLD_GRANT") or os.getenv("GRANT_THRESHOLD")
+        env_deny = os.getenv("DECISION_THRESHOLD_DENY") or os.getenv("DENY_THRESHOLD")
+        
+        if env_grant:
+            self.grant_threshold = float(env_grant)
+            print(f"Override grant threshold from env var: {self.grant_threshold:.2f}")
+        
+        if env_deny:
+            self.deny_threshold = float(env_deny)
+            print(f"Override deny threshold from env var: {self.deny_threshold:.2f}")
+        
+        # Final validation
+        if self.grant_threshold >= self.deny_threshold:
+            print(f"⚠ Warning: grant_threshold ({self.grant_threshold}) >= deny_threshold ({self.deny_threshold})")
+            self.deny_threshold = min(0.99, self.grant_threshold + 0.25)
+            print(f"  Adjusted deny_threshold to: {self.deny_threshold:.2f}")
+        
+        # If nothing loaded, use defaults
+        if self.grant_threshold == 0.30 and self.deny_threshold == 0.70:
+            print(f"Using default thresholds: grant={default_grant}, deny={default_deny}")
 
     def _load_models_verify(self) -> None:
         """Verify models from first initialization are accessible (for concurrent initialization)."""
@@ -334,18 +406,18 @@ class AccessDecisionEngine:
             if clone_bump:
                 risk_score = float(np.clip(risk_score + clone_bump, 0.0, 1.0))
 
-        if risk_score < self.GRANT_THRESHOLD:
+        if risk_score < self.grant_threshold:
             decision = "granted"
             reasoning = (
-                f"Risk score {risk_score:.4f} below grant threshold {self.GRANT_THRESHOLD}"
+                f"Risk score {risk_score:.4f} below grant threshold {self.grant_threshold}"
             )
-        elif risk_score < self.DENY_THRESHOLD:
+        elif risk_score < self.deny_threshold:
             decision = "delayed"
             reasoning = f"Risk score {risk_score:.4f} in delay zone - guard notified"
         else:
             decision = "denied"
             reasoning = (
-                f"Risk score {risk_score:.4f} above deny threshold {self.DENY_THRESHOLD}"
+                f"Risk score {risk_score:.4f} above deny threshold {self.deny_threshold}"
             )
 
         if clone_bump:
@@ -358,7 +430,7 @@ class AccessDecisionEngine:
             "ae_score": scores["ae_score"],
             "reasoning": reasoning,
             "mode": mode,
-            "thresholds": {"grant": self.GRANT_THRESHOLD, "deny": self.DENY_THRESHOLD},
+            "thresholds": {"grant": self.grant_threshold, "deny": self.deny_threshold},
         }
         self._emit_audit(
             event_type="decision",
@@ -401,8 +473,8 @@ class AccessDecisionEngine:
             else "single_model"
             if self.is_loaded
             else "rule_based",
-            "grant_threshold": self.GRANT_THRESHOLD,
-            "deny_threshold": self.DENY_THRESHOLD,
+            "grant_threshold": self.grant_threshold,
+            "deny_threshold": self.deny_threshold,
             "if_weight": self.IF_WEIGHT,
             "ae_weight": self.AE_WEIGHT,
         }

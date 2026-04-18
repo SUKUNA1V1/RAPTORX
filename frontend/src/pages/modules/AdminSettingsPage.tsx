@@ -17,6 +17,7 @@ import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import Alert from '@mui/material/Alert';
+import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { apiClient } from 'lib/api';
@@ -41,11 +42,15 @@ const AdminSettingsPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Admins list state
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [showNewAdminPassword, setShowNewAdminPassword] = useState(false);
   const [newAdminRole, setNewAdminRole] = useState('admin');
   const [newAdminFirstName, setNewAdminFirstName] = useState('');
   const [newAdminLastName, setNewAdminLastName] = useState('');
@@ -368,13 +373,22 @@ const AdminSettingsPage = () => {
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Current Password</Typography>
                   <TextField
                     fullWidth
-                    type="password"
+                    type={showCurrentPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     variant="filled"
                     helperText="Enter your current password to verify your identity."
                     inputProps={{ style: { fontSize: '1rem' } }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowCurrentPassword(!showCurrentPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                            <IconifyIcon icon={showCurrentPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
                     sx={{
                       '& .MuiFilledInput-root': {
                         borderRadius: 2,
@@ -391,13 +405,22 @@ const AdminSettingsPage = () => {
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>New Password</Typography>
                   <TextField
                     fullWidth
-                    type="password"
+                    type={showNewPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     variant="filled"
                     helperText="Use at least 8 characters with uppercase, lowercase, and numbers."
                     inputProps={{ style: { fontSize: '1rem' } }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowNewPassword(!showNewPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                            <IconifyIcon icon={showNewPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
                     sx={{
                       '& .MuiFilledInput-root': {
                         borderRadius: 2,
@@ -414,13 +437,22 @@ const AdminSettingsPage = () => {
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Confirm New Password</Typography>
                   <TextField
                     fullWidth
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     variant="filled"
                     helperText="Retype your new password to confirm."
                     inputProps={{ style: { fontSize: '1rem' } }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                            <IconifyIcon icon={showConfirmPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
                     sx={{
                       '& .MuiFilledInput-root': {
                         borderRadius: 2,
@@ -609,13 +641,22 @@ const AdminSettingsPage = () => {
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Temporary Password</Typography>
                   <TextField
                     fullWidth
-                    type="password"
+                    type={showNewAdminPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     variant="filled"
                     value={newAdminPassword}
                     onChange={(e) => setNewAdminPassword(e.target.value)}
                     helperText="Share this temporarily. User must change it on first login."
                     inputProps={{ style: { fontSize: '1rem' } }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowNewAdminPassword(!showNewAdminPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                            <IconifyIcon icon={showNewAdminPassword ? 'mdi:eye-off-outline' : 'mdi:eye-outline'} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
                     sx={{
                       '& .MuiFilledInput-root': {
                         borderRadius: 2,

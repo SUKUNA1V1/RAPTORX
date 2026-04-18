@@ -52,18 +52,6 @@ const sitemap: MenuItem[] = [
     icon: 'mdi:view-grid',
   },
   {
-    id: 'ml-status',
-    subheader: 'ML Status',
-    path: paths.mlStatus,
-    icon: 'mdi:chart-line',
-  },
-  {
-    id: 'explainability',
-    subheader: 'Explainability',
-    path: paths.explainability,
-    icon: 'mingcute:star-fill',
-  },
-  {
     id: 'performance',
     subheader: 'Performance',
     path: paths.performance,
@@ -74,6 +62,16 @@ const sitemap: MenuItem[] = [
     subheader: 'Admin Tools',
     icon: 'mingcute:safe-lock-fill',
     items: [
+      {
+        name: 'ML Status',
+        pathName: 'ml-status',
+        path: paths.mlStatus,
+      },
+      {
+        name: 'Explainability',
+        pathName: 'explainability',
+        path: paths.explainability,
+      },
       {
         name: 'Simulator',
         pathName: 'simulator',

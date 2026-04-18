@@ -330,7 +330,7 @@ const MlStatusPage = () => {
                 <Stack spacing={0}>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>Grant Threshold</Typography>
                   <Typography variant="body1" sx={{ color: '#fbbf24', fontWeight: 800 }}>
-                    {String(asRuntimeStatus(status).grant_threshold ?? '—')}
+                    {asRuntimeStatus(status).grant_threshold !== undefined ? Number(asRuntimeStatus(status).grant_threshold).toFixed(2) : '—'}
                   </Typography>
                 </Stack>
               </Box>
@@ -346,7 +346,7 @@ const MlStatusPage = () => {
                 <Stack spacing={0}>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>Deny Threshold</Typography>
                   <Typography variant="body1" sx={{ color: '#f87171', fontWeight: 800 }}>
-                    {String(asRuntimeStatus(status).deny_threshold ?? '—')}
+                    {asRuntimeStatus(status).deny_threshold !== undefined ? Number(asRuntimeStatus(status).deny_threshold).toFixed(2) : '—'}
                   </Typography>
                 </Stack>
               </Box>

@@ -69,42 +69,66 @@ def get_overview(db: Session = Depends(get_db)):
 
 
 @router.get("/access-timeline", status_code=status.HTTP_200_OK)
-def get_access_timeline(db: Session = Depends(get_db)):
-    """Return hourly access counts for last 24 hours."""
+def get_access_timeline(date: str | None = None, db: Session = Depends(get_db)):
+    """Return access counts by minute for a selected date (YYYY-MM-DD) or the 24h window
+    containing the most recent activity when no date is provided."""
     try:
-        today = datetime.now(timezone.utc).date()
-        result = []
-        for hour in range(24):
-            start = datetime.combine(today, time(hour, 0), tzinfo=timezone.utc)
-            end = datetime.combine(today, time(hour, 59, 59), tzinfo=timezone.utc)
-            granted = (
-                db.query(func.count(AccessLog.id))
-                .filter(AccessLog.timestamp.between(start, end))
-                .filter(AccessLog.decision == "granted")
-                .scalar()
-            )
-            denied = (
-                db.query(func.count(AccessLog.id))
-                .filter(AccessLog.timestamp.between(start, end))
-                .filter(AccessLog.decision == "denied")
-                .scalar()
-            )
-            delayed = (
-                db.query(func.count(AccessLog.id))
-                .filter(AccessLog.timestamp.between(start, end))
-                .filter(AccessLog.decision == "delayed")
-                .scalar()
-            )
-            result.append(
-                {
-                    "hour": hour,
-                    "granted": granted,
-                    "denied": denied,
-                    "delayed": delayed,
-                }
-            )
+        now = datetime.now(timezone.utc)
+
+        if date:
+            # Parse the user-selected date and build a full-day window in UTC
+            try:
+                selected = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+            window_start = selected
+            window_end = selected + timedelta(hours=24)
+        else:
+            # Anchor to the most recent log so the chart shows real data even if
+            # logs were stored with future timestamps from the simulator.
+            latest_ts = db.query(func.max(AccessLog.timestamp)).scalar()
+            if latest_ts is not None:
+                if latest_ts.tzinfo is None:
+                    latest_ts = latest_ts.replace(tzinfo=timezone.utc)
+                anchor = max(now, latest_ts)
+            else:
+                anchor = now
+            window_end = anchor.replace(second=0, microsecond=0) + timedelta(minutes=1)
+            window_start = window_end - timedelta(hours=24)
+
+        minute_map = {}
+        for m in range(24 * 60):
+            dt = window_start + timedelta(minutes=m)
+            minute_map[dt.isoformat()] = {"granted": 0, "denied": 0, "delayed": 0}
+
+        logs = (
+            db.query(AccessLog.timestamp, AccessLog.decision)
+            .filter(AccessLog.timestamp >= window_start, AccessLog.timestamp < window_end)
+            .all()
+        )
+
+        for ts, decision in logs:
+            if not ts:
+                continue
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            minute_key = ts.replace(second=0, microsecond=0).isoformat()
+            if minute_key in minute_map and decision in minute_map[minute_key]:
+                minute_map[minute_key][decision] += 1
+
+        result = [
+            {
+                "timestamp": k,
+                "granted": v["granted"],
+                "denied": v["denied"],
+                "delayed": v["delayed"],
+            }
+            for k, v in sorted(minute_map.items())
+        ]
 
         return result
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

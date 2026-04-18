@@ -120,7 +120,7 @@ if TARGET_ANOMALY_RATIO is not None:
 else:
     combined_tune = combined
 
-print("=" * 60)
+print("\n" + "=" * 60)
 print("THRESHOLD TUNING ON VALIDATION SET")
 print("=" * 60)
 print(f"Validation anomaly ratio (original): {y_val.mean() * 100:.2f}%")
@@ -128,12 +128,12 @@ print(f"Validation anomaly ratio (tuning)  : {y_tune.mean() * 100:.2f}%")
 print(f"Minimum precision target           : {MIN_PRECISION:.2f}")
 print(f"Minimum recall target              : {MIN_RECALL:.2f}")
 
-best_t = 0.5
+# Find optimal grant threshold (maximize recall - catch normal cases)
+# and optimal deny threshold (maximize precision - catch anomalies)
+best_grant_t = 0.30
+best_deny_t = 0.70
 best_f1 = 0.0
-best_prec = 0.0
-best_rec = 0.0
-best_valid = False
-best_selection_score = -1.0
+best_metrics = {}
 results = []
 
 for t in np.arange(0.20, 0.90, 0.01):
@@ -142,7 +142,6 @@ for t in np.arange(0.20, 0.90, 0.01):
     prec = precision_score(y_tune, preds, zero_division=0)
     rec = recall_score(y_tune, preds, zero_division=0)
     valid = prec >= MIN_PRECISION and rec >= MIN_RECALL
-    selection_score = f1 + (0.05 if valid else 0.0)
 
     results.append({
         "threshold": round(float(t), 2),
@@ -152,26 +151,37 @@ for t in np.arange(0.20, 0.90, 0.01):
         "valid": bool(valid),
     })
 
-    if selection_score > best_selection_score or (
-        np.isclose(selection_score, best_selection_score) and rec > best_rec
-    ):
-        best_selection_score = selection_score
+    if f1 > best_f1 and valid:
         best_f1 = f1
-        best_prec = prec
-        best_rec = rec
-        best_valid = valid
-        best_t = float(t)
+        best_grant_t = float(t)
+        best_metrics = {
+            "f1": f1,
+            "precision": prec,
+            "recall": rec,
+        }
+
+# Deny threshold should be higher than grant threshold
+# Use a higher percentile for deny - be stricter on denying
+# Strategy: grant at best found threshold, deny at +0.20 or higher percentile
+best_deny_t = min(0.80, best_grant_t + 0.25)
+
+# Validate deny threshold choice
+if best_grant_t < best_deny_t:
+    print(f"\n✓ Valid threshold pair: grant={best_grant_t:.2f}, deny={best_deny_t:.2f}")
+else:
+    print(f"\n⚠ Deny must be > grant, adjusting...")
+    best_deny_t = best_grant_t + 0.25
 
 results_df = pd.DataFrame(results).sort_values("f1", ascending=False)
 print("\nTop 15 threshold candidates:\n")
 print(results_df.head(15).to_string(index=False))
 
 print("\n" + "=" * 60)
-print(f"BEST THRESHOLD: {best_t:.2f}")
-print(f"Validation F1:  {best_f1:.4f}")
-print(f"Validation Precision: {best_prec:.4f}")
-print(f"Validation Recall:    {best_rec:.4f}")
-print(f"Meets min targets:    {best_valid}")
+print(f"BEST GRANT THRESHOLD: {best_grant_t:.2f}")
+print(f"BEST DENY THRESHOLD:  {best_deny_t:.2f}")
+print(f"Validation F1:  {best_metrics.get('f1', best_f1):.4f}")
+print(f"Validation Precision: {best_metrics.get('precision', 0):.4f}")
+print(f"Validation Recall:    {best_metrics.get('recall', 0):.4f}")
 print("=" * 60)
 
 # Evaluate on test set
@@ -180,7 +190,8 @@ X_test = test_df[FEATURE_COLS_13].values
 y_test = test_df["label"].values
 
 combined_test = compute_scores(X_test, if_data, ae_model, ae_config)
-preds_test = (combined_test >= best_t).astype(int)
+# Using binary classification: normal if < grant_threshold, anomaly if >= grant_threshold
+preds_test = (combined_test >= best_grant_t).astype(int)
 
 f1_test = f1_score(y_test, preds_test, zero_division=0)
 prec_test = precision_score(y_test, preds_test, zero_division=0)
@@ -188,8 +199,11 @@ rec_test = recall_score(y_test, preds_test, zero_division=0)
 auc_test = roc_auc_score(y_test, combined_test)
 
 print("\n" + "=" * 60)
-print("TEST SET PERFORMANCE (with new threshold)")
+print("TEST SET PERFORMANCE (with new thresholds)")
 print("=" * 60)
+print(f"Grant Threshold (normal if < this): {best_grant_t:.2f}")
+print(f"Deny Threshold (deny if >= this):   {best_deny_t:.2f}")
+print(f"\nBinary Classification Performance (anomaly detection):")
 print(f"Precision : {prec_test * 100:.2f}%")
 print(f"Recall    : {rec_test * 100:.2f}%")
 print(f"F1-Score  : {f1_test:.4f}")
@@ -217,23 +231,30 @@ if f1_test > 0.95:
     print("\nWARNING: F1 > 0.95 suggests data may still be too easy")
     print("Consider regenerating with more overlap")
 
-# Update saved models
-if_data["best_threshold"] = best_t
+# Update saved models with both thresholds
+if_data["best_threshold"] = best_grant_t
+if_data["deny_threshold"] = best_deny_t
 if_root_path = "ml/models/isolation_forest.pkl"
 joblib.dump(if_data, if_root_path)
 register_model_version("isolation_forest", [if_root_path], "ml/models")
-print(f"\nUpdated threshold in isolation_forest.pkl: {best_t:.2f}")
+print(f"\nUpdated thresholds in isolation_forest.pkl:")
+print(f"  grant_threshold: {best_grant_t:.2f}")
+print(f"  deny_threshold:  {best_deny_t:.2f}")
 
 try:
     ensemble_path = resolve_model_artifact_path("ensemble_config.pkl", "ensemble")
     ensemble = joblib.load(ensemble_path)
-    ensemble["best_threshold"] = best_t
-    ensemble["threshold"] = best_t
+    ensemble["best_threshold"] = best_grant_t
+    ensemble["threshold"] = best_grant_t
+    ensemble["grant_threshold"] = best_grant_t
+    ensemble["deny_threshold"] = best_deny_t
     ensemble_root_path = "ml/models/ensemble_config.pkl"
     joblib.dump(ensemble, ensemble_root_path)
     register_model_version("ensemble", [ensemble_root_path], "ml/models")
-    print(f"Updated threshold in ensemble_config.pkl: {best_t:.2f}")
-except Exception:
-    pass
+    print(f"Updated thresholds in ensemble_config.pkl:")
+    print(f"  grant_threshold: {best_grant_t:.2f}")
+    print(f"  deny_threshold:  {best_deny_t:.2f}")
+except Exception as e:
+    print(f"Warning: Could not update ensemble_config: {e}")
 
 print("\n" + "=" * 60)

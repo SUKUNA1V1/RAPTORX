@@ -139,8 +139,8 @@ export interface FeatureImportanceItem {
   rank?: number;
 }
 
-export interface HourlyTimelineItem {
-  hour: number;
+export interface TimelineItem {
+  timestamp: string;
   granted: number;
   denied: number;
   delayed: number;
@@ -206,8 +206,8 @@ export const apiClient = {
   getModelInsights: async () => (await api.get<Record<string, unknown>>('/explainations/model-insights')).data,
   getDecisionExplanation: async (logId: number) =>
     (await api.get<Record<string, unknown>>(`/explainations/decision/${logId}`)).data,
-  getAccessTimeline: async () =>
-    (await api.get<HourlyTimelineItem[]>('/stats/access-timeline')).data,
+  getAccessTimeline: async (date?: string) =>
+    (await api.get<TimelineItem[]>('/stats/access-timeline', { params: date ? { date } : {} })).data,
   getMonthlyTimeline: async () =>
     (await api.get<MonthlyTimelineItem[]>('/stats/monthly-timeline')).data,
   getTopAccessPoints: async () =>

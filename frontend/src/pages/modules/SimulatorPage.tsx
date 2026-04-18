@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -29,7 +29,8 @@ type ScenarioType =
   | 'weekend_normal'
   | 'cross_dept'
   | 'sequential_restricted'
-  | 'early_morning';
+  | 'early_morning'
+  | 'custom';
 
 const scenarioConfig: Record<
   ScenarioType,
@@ -94,9 +95,14 @@ const scenarioConfig: Record<
     description: 'Access at 6-7 AM (transitional hours - should be low risk for morning shift).',
     severity: 'warning',
   },
+  custom: {
+    label: 'Custom Execution',
+    description: 'Manually specify the user and access point to formulate a precise request pattern.',
+    severity: 'info',
+  },
 };
 
-const anomalyScenarios: Array<Exclude<ScenarioType, 'normal' | 'anomalous'>> = [
+const anomalyScenarios: Array<Exclude<ScenarioType, 'normal' | 'anomalous' | 'custom'>> = [
   'unusual_hours',
   'badge_cloning',
   'restricted_access',
@@ -135,6 +141,7 @@ const getExpectedResults = (scenario: ScenarioType): ExpectedResult => {
     sequential_restricted: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.85, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
     early_morning: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.45, riskLevel: 'low', successRate: 90 },
     anomalous: { decision: 'delayed', allowedDecisions: ['delayed', 'denied'], minRisk: 0.35, maxRisk: 1.0, riskLevel: 'high', successRate: 75 },
+    custom: { decision: 'granted', allowedDecisions: ['granted', 'denied', 'delayed'], minRisk: 0.0, maxRisk: 1.0, riskLevel: 'medium', successRate: 100 },
   };
   return expectations[scenario];
 };
@@ -253,6 +260,12 @@ const SimulatorPage = () => {
   const [accessPoints, setAccessPoints] = useState<AccessPointItem[]>([]);
   const [scenario, setScenario] = useState<ScenarioType>('normal');
   const [iterations, setIterations] = useState(10);
+  const [customUserId, setCustomUserId] = useState<string>('random');
+  const [customApId, setCustomApId] = useState<string>('random');
+  const [customTime, setCustomTime] = useState<string>(() => {
+    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+    return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
+  });
   const [loading, setLoading] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(false);
   const [error, setError] = useState('');
@@ -293,6 +306,12 @@ const SimulatorPage = () => {
     }
   };
 
+  useEffect(() => {
+    // Pre-load data on mount so select fields show options immediately
+    void ensureSeedDataLoaded();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const runScenario = async () => {
     const { usersData, accessPointsData } = await ensureSeedDataLoaded();
 
@@ -307,17 +326,37 @@ const SimulatorPage = () => {
     try {
       const generatedResults: SimulationResult[] = [];
       const safeIterations = Math.max(1, Math.min(100, iterations));
-      // Use a future anchor to avoid contamination from existing recent logs.
-      const runBaseMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      // Use current time so events appear on today's dashboard chart.
+      const runBaseMs = Date.now();
 
       for (let i = 0; i < safeIterations; i += 1) {
         const effectiveScenario = scenario === 'anomalous' ? randomItem(anomalyScenarios) : scenario;
-        const expectedForEvent = getExpectedResults(effectiveScenario);
+        const expectedForEvent = { ...getExpectedResults(effectiveScenario) };
         let target: { user: UserItem; accessPoint: AccessPointItem } | null = null;
-        const eventBase = new Date(runBaseMs + i * 90 * 1000);
+        const eventBase = new Date(runBaseMs + i * 5 * 1000);
         let timestamp: string | undefined = eventBase.toISOString();
 
-        if (effectiveScenario === 'restricted_access') {
+        if (effectiveScenario === 'custom') {
+          let cUser: UserItem | undefined;
+          if (customUserId === 'random') {
+            cUser = randomItem(usersData.filter((u) => u.is_active));
+          } else {
+            cUser = usersData.find((u) => u.id === Number(customUserId));
+          }
+
+          let cAp: AccessPointItem | undefined;
+          if (customApId === 'random') {
+            cAp = randomItem(accessPointsData.filter((ap) => ap.status === 'active'));
+          } else {
+            cAp = accessPointsData.find((ap) => ap.id === Number(customApId));
+          }
+
+          target = (cUser && cAp) ? { user: cUser, accessPoint: cAp } : null;
+          const parsedDate = new Date(customTime);
+          if (!isNaN(parsedDate.getTime())) {
+            timestamp = parsedDate.toISOString();
+          }
+        } else if (effectiveScenario === 'restricted_access') {
           target = pickRestrictedTarget(usersData, accessPointsData);
         } else if (
           effectiveScenario === 'unusual_hours' ||
@@ -565,6 +604,55 @@ const SimulatorPage = () => {
                 </Grid>
               </Grid>
 
+              {scenario === 'custom' && (
+                <Grid container spacing={2} sx={{ mt: 0 }}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      label="Target User"
+                      value={customUserId}
+                      onChange={(e) => setCustomUserId(e.target.value)}
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, '& .MuiInputLabel-root': { color: 'text.secondary' } }}
+                    >
+                      <MenuItem value="random">Auto-Select</MenuItem>
+                      {users.filter((u) => u.is_active).map((u) => (
+                        <MenuItem key={u.id} value={String(u.id)}>{u.email} (CLR: {u.clearance_level})</MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      label="Target Access Point"
+                      value={customApId}
+                      onChange={(e) => setCustomApId(e.target.value)}
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, '& .MuiInputLabel-root': { color: 'text.secondary' } }}
+                    >
+                      <MenuItem value="random">Auto-Select</MenuItem>
+                      {accessPoints.filter((ap) => ap.status === 'active').map((ap) => (
+                        <MenuItem key={ap.id} value={String(ap.id)}>{ap.name} (REQ: {ap.required_clearance})</MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      type="datetime-local"
+                      fullWidth
+                      size="small"
+                      label="Event Time"
+                      InputLabelProps={{ shrink: true }}
+                      value={customTime}
+                      onChange={(e) => setCustomTime(e.target.value)}
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, '& .MuiInputLabel-root': { color: 'text.secondary' } }}
+                    />
+                  </Grid>
+                </Grid>
+              )}
+
               <Alert 
                 severity={scenarioConfig[scenario].severity} 
                 icon={<IconifyIcon icon="mdi:information-outline" />}
@@ -624,57 +712,21 @@ const SimulatorPage = () => {
                 </Box>
               </Box>
 
-              {results.length > 0 && (
-                <Box>
-                  <Typography variant="caption" sx={{ color: '#f9a825', fontWeight: 700, mb: 1, display: 'block' }}>🎯 EXPECTED vs ACTUAL</Typography>
-                  {(() => {
-                    const expected = results[0]?.expected ?? getExpectedResults(scenario);
-                    const actualDecision = summary.denied > 0 ? 'denied' : (summary.granted > summary.delayed ? 'granted' : 'delayed');
-                    const successMatch = expected.allowedDecisions.includes(actualDecision);
-                    const riskColor = { low: '#4caf50', medium: '#ff9800', high: '#f57c00', critical: '#f44336' }[getRiskLevel(parseFloat(summary.avgRisk))];
-                    const avgRisk = parseFloat(summary.avgRisk);
-                    const riskMatch = avgRisk >= expected.minRisk && avgRisk <= expected.maxRisk;
-                    
-                    return (
-                      <Stack spacing={1}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>Decision</Typography>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Chip label={`expected: ${expected.decision}`} size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: '#e2e8f0' }} />
-                            <Chip label={`actual: ${actualDecision}`} size="small" sx={{ bgcolor: successMatch ? '#4caf5033' : '#f4433633', color: successMatch ? '#4caf50' : '#f44336' }} />
-                          </Box>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>Risk Level</Typography>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Chip label={`expected: ${expected.riskLevel}`} size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: '#e2e8f0' }} />
-                            <Chip label={`actual: ${getRiskLevel(parseFloat(summary.avgRisk))}`} size="small" sx={{ bgcolor: `${riskColor}33`, color: riskColor }} />
-                          </Box>
-                        </Box>
-                        <Box sx={{ mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1, textAlign: 'center' }}>
-                          {successMatch && riskMatch ? (
-                            <Typography variant="caption" sx={{ color: '#4caf50', fontWeight: 700 }}>✅ RESULTS MATCH EXPECTATIONS</Typography>
-                          ) : (
-                            <Typography variant="caption" sx={{ color: '#f44336', fontWeight: 700 }}>⚠️ RESULTS DIFFER FROM EXPECTED</Typography>
-                          )}
-                        </Box>
-                      </Stack>
-                    );
-                  })()}
-                </Box>
-              )}
 
-              <Button 
-                variant="outlined" 
-                color="error"
-                fullWidth 
-                onClick={() => setResults([])} 
-                disabled={loading || !results.length}
-                startIcon={<IconifyIcon icon="mdi:delete-outline" />}
-                sx={{ mt: 2, borderRadius: 2, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
-              >
-                Clear Log
-              </Button>
+
+              <Box sx={{ mt: 'auto', pt: 3 }}>
+                <Button 
+                  variant="outlined" 
+                  color="error"
+                  fullWidth 
+                  onClick={() => setResults([])} 
+                  disabled={loading || !results.length}
+                  startIcon={<IconifyIcon icon="mdi:delete-outline" />}
+                  sx={{ borderRadius: 2, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+                >
+                  Clear Log
+                </Button>
+              </Box>
             </Box>
           </Grid>
         </Grid>
@@ -721,7 +773,7 @@ const SimulatorPage = () => {
                 <TableHead>
                   <TableRow>
                     {['Subject / User', 'Target Access Point', 'Expected', 'Actual Decision', 'Risk Score', 'Match?', 'Reasoning'].map((header) => (
-                      <TableCell key={header} sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid rgba(255,255,255,0.05)', py: 2 }}>
+                      <TableCell key={header} align={header === 'Match?' ? 'center' : 'left'} sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid rgba(255,255,255,0.05)', py: 2 }}>
                         {header}
                       </TableCell>
                     ))}
@@ -749,9 +801,9 @@ const SimulatorPage = () => {
                         <TableCell sx={{ color: '#fff', fontWeight: 600 }}>{result.user_name || 'Unknown'}</TableCell>
                         <TableCell sx={{ color: '#e2e8f0' }}>{result.access_point_name || 'Invalid'}</TableCell>
                         <TableCell>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                            <Chip label={expected.decision.toUpperCase()} size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: '#e2e8f0' }} />
-                            <Chip label={expected.riskLevel.toUpperCase()} size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: '#a78bfa' }} />
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Chip label={expected.decision.toUpperCase()} size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: '#e2e8f0', width: 'fit-content', fontSize: '0.65rem', fontWeight: 700 }} />
+                            <Chip label={expected.riskLevel.toUpperCase()} size="small" variant="outlined" sx={{ borderColor: 'rgba(167,139,250,0.4)', color: '#a78bfa', width: 'fit-content', fontSize: '0.65rem', fontWeight: 700 }} />
                           </Box>
                         </TableCell>
                         <TableCell>
@@ -760,6 +812,7 @@ const SimulatorPage = () => {
                             size="small"
                             sx={{
                               fontWeight: 800,
+                              fontSize: '0.7rem',
                               letterSpacing: 0.5,
                               bgcolor: `${getDecisionColor(result.decision)}22`,
                               color: getDecisionColor(result.decision),
@@ -768,15 +821,22 @@ const SimulatorPage = () => {
                             }}
                           />
                         </TableCell>
-                        <TableCell sx={{ color: '#fbbf24', fontWeight: 700, fontFamily: 'monospace', fontSize: '1rem' }}>
-                          {Number(result.risk_score || 0).toFixed(3)} ({getRiskLevel(Number(result.risk_score || 0))})
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: '1.5rem', textAlign: 'center' }}>
-                            {overallMatch ? '✅' : '❌'}
+                        <TableCell sx={{ color: '#fbbf24', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                          {Number(result.risk_score || 0).toFixed(3)}
+                          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 600, mt: 0.5 }}>
+                            {getRiskLevel(Number(result.risk_score || 0)).toUpperCase()}
                           </Typography>
                         </TableCell>
-                        <TableCell sx={{ color: 'text.secondary', maxWidth: 250, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.85rem' }}>
+                        <TableCell align="center">
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {overallMatch ? (
+                              <IconifyIcon icon="mdi:check-circle" sx={{ fontSize: '1.5rem', color: '#4caf50' }} />
+                            ) : (
+                              <IconifyIcon icon="mdi:close-circle" sx={{ fontSize: '1.5rem', color: '#f44336' }} />
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ color: 'text.secondary', maxWidth: 200, whiteSpace: 'normal', fontSize: '0.8rem', lineHeight: 1.4 }}>
                           {result.reasoning || 'Standard flow'}
                         </TableCell>
                       </TableRow>
