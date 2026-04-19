@@ -664,363 +664,361 @@ HTTP RESPONSE
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### Detailed Database Entity Relationship Diagram (ERD)
+### Database Entity Relationship Diagram (Mermaid ERD)
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                       DATABASE ENTITY RELATIONSHIPS                           │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  USERS DOMAIN                          AUTHORIZATION DOMAIN                  │
-│  ┌───────────────────────┐             ┌──────────────────────┐             │
-│  │ users                 │             │ user_roles           │             │
-│  ├───────────────────────┤             ├──────────────────────┤             │
-│  │ id (PK)              │◄────────────►│ id (PK)             │             │
-│  │ badge_id (UNIQUE)     │  1 to Many  │ user_id (FK)        │             │
-│  │ first_name            │             │ role_name            │             │
-│  │ last_name             │             │ assigned_at          │             │
-│  │ email (UNIQUE)        │             │ assigned_by          │             │
-│  │ role                  │             └──────────────────────┘             │
-│  │ department            │                                                  │
-│  │ clearance_level       │             ┌──────────────────────┐             │
-│  │ is_active             │             │ user_permissions     │             │
-│  │ created_at            │◄────────────┤ id (PK)             │             │
-│  │ last_seen_at          │  1 to Many  │ user_id (FK)        │             │
-│  └───────────────────────┘             │ resource             │             │
-│           │                            │ action               │             │
-│           │ 1 to Many                  │ granted              │             │
-│           │                            │ valid_until         │             │
-│           ▼                            └──────────────────────┘             │
-│  ┌───────────────────────┐                                                  │
-│  │ login_attempts        │             AUTHENTICATION DOMAIN                │
-│  ├───────────────────────┤             ┌──────────────────────┐             │
-│  │ id (PK)              │             │ mfa_secrets          │             │
-│  │ user_id (FK)         │             ├──────────────────────┤             │
-│  │ ip_address            │             │ id (PK)             │             │
-│  │ failed_count          │             │ user_id (FK, UNIQUE)│             │
-│  │ locked_until          │             │ secret               │             │
-│  │ last_attempt_at       │             │ backup_codes        │             │
-│  │ created_at            │             │ created_at          │             │
-│  └───────────────────────┘             │ last_used_at        │             │
-│  (INDEX: user_id, ip_address)          └──────────────────────┘             │
-│                                                                               │
-│  ACCESS CONTROL DOMAIN                                                       │
-│  ┌──────────────────────────┐         ┌────────────────────────┐            │
-│  │ access_points            │         │ device_certificates    │            │
-│  ├──────────────────────────┤         ├────────────────────────┤            │
-│  │ id (PK)                 │         │ id (PK)               │            │
-│  │ name                     │         │ device_id             │            │
-│  │ building (FK implied)    │         │ cert_data (BLOB)      │            │
-│  │ floor                    │         │ issued_at             │            │
-│  │ zone                     │         │ expires_at            │            │
-│  │ type (badge/biometric)   │         │ verified              │            │
-│  │ required_clearance       │         └────────────────────────┘            │
-│  │ status                   │                                                │
-│  │ ip_address               │         ┌────────────────────────┐            │
-│  │ created_at               │         │ access_point_schedules│            │
-│  └──────────────────────────┘         ├────────────────────────┤            │
-│           │ 1 to Many                 │ id (PK)               │            │
-│           │                           │ access_point_id (FK)  │            │
-│           ▼                           │ schedule_type         │            │
-│  ┌──────────────────────────┐         │ start_time            │            │
-│  │ access_logs              │         │ end_time              │            │
-│  ├──────────────────────────┤         │ day_of_week           │            │
-│  │ id (PK)                 │         └────────────────────────┘            │
-│  │ user_id (FK)            │                                                │
-│  │ access_point_id (FK)    │         AUDIT & COMPLIANCE DOMAIN              │
-│  │ timestamp (INDEX)        │         ┌────────────────────────┐            │
-│  │ decision                 │         │ audit_log              │            │
-│  │ risk_score               │         ├────────────────────────┤            │
-│  │ method                   │         │ id (PK)               │            │
-│  │ badge_id_used            │         │ user_id (FK)          │            │
-│  │ context (JSON)           │         │ action                │            │
-│  │ if_score                 │         │ resource              │            │
-│  │ ae_score                 │         │ timestamp             │            │
-│  │ mode                     │         │ ip_address            │            │
-│  └──────────────────────────┘         │ details (JSON)        │            │
-│  (INDEX: user_id, timestamp)          └────────────────────────┘            │
-│  (INDEX: decision, timestamp)         (No FK constraints - immutable)       │
-│                                                                               │
-│  ANOMALY & ALERTS DOMAIN              MACHINE LEARNING DOMAIN                │
-│  ┌──────────────────────────┐         ┌────────────────────────┐            │
-│  │ anomaly_alerts           │         │ ml_models              │            │
-│  ├──────────────────────────┤         ├────────────────────────┤            │
-│  │ id (PK)                 │         │ id (PK)               │            │
-│  │ log_id (FK)             │         │ version               │            │
-│  │ alert_type               │         │ model_type            │            │
-│  │ severity (INDEX)         │         │ accuracy              │            │
-│  │ status (INDEX)           │         │ precision             │            │
-│  │ confidence               │         │ recall                │            │
-│  │ is_resolved              │         │ f1_score              │            │
-│  │ resolved_at              │         │ features_json        │            │
-│  │ resolved_by              │         │ artifact_path        │            │
-│  │ created_at               │         │ created_at            │            │
-│  └──────────────────────────┘         └────────────────────────┘            │
-│           │ 1 to Many                                                        │
-│           │                          ┌────────────────────────┐            │
-│           ▼                          │ feature_extraction_logs│            │
-│  ┌──────────────────────────┐        ├────────────────────────┤            │
-│  │ alert_history            │        │ id (PK)               │            │
-│  ├──────────────────────────┤        │ user_id (FK)          │            │
-│  │ id (PK)                 │        │ features_json        │            │
-│  │ alert_id (FK)           │        │ timestamp             │            │
-│  │ action                   │        │ extraction_time_ms    │            │
-│  │ actor_id                 │        │ model_version        │            │
-│  │ timestamp                │        └────────────────────────┘            │
-│  │ notes                    │                                                │
-│  └──────────────────────────┘        ┌────────────────────────┐            │
-│                                       │ model_retraining_history              │
-│  ┌──────────────────────────┐        ├────────────────────────┤            │
-│  │ false_positives          │        │ id (PK)               │            │
-│  ├──────────────────────────┤        │ version               │            │
-│  │ id (PK)                 │        │ retrain_date          │            │
-│  │ alert_id (FK)           │        │ validation_f1         │            │
-│  │ reason                   │        │ test_f1               │            │
-│  │ reported_by              │        │ status                │            │
-│  │ timestamp                │        │ threshold_grant       │            │
-│  └──────────────────────────┘        │ threshold_deny        │            │
-│                                       └────────────────────────┘            │
-│                                                                               │
-│  OPERATIONAL DOMAIN                                                          │
-│  ┌──────────────────────────┐        ┌────────────────────────┐            │
-│  │ system_config            │        │ audit_trail            │            │
-│  ├──────────────────────────┤        ├────────────────────────┤            │
-│  │ id (PK)                 │        │ id (PK)               │            │
-│  │ key (UNIQUE)            │        │ event_type            │            │
-│  │ value                    │        │ event_data (JSON)     │            │
-│  │ updated_by               │        │ timestamp             │            │
-│  │ updated_at               │        │ severity              │            │
-│  └──────────────────────────┘        └────────────────────────┘            │
-│                                                                               │
-│  KEY RELATIONSHIPS:                                                          │
-│  • users → user_roles (1:N) - Manage role assignments                       │
-│  • users → login_attempts (1:N) - Track login attempts per user             │
-│  • users → mfa_secrets (1:1) - Store MFA secrets                            │
-│  • access_points → access_logs (1:N) - Log all access attempts             │
-│  • access_logs → anomaly_alerts (1:N) - Create alerts from logs            │
-│  • anomaly_alerts → alert_history (1:N) - Track alert lifecycle            │
-│  • ml_models → feature_extraction_logs (1:N) - Map features to models      │
-│                                                                               │
-└──────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+erDiagram
+    USERS ||--o{ USER_ROLES : has
+    USERS ||--o{ LOGIN_ATTEMPTS : has
+    USERS ||--|| MFA_SECRETS : has
+    USERS ||--o{ USER_PERMISSIONS : has
+    USERS ||--o{ ACCESS_LOGS : "initiates"
+    
+    ACCESS_POINTS ||--o{ ACCESS_LOGS : "tracks"
+    ACCESS_POINTS ||--o{ ACCESS_POINT_SCHEDULES : "defines"
+    ACCESS_POINTS ||--o{ DEVICE_CERTIFICATES : "secures"
+    
+    ACCESS_LOGS ||--o{ ANOMALY_ALERTS : "triggers"
+    ANOMALY_ALERTS ||--o{ ALERT_HISTORY : "has"
+    ANOMALY_ALERTS ||--o{ FALSE_POSITIVES : "may-have"
+    
+    ML_MODELS ||--o{ FEATURE_EXTRACTION_LOGS : "uses"
+    ML_MODELS ||--o{ MODEL_RETRAINING_HISTORY : "tracks"
+    
+    SYSTEM_CONFIG ||--o{ AUDIT_TRAIL : "logs"
+
+    USERS {
+        int id PK
+        string badge_id UK
+        string email UK
+        string first_name
+        string last_name
+        string role
+        string department
+        int clearance_level
+        boolean is_active
+        timestamp created_at
+        timestamp last_seen_at
+    }
+
+    USER_ROLES {
+        int id PK
+        int user_id FK
+        string role_name
+        timestamp assigned_at
+        string assigned_by
+    }
+
+    LOGIN_ATTEMPTS {
+        int id PK
+        int user_id FK
+        string ip_address
+        int failed_count
+        timestamp locked_until
+        timestamp last_attempt_at
+        timestamp created_at
+    }
+
+    MFA_SECRETS {
+        int id PK
+        int user_id FK "UK"
+        string secret
+        string backup_codes
+        timestamp created_at
+        timestamp last_used_at
+    }
+
+    USER_PERMISSIONS {
+        int id PK
+        int user_id FK
+        string resource
+        string action
+        boolean granted
+        timestamp valid_until
+    }
+
+    ACCESS_POINTS {
+        int id PK
+        string name
+        string building
+        string floor
+        string zone
+        string type
+        int required_clearance
+        string status
+        string ip_address
+        timestamp created_at
+    }
+
+    ACCESS_LOGS {
+        int id PK "INDEX"
+        int user_id FK
+        int access_point_id FK
+        timestamp timestamp "INDEX"
+        string decision
+        float risk_score
+        string method
+        string badge_id_used
+        json context
+        float if_score
+        float ae_score
+        string mode
+    }
+
+    ANOMALY_ALERTS {
+        int id PK
+        int log_id FK
+        string alert_type
+        string severity "INDEX"
+        string status "INDEX"
+        float confidence
+        boolean is_resolved
+        timestamp resolved_at
+        string resolved_by
+        timestamp created_at
+    }
+
+    ALERT_HISTORY {
+        int id PK
+        int alert_id FK
+        string action
+        string actor_id
+        timestamp timestamp
+        string notes
+    }
+
+    FALSE_POSITIVES {
+        int id PK
+        int alert_id FK
+        string reason
+        string reported_by
+        timestamp timestamp
+    }
+
+    ACCESS_POINT_SCHEDULES {
+        int id PK
+        int access_point_id FK
+        string schedule_type
+        time start_time
+        time end_time
+        string day_of_week
+    }
+
+    DEVICE_CERTIFICATES {
+        int id PK
+        string device_id
+        blob cert_data
+        timestamp issued_at
+        timestamp expires_at
+        boolean verified
+    }
+
+    AUDIT_LOG {
+        int id PK
+        int user_id FK
+        string action
+        string resource
+        timestamp timestamp
+        string ip_address
+        json details
+    }
+
+    ML_MODELS {
+        int id PK
+        int version
+        string model_type
+        float accuracy
+        float precision
+        float recall
+        float f1_score
+        json features_json
+        string artifact_path
+        timestamp created_at
+    }
+
+    FEATURE_EXTRACTION_LOGS {
+        int id PK
+        int user_id FK
+        json features_json
+        timestamp timestamp
+        int extraction_time_ms
+        string model_version
+    }
+
+    MODEL_RETRAINING_HISTORY {
+        int id PK
+        int version
+        date retrain_date
+        float validation_f1
+        float test_f1
+        string status
+        float threshold_grant
+        float threshold_deny
+    }
+
+    SYSTEM_CONFIG {
+        int id PK
+        string key UK
+        string value
+        string updated_by
+        timestamp updated_at
+    }
+
+    AUDIT_TRAIL {
+        int id PK
+        string event_type
+        json event_data
+        timestamp timestamp
+        string severity
+    }
 ```
 
 ### Class Sequence Diagrams
 
-#### Access Decision Flow
+#### Access Decision Flow (Sequence Diagram)
 
-```
-┌──────────────┐     ┌─────────────┐     ┌──────────────┐     ┌────────────┐
-│   Client     │     │  FastAPI    │     │   Decision   │     │  Database  │
-│  (Badge)     │     │   Route     │     │   Engine     │     │     +      │
-│              │     │             │     │              │     │   Cache    │
-└──────────────┘     └─────────────┘     └──────────────┘     └────────────┘
-       │                    │                    │                    │
-       │ 1. POST            │                    │                    │
-       │ /access/request    │                    │                    │
-       │───────────────────►│                    │                    │
-       │                    │ 2. Input validation│                    │
-       │                    │ (Pydantic)        │                    │
-       │                    │                    │                    │
-       │                    │ 3. Load user      │                    │
-       │                    │ from cache/DB     │───────────────────►│
-       │                    │◄──────────────────│ 4. User data       │
-       │                    │                    │◄───────────────────│
-       │                    │                    │                    │
-       │                    │ 5. Validate      │                    │
-       │                    │ clearance level   │                    │
-       │                    │                    │                    │
-       │                    │ 6. Extract       │                    │
-       │                    │ 13 features      │                    │
-       │                    │                    │                    │
-       │                    │ 7. Compute       │                    │
-       │                    │ risk score       │                    │
-       │                    ├──────────────────►│                    │
-       │                    │                    │ 8. IF score       │
-       │                    │                    │ AE score          │
-       │                    │                    │ Ensemble: 30%-70%│
-       │                    │◄──────────────────┤                    │
-       │                    │ 9. Return        │                    │
-       │                    │ decision +       │                    │
-       │                    │ thresholds       │                    │
-       │                    │                    │                    │
-       │                    │ 10. Map decision │                    │
-       │                    │ to action        │                    │
-       │                    │ ├─ granted       │                    │
-       │                    │ ├─ delayed       │                    │
-       │                    │ └─ denied        │                    │
-       │                    │                    │                    │
-       │                    │ 11. Log access  │                    │
-       │                    │ attempt + risk   │───────────────────►│
-       │                    │                    │                    │
-       │                    │ 12. Check if    │                    │
-       │                    │ alert needed    │                    │
-       │                    │ (decision =     │                    │
-       │                    │ denied OR       │                    │
-       │                    │ delayed)        │                    │
-       │                    │                    │                    │
-       │                    │ 13. Create alert│                    │
-       │                    │ with severity   │───────────────────►│
-       │                    │                    │                    │
-       │                    │ 14. Invalidate │                    │
-       │                    │ cache patterns  │───────────────────►│
-       │                    │                    │ (access_logs:*) │
-       │                    │                    │◄───────────────────│
-       │ 15. Return         │                    │                    │
-       │ response with      │                    │                    │
-       │ decision +         │                    │                    │
-       │ scores             │                    │                    │
-       │◄───────────────────┤                    │                    │
-       │                    │                    │                    │
+```mermaid
+sequenceDiagram
+    actor Client as Badge Reader
+    participant API as FastAPI Route
+    participant Engine as Decision Engine
+    participant DB as Database
+    participant Cache as Redis Cache
+    
+    Client->>API: 1. POST /access/request
+    API->>API: 2. Input validation (Pydantic)
+    API->>Cache: 3. Check user in cache
+    alt Cache Hit
+        Cache-->>API: User data
+    else Cache Miss
+        API->>DB: Query user (indexed)
+        DB-->>API: User data
+        API->>Cache: Store user (15 min TTL)
+    end
+    
+    API->>API: 5. Validate clearance level
+    API->>Engine: 6. Extract features & compute risk
+    Engine->>DB: Query access logs (last 24h)
+    DB-->>Engine: Historical data
+    
+    Engine->>Engine: 7. Extract 13 runtime features
+    Engine->>Engine: 8. Run IF model (30% weight)
+    Engine->>Engine: 9. Run AE model (70% weight)
+    Engine->>Engine: 10. Calculate ensemble score
+    
+    Engine-->>API: Risk score + decision
+    
+    API->>API: 11. Map to action (GRANTED/DELAYED/DENIED)
+    API->>DB: 12. Log access attempt
+    
+    alt Decision is DENIED or DELAYED
+        API->>DB: 13. Create anomaly alert
+        API->>Cache: 14. Alert invalidation
+    end
+    
+    API->>Cache: 15. Invalidate access_logs:* pattern
+    API-->>Client: Response (decision + scores + log_id)
 ```
 
-#### Authentication & MFA Flow
+#### Authentication & MFA Flow (Sequence Diagram)
 
-```
-┌──────────────┐     ┌─────────────┐     ┌──────────────┐     ┌────────────┐
-│   Client     │     │  Auth Route │     │   Password   │     │  Database  │
-│  (Login)     │     │             │     │  Validation  │     │   + Cache  │
-└──────────────┘     └─────────────┘     └──────────────┘     └────────────┘
-       │                    │                    │                    │
-       │ 1. POST /auth/login│                    │                    │
-       │ (email, password)  │                    │                    │
-       │───────────────────►│                    │                    │
-       │                    │ 2. Validate input │                    │
-       │                    │ (Pydantic)        │                    │
-       │                    │                    │                    │
-       │                    │ 3. Check rate   │                    │
-       │                    │ limit (5/15min) │───────────────────►│
-       │                    │ from login_attempts                   │
-       │                    │◄───────────────────────────────────────│
-       │                    │                    │                    │
-       │                    │ 4. Load user   │                    │
-       │                    │ (email lookup) │───────────────────►│
-       │                    │◄───────────────────────────────────────│
-       │                    │                    │                    │
-       │                    │ 5. Compare     │                    │
-       │                    │ bcrypt(pwd)    │                    │
-       │                    ├──────────────────►│                    │
-       │                    │                    │ 6. Verify        │
-       │                    │                    │ (12 rounds)      │
-       │                    │◄──────────────────┤                    │
-       │                    │                    │                    │
-       │        ┌───────────┴────────────────────┤                    │
-       │        │ If MFA Enabled:                │                    │
-       │        │                                │                    │
-       │        │ 7. Generate TOTP challenge    │                    │
-       │        │────────────────────────────────► 8. Store         │
-       │        │                                │ (30s window)    │
-       │        │                                │◄─────────────────│
-       │        │ 9. Return TOTP prompt        │                    │
-       │◄───────┤                                │                    │
-       │        │                                │                    │
-       │ 10. User enters TOTP code             │                    │
-       │ (6 digits)                             │                    │
-       │───────────────────►│                    │                    │
-       │                    │ 11. Verify TOTP │                    │
-       │                    │ (time window)   │───────────────────►│
-       │                    │◄───────────────────────────────────────│
-       │        └───────────┬────────────────────┤                    │
-       │                    │ All checks passed  │                    │
-       │                    │                    │                    │
-       │                    │ 12. Generate     │                    │
-       │                    │ JWT tokens        │                    │
-       │                    │ ├─ access_token  │                    │
-       │                    │ │  (15 min)       │                    │
-       │                    │ └─ refresh_token │                    │
-       │                    │    (7 days)      │                    │
-       │                    │                    │                    │
-       │                    │ 13. Generate     │                    │
-       │                    │ CSRF token       │                    │
-       │                    │ (43 bytes)       │                    │
-       │                    │                    │                    │
-       │                    │ 14. Update       │                    │
-       │                    │ last_seen_at    │───────────────────►│
-       │                    │                    │                    │
-       │ 15. Return tokens  │                    │                    │
-       │ + CSRF in cookie   │                    │                    │
-       │◄───────────────────┤                    │                    │
-       │                    │                    │                    │
-       │ 16. Client stores │                    │                    │
-       │ tokens locally     │                    │                    │
-       │                    │                    │                    │
+```mermaid
+sequenceDiagram
+    actor User
+    participant Auth as Auth Route
+    participant DB as Database
+    participant Cache as Redis Cache
+    
+    User->>Auth: 1. POST /auth/login (email, password)
+    Auth->>Auth: 2. Input validation (Pydantic)
+    Auth->>Cache: 3. Check rate limit (5 attempts/15min)
+    Cache-->>Auth: Rate limit OK
+    
+    Auth->>DB: 4. Load user by email (indexed)
+    DB-->>Auth: User record
+    
+    Auth->>Auth: 5. Compare bcrypt(password)
+    
+    alt Password Match ✅
+        Auth->>Auth: Check MFA enabled?
+        alt MFA Enabled
+            Auth->>Auth: 6. Generate TOTP challenge
+            Auth->>Cache: 7. Store OTP (30s window)
+            Auth-->>User: 8. Return MFA prompt
+            User->>Auth: 9. POST /auth/mfa/verify (6-digit code)
+            Auth->>Cache: 10. Verify TOTP (time window)
+            Cache-->>Auth: TOTP valid ✅
+        else MFA Disabled
+            Auth->>Auth: Skip to token generation
+        end
+        
+        Auth->>Auth: 11. Generate JWT tokens
+        Auth->>Auth: • access_token (15 min, exp, role)
+        Auth->>Auth: • refresh_token (7 days)
+        Auth->>Auth: • CSRF token (43 bytes)
+        
+        Auth->>Cache: 12. Store session:{user_id} (15 min TTL)
+        Auth->>DB: 13. Update last_login_at
+        Auth->>DB: 14. Log audit entry
+        Auth-->>User: 15. Return tokens + CSRF cookie
+        
+    else Password Mismatch ❌
+        Auth->>DB: Increment login_attempts.failed_count
+        DB-->>Auth: Count >= 5?
+        alt Account Locked
+            Auth->>DB: Set locked_until = now + 30min
+            Auth->>DB: Log security event
+            Auth-->>User: 401 Unauthorized (Account Locked)
+        else Allow Retry
+            Auth-->>User: 401 Unauthorized (Invalid credentials)
+        end
+    end
 ```
 
-#### ML Model Retraining Flow
+#### ML Model Retraining Flow (Sequence Diagram)
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌────────────┐
-│   CI/CD      │     │  Retune      │     │   ML Models  │     │  Database  │
-│  Pipeline    │     │  Script      │     │  + Metrics   │     │            │
-└──────────────┘     └──────────────┘     └──────────────┘     └────────────┘
-       │                    │                    │                    │
-       │ 1. Scheduled       │                    │                    │
-       │ trigger (40 days)  │                    │                    │
-       │───────────────────►│                    │                    │
-       │                    │ 2. Load           │                    │
-       │                    │ validation data   │───────────────────►│
-       │                    │                    │ 3. Query           │
-       │                    │                    │ train_scaled.csv   │
-       │                    │◄───────────────────────────────────────│
-       │                    │                    │                    │
-       │                    │ 4. Load models    │                    │
-       │                    ├──────────────────►│                    │
-       │                    │ ├─ isolation_forest.pkl               │
-       │                    │ ├─ autoencoder.keras                  │
-       │                    │ └─ autoencoder_config.pkl             │
-       │                    │◄──────────────────┤                    │
-       │                    │                    │                    │
-       │                    │ 5. Compute       │                    │
-       │                    │ ensemble scores  │                    │
-       │                    │ (30% IF +        │                    │
-       │                    │  70% AE)         │                    │
-       │                    │                    │                    │
-       │                    │ 6. Search        │                    │
-       │                    │ thresholds       │                    │
-       │                    │ (0.20 to 0.90)   │                    │
-       │                    │ ├─ Calculate F1  │                    │
-       │                    │ ├─ Calculate     │                    │
-       │                    │ │ Precision      │                    │
-       │                    │ └─ Calculate     │                    │
-       │                    │   Recall         │                    │
-       │                    │                    │                    │
-       │                    │ 7. Find optimal  │                    │
-       │                    │ threshold        │                    │
-       │                    │ (F1-score max,   │                    │
-       │                    │ prec ≥72%,       │                    │
-       │                    │ recall ≥80%)     │                    │
-       │                    │                    │                    │
-       │                    │ 8. Evaluate on   │                    │
-       │                    │ test set         │                    │
-       │                    │ (F1, precision,  │                    │
-       │                    │ recall, AUC)     │                    │
-       │                    │                    │                    │
-       │                    │ 9. Update model │                    │
-       │                    │ artifacts        │                    │
-       │                    ├──────────────────►│                    │
-       │                    │ ├─ best_threshold│                    │
-       │                    │ ├─ deny_threshold│                    │
-       │                    │ └─ version bump  │                    │
-       │                    │◄──────────────────┤                    │
-       │                    │                    │                    │
-       │                    │ 10. Save to:    │                    │
-       │                    │ ├─ isolation_forest.pkl               │
-       │                    │ ├─ ensemble_config.pkl                │
-       │                    │ └─ current.json  │                    │
-       │                    │                    │                    │
-       │                    │ 11. Log metrics │                    │
-       │                    │ to DB            │───────────────────►│
-       │                    │                    │ (model_retraining_│
-       │                    │                    │  history table)   │
-       │                    │                    │◄───────────────────│
-       │                    │                    │                    │
-       │                    │ 12. Return      │                    │
-       │                    │ success status  │                    │
-       │◄───────────────────┤                    │                    │
-       │                    │                    │                    │
-       │ 13. Notify        │                    │                    │
-       │ retraining        │                    │                    │
-       │ complete          │                    │                    │
-       │                    │                    │                    │
+```mermaid
+sequenceDiagram
+    participant CI as CI/CD Pipeline
+    participant Retune as Retune Script
+    participant ML as ML Models
+    participant DB as Database
+    
+    CI->>Retune: 1. Scheduled trigger (every 40 days)
+    Retune->>DB: 2. Load validation data
+    DB-->>Retune: Access logs + labels
+    
+    Retune->>ML: 3. Load trained models
+    ML-->>Retune: isolation_forest.pkl + autoencoder.keras
+    
+    Retune->>ML: 4. Compute ensemble scores (30% IF + 70% AE)
+    ML-->>Retune: Risk scores for all records
+    
+    Retune->>Retune: 5. Search optimal threshold (0.20 - 0.90)
+    Retune->>Retune: • Calculate F1-score
+    Retune->>Retune: • Calculate Precision
+    Retune->>Retune: • Calculate Recall
+    
+    Retune->>Retune: 6. Find best threshold (F1 max, prec ≥72%, recall ≥80%)
+    Retune->>ML: 7. Evaluate on test set
+    ML-->>Retune: Final metrics (F1, precision, recall, AUC)
+    
+    Retune->>ML: 8. Update model artifacts
+    ML->>ML: • best_threshold = optimal_value
+    ML->>ML: • deny_threshold = upper_percentile
+    ML->>ML: • version += 1
+    
+    Retune->>ML: 9. Save updated files
+    ML->>ML: • isolation_forest.pkl (updated)
+    ML->>ML: • ensemble_config.pkl (updated)
+    ML->>ML: • current.json (metadata)
+    
+    Retune->>DB: 10. Log retraining metrics
+    DB->>DB: model_retraining_history INSERT
+    
+    Retune->>CI: 11. Return success
+    CI->>CI: 12. Notify: Retraining complete
+    CI->>CI: 13. Restart backend (load new models)
 ```
 
 ---
