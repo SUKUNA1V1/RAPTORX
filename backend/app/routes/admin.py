@@ -10,6 +10,7 @@ from ..database import get_db
 from ..models import User
 from ..schemas.user import UserCreate, UserResponse, UserUpdate
 from ..utils.password import hash_password, verify_password
+from ..routes.auth import get_current_user
 
 
 # Schemas
@@ -86,8 +87,9 @@ def admin_login(
 def get_admin_profile(
     admin_id: int = Query(..., description="Admin user ID"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Get current admin profile information."""
+    """Get current admin profile information. Requires authentication."""
     try:
         user = db.query(User).filter(User.id == admin_id).first()
         if not user:
@@ -108,8 +110,9 @@ def update_admin_username(
     admin_id: int = Query(..., description="Admin user ID"),
     new_email: str = Query(..., description="New email/username"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Update admin's email/username."""
+    """Update admin's email/username. Requires authentication."""
     try:
         user = db.query(User).filter(User.id == admin_id).first()
         if not user:
@@ -142,8 +145,9 @@ def change_admin_password(
     current_password: str = Query(..., description="Current password"),
     new_password: str = Query(..., description="New password"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Change admin password."""
+    """Change admin password. Requires authentication."""
     try:
         user = db.query(User).filter(User.id == admin_id).first()
         if not user:
@@ -173,8 +177,9 @@ def list_admins(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """List all administrators."""
+    """List all administrators. Requires authentication."""
     try:
         # Filter for admin and security roles
         admins = db.query(User).filter(
@@ -189,8 +194,9 @@ def list_admins(
 def create_admin(
     admin_data: AdminCreateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Create a new administrator account."""
+    """Create a new administrator account. Requires authentication."""
     try:
         # Check if email already exists
         if db.query(User).filter(User.email == admin_data.email).first():
@@ -238,8 +244,9 @@ def create_admin(
 def delete_admin(
     admin_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Delete an administrator account."""
+    """Delete an administrator account. Requires authentication."""
     try:
         admin = db.query(User).filter(User.id == admin_id).first()
         if not admin:

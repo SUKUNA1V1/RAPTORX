@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 from typing import Optional
+import threading
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session, joinedload
 
 from ..database import get_db
@@ -10,6 +12,11 @@ from ..models import AccessLog, AccessPoint, AnomalyAlert, User
 from ..schemas.access_point import AccessPointCreate, AccessPointResponse, AccessPointUpdate
 from ..services import AccessDecisionEngine, create_alert, extract_features
 from ..services.ml_service import FEATURE_COLS
+from ..services.cache_service import CacheService, CacheConfig, cache_context
+from ..models.pagination import PaginationParams, PaginatedResponse, get_pagination_offset
+from ..routes.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 
 # Purpose: Access-control endpoints for request evaluation, logs, and ML status.
@@ -19,18 +26,45 @@ access_points_router = APIRouter(prefix="/access-points", tags=["access-points"]
 
 
 class AccessRequest(BaseModel):
-    badge_id: str
-    access_point_id: int
-    timestamp: Optional[datetime] = None
-    method: Optional[str] = "badge"
+    """Request to make an access decision.
+    
+    Validates:
+    - badge_id must be non-empty string
+    - access_point_id must be positive integer
+    - timestamp must be reasonable (not in future)
+    - method must be one of allowed types
+    """
+    badge_id: str = Field(..., min_length=1, max_length=64, description="Badge ID")
+    access_point_id: int = Field(..., gt=0, description="Access point ID")
+    timestamp: Optional[datetime] = Field(None, description="Access timestamp (default: now)")
+    method: Optional[str] = Field("badge", pattern="^(badge|pin|biometric|mobile)$", description="Access method")
+    
+    @validator("badge_id")
+    def validate_badge_id(cls, v):
+        """Validate badge ID format."""
+        if not v or not v.strip():
+            raise ValueError("badge_id cannot be empty")
+        # Prevent injection attacks - only allow alphanumeric, underscore, hyphen
+        if not all(c.isalnum() or c in "_-" for c in v):
+            raise ValueError("badge_id contains invalid characters")
+        return v.strip()
+    
+    @validator("timestamp")
+    def validate_timestamp(cls, v):
+        """Validate timestamp is not in the future."""
+        if v is None:
+            return datetime.now(timezone.utc)
+        if v > datetime.now(timezone.utc):
+            raise ValueError("timestamp cannot be in the future")
+        return v
 
 
 class AccessDecisionResponse(BaseModel):
     decision: str
-    risk_score: float
-    if_score: Optional[float] = None
-    ae_score: Optional[float] = None
-    log_id: Optional[int]
+    risk_score: float = Field(..., ge=0.0, le=1.0)
+    if_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    ae_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    log_id: Optional[int] = None
     user_name: Optional[str] = None
     access_point_name: Optional[str] = None
     mode: Optional[str] = None
@@ -39,13 +73,34 @@ class AccessDecisionResponse(BaseModel):
 
 
 _ENGINE: Optional[AccessDecisionEngine] = None
+_ENGINE_LOCK = threading.Lock()
 
 
 def get_engine() -> AccessDecisionEngine:
-    # Purpose: Lazily initialize and reuse a single decision-engine instance.
+    """Get or initialize the decision engine singleton.
+    
+    Thread-safe lazy loading with double-checked locking pattern
+    to prevent concurrent initialization and ensure single instance.
+    """
     global _ENGINE
-    if _ENGINE is None:
-        _ENGINE = AccessDecisionEngine()
+    
+    # First check (no lock for performance)
+    if _ENGINE is not None:
+        return _ENGINE
+    
+    # Acquire lock for initialization
+    with _ENGINE_LOCK:
+        # Second check (inside lock)
+        if _ENGINE is not None:
+            return _ENGINE
+        
+        try:
+            _ENGINE = AccessDecisionEngine()
+            logger.debug("Decision engine initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize decision engine: {e}")
+            raise
+    
     return _ENGINE
 
 
@@ -90,27 +145,72 @@ def _rule_based_score(features: list) -> float:
     return float(min(max(score, 0.0), 1.0))
 
 
-@access_points_router.get("", status_code=status.HTTP_200_OK)
+@access_points_router.get("", response_model=PaginatedResponse[AccessPointResponse], status_code=status.HTTP_200_OK)
 def list_access_points(
     status_filter: Optional[str] = Query(None, alias="status"),
     building: Optional[str] = Query(None),
+    params: PaginationParams = Depends(),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Return access points list with optional filters."""
+    """Return access points list with optional filters and pagination. Requires authentication."""
     try:
+        # Generate cache key from filters
+        cache_key = f"access_points:{status_filter}:{building}:{params.page}:{params.page_size}:{params.sort_by}:{params.sort_order}"
+        
+        # Try cache first
+        cached_result = CacheService.get(cache_key)
+        if cached_result:
+            return cached_result
+        
+        # Build query
         query = db.query(AccessPoint)
         if status_filter:
             query = query.filter(AccessPoint.status == status_filter)
         if building:
             query = query.filter(AccessPoint.building == building)
-        return query.all()
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply sorting
+        try:
+            sort_field = getattr(AccessPoint, params.sort_by, AccessPoint.created_at)
+            if params.sort_order == "asc":
+                query = query.order_by(sort_field.asc())
+            else:
+                query = query.order_by(sort_field.desc())
+        except AttributeError:
+            query = query.order_by(AccessPoint.name.asc())
+        
+        # Apply pagination
+        offset = get_pagination_offset(params.page, params.page_size)
+        access_points = query.offset(offset).limit(params.page_size).all()
+        
+        # Build response
+        response = PaginatedResponse(
+            data=access_points,
+            page=params.page,
+            page_size=params.page_size,
+            total=total
+        )
+        
+        # Cache result
+        CacheService.set(cache_key, response, CacheConfig.TTL_MEDIUM)
+        
+        return response
     except Exception as exc:
+        logger.error(f"Error listing access points: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @access_points_router.get("/{access_point_id}", response_model=AccessPointResponse, status_code=status.HTTP_200_OK)
-def get_access_point(access_point_id: int, db: Session = Depends(get_db)):
-    """Return a single access point by id."""
+def get_access_point(
+    access_point_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return a single access point by id. Requires authentication."""
     access_point = (
         db.query(AccessPoint)
         .filter(AccessPoint.id == access_point_id)
@@ -122,8 +222,12 @@ def get_access_point(access_point_id: int, db: Session = Depends(get_db)):
 
 
 @access_points_router.post("", response_model=AccessPointResponse, status_code=status.HTTP_201_CREATED)
-def create_access_point(data: AccessPointCreate, db: Session = Depends(get_db)):
-    """Create a new access point."""
+def create_access_point(
+    data: AccessPointCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new access point. Requires authentication."""
     try:
         payload = data.model_dump()
         payload["building"] = payload.get("building", "").strip()
@@ -145,6 +249,10 @@ def create_access_point(data: AccessPointCreate, db: Session = Depends(get_db)):
         db.add(access_point)
         db.commit()
         db.refresh(access_point)
+        
+        # Invalidate access_points cache
+        CacheService.invalidate("access_points:*")
+        
         return access_point
     except HTTPException:
         db.rollback()
@@ -155,8 +263,13 @@ def create_access_point(data: AccessPointCreate, db: Session = Depends(get_db)):
 
 
 @access_points_router.put("/{access_point_id}", response_model=AccessPointResponse, status_code=status.HTTP_200_OK)
-def update_access_point(access_point_id: int, data: AccessPointUpdate, db: Session = Depends(get_db)):
-    """Update an access point."""
+def update_access_point(
+    access_point_id: int,
+    data: AccessPointUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update an access point. Requires authentication."""
     try:
         access_point = (
             db.query(AccessPoint)
@@ -214,6 +327,10 @@ def update_access_point(access_point_id: int, data: AccessPointUpdate, db: Sessi
 
         db.commit()
         db.refresh(access_point)
+        
+        # Invalidate access_points cache
+        CacheService.invalidate("access_points:*")
+        
         return access_point
     except HTTPException:
         db.rollback()
@@ -384,18 +501,18 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
         except Exception as exc:
             print(f"ML scoring failed, falling back to rule-based: {exc}")
             risk_score = _rule_based_score(raw_list)
-            if risk_score < engine.GRANT_THRESHOLD:
+            if risk_score < engine.grant_threshold:
                 decision = "granted"
                 reasoning = (
-                    f"Risk score {risk_score:.4f} below grant threshold {engine.GRANT_THRESHOLD}"
+                    f"Risk score {risk_score:.4f} below grant threshold {engine.grant_threshold}"
                 )
-            elif risk_score < engine.DENY_THRESHOLD:
+            elif risk_score < engine.deny_threshold:
                 decision = "delayed"
                 reasoning = f"Risk score {risk_score:.4f} in delay zone - guard notified"
             else:
                 decision = "denied"
                 reasoning = (
-                    f"Risk score {risk_score:.4f} above deny threshold {engine.DENY_THRESHOLD}"
+                    f"Risk score {risk_score:.4f} above deny threshold {engine.deny_threshold}"
                 )
             ml_result = {
                 "decision": decision,
@@ -441,12 +558,22 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
         user.last_seen_at = timestamp
         db.commit()
         db.refresh(access_log)
+        
+        # Invalidate access logs cache since new log was added
+        CacheService.invalidate("access_logs:*")
 
         alert_created = False
         if ml_result["decision"] == "denied" or (
             ml_result["decision"] == "delayed" and ml_result["risk_score"] >= 0.50
         ):
-            create_alert(db, access_log.id, ml_result, features["raw"])
+            create_alert(
+                db,
+                access_log.id,
+                ml_result,
+                features["raw"],
+                grant_threshold=engine.grant_threshold,
+                deny_threshold=engine.deny_threshold,
+            )
             alert_created = True
 
         return AccessDecisionResponse(
@@ -474,20 +601,48 @@ def ml_status():
 
 @router.get("/logs", status_code=status.HTTP_200_OK)
 def list_access_logs(
-    user_id: Optional[int] = None,
-    access_point_id: Optional[int] = None,
-    decision: Optional[str] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1),
+    params: PaginationParams = Depends(),
+    user_id: Optional[int] = Query(None, description="Filter by user ID"),
+    access_point_id: Optional[int] = Query(None, description="Filter by access point ID"),
+    decision: Optional[str] = Query(None, description="Filter by decision (grant/deny/delayed)"),
+    date_from: Optional[datetime] = Query(None, description="Filter from date"),
+    date_to: Optional[datetime] = Query(None, description="Filter to date"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """List access logs with optional filters."""
+    """
+    List access logs with pagination and optional filters.
+    
+    Returns paginated results with metadata.
+    
+    Supports filtering by:
+    - user_id
+    - access_point_id
+    - decision
+    - date range (date_from, date_to)
+    
+    Pagination parameters:
+    - page: Page number (1-indexed, default 1)
+    - page_size: Items per page (10-500, default 50)
+    - sort_by: Field to sort by (default created_at)
+    - sort_order: asc or desc (default desc)
+    """
     try:
+        # Generate cache key from parameters
+        cache_key = f"access_logs:{user_id}:{access_point_id}:{decision}:{date_from}:{date_to}:{params.page}:{params.page_size}:{params.sort_by}:{params.sort_order}"
+        
+        # Try to get from cache
+        cached_result = CacheService.get(cache_key)
+        if cached_result:
+            logger.debug(f"Cache hit for access logs: {cache_key}")
+            return cached_result
+        
+        # Build query
         query = db.query(AccessLog).options(
             joinedload(AccessLog.user), joinedload(AccessLog.access_point)
         )
+        
+        # Apply filters
         if user_id:
             query = query.filter(AccessLog.user_id == user_id)
         if access_point_id:
@@ -498,46 +653,77 @@ def list_access_logs(
             query = query.filter(AccessLog.timestamp >= date_from)
         if date_to:
             query = query.filter(AccessLog.timestamp <= date_to)
-
+        
+        # Get total count
         total = query.count()
-        logs = query.order_by(AccessLog.timestamp.desc()).offset(skip).limit(limit).all()
+        
+        # Calculate offset
+        offset = get_pagination_offset(params.page, params.page_size)
+        
+        # Get sorted results
+        sort_field = getattr(AccessLog, params.sort_by, AccessLog.created_at)
+        if params.sort_order == "asc":
+            query = query.order_by(sort_field.asc())
+        else:
+            query = query.order_by(sort_field.desc())
+        
+        logs = query.offset(offset).limit(params.page_size).all()
+        
+        # Format items
         items = []
         for log in logs:
-            items.append(
-                {
-                    "id": log.id,
-                    "timestamp": log.timestamp,
-                    "decision": log.decision,
-                    "risk_score": float(log.risk_score or 0.0),
-                    "method": log.method,
-                    "badge_id_used": log.badge_id_used,
-                    "user_id": log.user_id,
-                    "access_point_id": log.access_point_id,
-                    "user": {
-                        "first_name": log.user.first_name,
-                        "last_name": log.user.last_name,
-                        "badge_id": log.user.badge_id,
-                        "role": log.user.role,
-                    }
-                    if log.user
-                    else None,
-                    "access_point": {
-                        "name": log.access_point.name,
-                        "building": log.access_point.building,
-                        "room": log.access_point.room,
-                    }
-                    if log.access_point
-                    else None,
-                }
-            )
-        return {"items": items, "total": total}
+            items.append({
+                "id": log.id,
+                "timestamp": log.timestamp,
+                "decision": log.decision,
+                "risk_score": float(log.risk_score or 0.0),
+                "method": log.method,
+                "badge_id_used": log.badge_id_used,
+                "user_id": log.user_id,
+                "access_point_id": log.access_point_id,
+                "user": {
+                    "first_name": log.user.first_name,
+                    "last_name": log.user.last_name,
+                    "badge_id": log.user.badge_id,
+                    "role": log.user.role,
+                } if log.user else None,
+                "access_point": {
+                    "name": log.access_point.name,
+                    "building": log.access_point.building,
+                    "room": log.access_point.room,
+                } if log.access_point else None,
+            })
+        
+        # Build response with pagination
+        response_data = {
+            "data": items,
+            "page": params.page,
+            "page_size": params.page_size,
+            "total": total
+        }
+        
+        # Cache the result
+        CacheService.set(cache_key, response_data, CacheConfig.TTL_SHORT)
+        
+        # Return paginated response
+        return PaginatedResponse(
+            data=items,
+            page=params.page,
+            page_size=params.page_size,
+            total=total
+        )
     except Exception as exc:
+        logger.error(f"Error listing access logs: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.get("/logs/{log_id}", status_code=status.HTTP_200_OK)
-def get_access_log(log_id: int, db: Session = Depends(get_db)):
-    """Get a single access log with full details."""
+def get_access_log(
+    log_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a single access log with full details. Requires authentication."""
     try:
         log = (
             db.query(AccessLog)

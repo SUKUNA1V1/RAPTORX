@@ -63,6 +63,11 @@ const sitemap: MenuItem[] = [
     icon: 'mingcute:safe-lock-fill',
     items: [
       {
+        name: 'Onboarding',
+        pathName: 'onboarding',
+        path: paths.onboarding,
+      },
+      {
         name: 'ML Status',
         pathName: 'ml-status',
         path: paths.mlStatus,

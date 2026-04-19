@@ -2,6 +2,7 @@ export const rootPaths = {
   root: '/',
   pagesRoot: 'pages',
   authRoot: 'authentication',
+  onboardingRoot: 'onboarding',
 };
 
 export default {
@@ -18,6 +19,9 @@ export default {
   accessPointsManage: `/${rootPaths.pagesRoot}/access-points/manage`,
   simulator: `/${rootPaths.pagesRoot}/simulator`,
   adminSettings: `/${rootPaths.pagesRoot}/admin-settings`,
+  
+  onboarding: `/${rootPaths.onboardingRoot}`,
+  onboardingStep: `/${rootPaths.onboardingRoot}/step/:step`,
 
   login: `/${rootPaths.authRoot}/login`,
 };

@@ -36,3 +36,5 @@
 2026-04-13 12:06:38 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/list failed after 5.52ms
 2026-04-13 12:08:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 9.97ms
 2026-04-13 12:08:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 7.56ms
+2026-04-18 21:43:25 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 365.96ms
+2026-04-18 21:43:54 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 768.02ms

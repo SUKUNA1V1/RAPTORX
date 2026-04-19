@@ -1,0 +1,4 @@
+2026-04-18 21:56:13 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 666.73ms (status: 200)
+2026-04-18 21:56:27 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 719.45ms (status: 200)
+2026-04-18 21:56:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 734.68ms (status: 200)
+2026-04-18 21:57:27 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 677.91ms (status: 200)

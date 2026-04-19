@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_
@@ -7,24 +8,38 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User
 from ..schemas.user import UserCreate, UserResponse, UserUpdate
+from ..routes.auth import get_current_user
+from ..models.pagination import PaginationParams, PaginatedResponse, get_pagination_offset
+from ..services.cache_service import CacheService, CacheConfig
+
+logger = logging.getLogger(__name__)
 
 
 # Purpose: User CRUD endpoints with filtering and soft-delete behavior.
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("", response_model=list[UserResponse])
+@router.get("", response_model=PaginatedResponse[UserResponse])
 def list_users(
     role: Optional[str] = None,
     department: Optional[str] = None,
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10000, ge=1),
+    params: PaginationParams = Depends(),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """List users with optional filters."""
+    """List users with optional filters and pagination. Requires authentication."""
     try:
+        # Generate cache key from filters
+        cache_key = f"users:{role}:{department}:{is_active}:{search}:{params.page}:{params.page_size}:{params.sort_by}:{params.sort_order}"
+        
+        # Try cache first
+        cached_result = CacheService.get(cache_key)
+        if cached_result:
+            return cached_result
+        
+        # Build query
         query = db.query(User)
         if role:
             query = query.filter(User.role == role)
@@ -42,14 +57,48 @@ def list_users(
                     User.badge_id.ilike(like),
                 )
             )
-        return query.offset(skip).limit(limit).all()
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply sorting
+        try:
+            sort_field = getattr(User, params.sort_by, User.created_at)
+            if params.sort_order == "asc":
+                query = query.order_by(sort_field.asc())
+            else:
+                query = query.order_by(sort_field.desc())
+        except AttributeError:
+            query = query.order_by(User.created_at.desc())
+        
+        # Apply pagination
+        offset = get_pagination_offset(params.page, params.page_size)
+        users = query.offset(offset).limit(params.page_size).all()
+        
+        # Build response
+        response = PaginatedResponse(
+            data=users,
+            page=params.page,
+            page_size=params.page_size,
+            total=total
+        )
+        
+        # Cache result
+        CacheService.set(cache_key, response, CacheConfig.TTL_MEDIUM)
+        
+        return response
     except Exception as exc:
+        logger.error(f"Error listing users: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
-    """Create a new user with unique badge_id and email."""
+def create_user(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new user with unique badge_id and email. Requires authentication."""
     try:
         if db.query(User).filter(User.badge_id == user_in.badge_id).first():
             raise HTTPException(status_code=422, detail="badge_id already exists")
@@ -60,6 +109,10 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
+        
+        # Invalidate users cache
+        CacheService.invalidate("users:*")
+        
         return user
     except HTTPException:
         raise
@@ -68,8 +121,12 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    """Get a single user by id."""
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a single user by id. Requires authentication."""
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
@@ -82,8 +139,13 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)):
-    """Update user fields."""
+def update_user(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update user fields. Requires authentication."""
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
@@ -96,6 +158,10 @@ def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)
         db.add(user)
         db.commit()
         db.refresh(user)
+        
+        # Invalidate users cache
+        CacheService.invalidate("users:*")
+        
         return user
     except HTTPException:
         raise
@@ -104,8 +170,12 @@ def update_user(user_id: int, user_in: UserUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{user_id}", response_model=UserResponse)
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    """Soft delete a user by setting is_active to False."""
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Soft delete a user by setting is_active to False. Requires authentication."""
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
@@ -115,6 +185,10 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
+        
+        # Invalidate users cache
+        CacheService.invalidate("users:*")
+        
         return user
     except HTTPException:
         raise

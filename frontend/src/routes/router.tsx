@@ -1,12 +1,46 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Suspense, lazy } from 'react';
-import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom';
+import { Navigate, Outlet, createBrowserRouter, useParams } from 'react-router-dom';
 import paths, { rootPaths } from './paths';
 import MainLayout from 'layouts/main-layout';
 import AuthLayout from 'layouts/auth-layout';
 import RequireAdmin from 'components/auth/RequireAdmin';
 import Splash from 'components/loading/Splash';
 import PageLoader from 'components/loading/PageLoader';
+
+// Lazy load all onboarding steps
+const OnboardingStep1 = lazy(() => import('pages/onboarding/Step1'));
+const OnboardingStep2 = lazy(() => import('pages/onboarding/Step2'));
+const OnboardingStep3 = lazy(() => import('pages/onboarding/Step3'));
+const OnboardingStep4 = lazy(() => import('pages/onboarding/Step4'));
+const OnboardingStep5 = lazy(() => import('pages/onboarding/Step5'));
+const OnboardingStep6 = lazy(() => import('pages/onboarding/Step6'));
+const OnboardingStep7 = lazy(() => import('pages/onboarding/Step7'));
+
+// Onboarding step router component
+const OnboardingRoutes = () => {
+  const { step } = useParams<{ step: string }>();
+  const stepNum = parseInt(step || '1', 10);
+
+  switch (stepNum) {
+    case 1:
+      return <OnboardingStep1 />;
+    case 2:
+      return <OnboardingStep2 />;
+    case 3:
+      return <OnboardingStep3 />;
+    case 4:
+      return <OnboardingStep4 />;
+    case 5:
+      return <OnboardingStep5 />;
+    case 6:
+      return <OnboardingStep6 />;
+    case 7:
+      return <OnboardingStep7 />;
+    default:
+      return <Navigate to={paths.onboardingStep.replace(':step', '1')} replace />;
+  }
+};
 
 const App = lazy(() => import('App'));
 const Dashboard = lazy(() => import('pages/dashboard'));
@@ -47,27 +81,51 @@ const router = createBrowserRouter(
           children: [
             {
               index: true,
-              element: <Dashboard />,
+              element: (
+                <RequireAdmin>
+                  <Dashboard />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.accessLogs,
-              element: <AccessLogsPage />,
+              element: (
+                <RequireAdmin>
+                  <AccessLogsPage />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.decisionExplanation,
-              element: <DecisionExplainer />,
+              element: (
+                <RequireAdmin>
+                  <DecisionExplainer />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.alerts,
-              element: <AlertsPage />,
+              element: (
+                <RequireAdmin>
+                  <AlertsPage />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.users,
-              element: <UsersPage />,
+              element: (
+                <RequireAdmin>
+                  <UsersPage />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.accessPoints,
-              element: <AccessPointsPage />,
+              element: (
+                <RequireAdmin>
+                  <AccessPointsPage />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.mlStatus,
@@ -87,7 +145,11 @@ const router = createBrowserRouter(
             },
             {
               path: paths.performance,
-              element: <PerformancePage />,
+              element: (
+                <RequireAdmin>
+                  <PerformancePage />
+                </RequireAdmin>
+              ),
             },
             {
               path: paths.simulator,
@@ -118,6 +180,22 @@ const router = createBrowserRouter(
               element: (
                 <RequireAdmin>
                   <AdminSettingsPage />
+                </RequireAdmin>
+              ),
+            },
+            {
+              path: paths.onboarding,
+              element: (
+                <RequireAdmin>
+                  <OnboardingStep1 />
+                </RequireAdmin>
+              ),
+            },
+            {
+              path: paths.onboardingStep,
+              element: (
+                <RequireAdmin>
+                  <OnboardingRoutes />
                 </RequireAdmin>
               ),
             },

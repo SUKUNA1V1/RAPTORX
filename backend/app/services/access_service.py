@@ -154,16 +154,25 @@ class AccessService:
         return mapping.get(role, 1)
 
     @staticmethod
-    def _severity_from_score(score: float) -> str:
-        """Convert risk score to alert severity tier."""
+    def _severity_from_score(score: float, grant_threshold: float = 0.30, deny_threshold: float = 0.70) -> str:
+        """Convert risk score to alert severity tier using dynamic thresholds.
+        
+        Args:
+            score: Risk score (0.0-1.0)
+            grant_threshold: Score below this = low risk
+            deny_threshold: Score above this = high risk
+        
+        Returns:
+            Severity level: 'low', 'medium', 'high', or 'critical'
+        """
         # Granted decisions are never critical, even if features are unusual
-        if score < 0.30:
+        if score < grant_threshold:
             return "low"
-        if score >= 0.85:
+        if score >= min(0.99, deny_threshold + 0.20):  # Critical zone
             return "critical"
-        if score >= 0.70:
+        if score >= deny_threshold:
             return "high"
-        if score >= 0.60:
+        if score >= (grant_threshold + deny_threshold) / 2:  # Medium zone
             return "medium"
         return "low"
 

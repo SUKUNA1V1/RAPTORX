@@ -93,13 +93,19 @@ class AccessDecisionEngine:
         return logger
 
     def _hash_features(self, values: list | None) -> str | None:
+        """Hash feature vector for audit purposes.
+        
+        Silently returns None on error to prevent audit hashing from blocking access decisions.
+        Logs error for debugging purposes.
+        """
         if values is None:
             return None
         try:
             arr = np.asarray(values, dtype=float)
             payload = ",".join(f"{v:.6f}" for v in arr.tolist())
             return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Failed to hash features: {e}", exc_info=False)
             return None
 
     def _emit_audit(
@@ -110,6 +116,11 @@ class AccessDecisionEngine:
         raw_features: list | None = None,
         audit_context: dict | None = None,
     ) -> None:
+        """Emit audit log entry for decision tracking.
+        
+        Silently fails on errors to prevent audit logging from blocking access decisions.
+        Logs errors for debugging and monitoring.
+        """
         try:
             entry = {
                 "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -128,9 +139,9 @@ class AccessDecisionEngine:
                 "context": audit_context or {},
             }
             self.audit_logger.info(json.dumps(entry, ensure_ascii=False))
-        except Exception:
-            # Never fail access flow because of audit logging errors
-            pass
+        except Exception as e:
+            # Never fail access flow because of audit logging errors, but log the failure
+            logging.error(f"Audit logging failed: {e}", exc_info=False)
 
     def load_models(self):
         print("Loading ML models...")

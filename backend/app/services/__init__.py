@@ -7,6 +7,7 @@ from .ml_service import (
 	extract_features,
 	get_scaler,
 )
+from .scheduler import start_scheduler, stop_scheduler, get_scheduler
 
 # Purpose: Service exports used by API routes and other backend modules.
 __all__ = [
@@ -18,4 +19,7 @@ __all__ = [
 	"determine_alert_type",
 	"extract_features",
 	"get_scaler",
+	"start_scheduler",
+	"stop_scheduler",
+	"get_scheduler",
 ]

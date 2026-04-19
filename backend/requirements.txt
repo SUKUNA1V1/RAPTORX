@@ -14,3 +14,9 @@ numpy
 pandas
 psutil
 bcrypt
+python-jose[cryptography]
+pyotp
+qrcode
+Pillow
+requests
+python-multipart

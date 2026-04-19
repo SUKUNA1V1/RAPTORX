@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAccessToken, refreshAccessToken, logout } from './auth';
 
 const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const API_BASE_URL = envApiBaseUrl && envApiBaseUrl.trim() ? envApiBaseUrl : '/api';
@@ -7,6 +8,66 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
 });
+
+// Token refresh queue to prevent concurrent refresh attempts
+let isRefreshing = false;
+let refreshQueue: Array<() => void> = [];
+
+const processQueue = () => {
+  refreshQueue.forEach(callback => callback());
+  refreshQueue = [];
+};
+
+// Add Authorization header to all requests
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle 401 responses by attempting token refresh (with queue to prevent multiple refresh attempts)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      if (!isRefreshing) {
+        isRefreshing = true;
+        try {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            processQueue();
+            const token = getAccessToken();
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          } else {
+            // Refresh failed, logout user
+            logout();
+            window.location.href = '/raptorx/authentication/login';
+          }
+        } finally {
+          isRefreshing = false;
+        }
+      } else {
+        // Queue this request to be retried after refresh completes
+        return new Promise(resolve => {
+          refreshQueue.push(() => {
+            const token = getAccessToken();
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          });
+        });
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export interface OverviewStats {
   total_accesses_today: number;
@@ -201,6 +262,12 @@ export const apiClient = {
   updateAccessPoint: async (accessPointId: number, payload: CreateAccessPointPayload) =>
     (await api.put<AccessPointItem>(`/access-points/${accessPointId}`, payload)).data,
   getMlStatus: async () => (await api.get<MlStatus>('/ml/status')).data,
+  getModelVersions: async () =>
+    (await api.get<Record<string, unknown>>('/ml/model-versions')).data,
+  restoreModelVersion: async (modelKey: string, versionId: string) =>
+    (await api.post<{ status: string; message: string }>('/ml/restore-model-version', null, {
+      params: { model_key: modelKey, version_id: versionId }
+    })).data,
   getFeatureImportance: async () =>
     (await api.get<FeatureImportanceItem[]>('/explainations/feature-importance')).data,
   getModelInsights: async () => (await api.get<Record<string, unknown>>('/explainations/model-insights')).data,

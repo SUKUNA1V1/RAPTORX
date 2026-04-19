@@ -13,8 +13,14 @@ from .routes import (
     users_router,
     explainability_router,
     admin_router,
+    auth_router,
+    devices_router,
+    websocket_router,
+    onboarding_router,
+    scheduler_admin_router,
 )
 from .api_metrics import APIPerformanceMiddleware
+from .middleware.csrf import CSRFMiddleware
 from .logging_config import get_logger
 
 logger = get_logger("main")
@@ -30,7 +36,10 @@ cors_origins = [
     ).split(",")
     if origin.strip()
 ]
-cors_localhost_regex = r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\\d+)?$"
+cors_localhost_regex = r"^https?://(localhost|127\.0\.0\.0)(:\\d+)?$"
+
+# Add CSRF protection middleware (must be before CORS)
+app.add_middleware(CSRFMiddleware)
 
 # Add API performance monitoring middleware
 app.add_middleware(APIPerformanceMiddleware)
@@ -68,9 +77,23 @@ def health_check():
 @app.on_event("startup")
 async def startup_event():
     from .routes.access import get_engine
+    from .services.scheduler import start_scheduler
 
     engine = get_engine()
     print(f"Decision Engine loaded: {engine.status()}")
+    
+    # Start the auto-retrain scheduler
+    await start_scheduler()
+    print("✅ Auto-retrain scheduler started")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    from .services.scheduler import stop_scheduler
+    
+    # Stop the auto-retrain scheduler
+    await stop_scheduler()
+    print("✅ Auto-retrain scheduler stopped")
 
 
 app.include_router(users_router, prefix="/api")
@@ -81,3 +104,8 @@ app.include_router(alerts_router, prefix="/api")
 app.include_router(stats_router, prefix="/api")
 app.include_router(explainability_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(auth_router)
+app.include_router(devices_router)
+app.include_router(websocket_router, prefix="/api")
+app.include_router(onboarding_router)
+app.include_router(scheduler_admin_router)

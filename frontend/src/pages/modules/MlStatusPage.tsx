@@ -8,6 +8,15 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
 import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import List from '@mui/material/List';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemButton from '@mui/material/ListItemButton';
+import Radio from '@mui/material/Radio';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { apiClient, MlStatus } from 'lib/api';
 import { useTheme } from '@mui/material/styles';
@@ -40,12 +49,24 @@ interface MlRuntimeStatus extends Record<string, unknown> {
   ae_weight?: number;
 }
 
+interface ModelVersion {
+  version_id: string;
+  timestamp: string;
+  is_current: boolean;
+}
+
 const MlStatusPage = () => {
   const theme = useTheme();
   const [status, setStatus] = useState<MlStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modelStatuses, setModelStatuses] = useState<ModelStatus[]>([]);
+  const [modelVersions, setModelVersions] = useState<Record<string, ModelVersion[]>>({});
+  const [showVersionDialog, setShowVersionDialog] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [selectedVersion, setSelectedVersion] = useState('');
+  const [restoringVersion, setRestoringVersion] = useState(false);
+  const [versionError, setVersionError] = useState('');
 
   const asRuntimeStatus = (value: MlStatus | null): MlRuntimeStatus =>
     ((value ?? {}) as MlRuntimeStatus);
@@ -100,6 +121,51 @@ const MlStatusPage = () => {
     const interval = setInterval(() => void load(), 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadModelVersions = async () => {
+    try {
+      const response = await apiClient.getModelVersions() as {
+        available_versions?: Record<string, ModelVersion[]>;
+        current_versions?: Record<string, unknown>;
+        status?: string;
+        message?: string;
+      };
+      setModelVersions(response.available_versions || {});
+      setVersionError('');
+    } catch {
+      setVersionError('Failed to load model versions');
+    }
+  };
+
+  const handleOpenVersionDialog = async () => {
+    await loadModelVersions();
+    setShowVersionDialog(true);
+  };
+
+  const handleCloseVersionDialog = () => {
+    setShowVersionDialog(false);
+    setSelectedModel('');
+    setSelectedVersion('');
+    setVersionError('');
+  };
+
+  const handleRestoreVersion = async () => {
+    if (!selectedModel || !selectedVersion) return;
+
+    setRestoringVersion(true);
+    try {
+      await apiClient.restoreModelVersion(selectedModel, selectedVersion);
+      setVersionError('');
+      handleCloseVersionDialog();
+      // Reload status
+      const data = await apiClient.getMlStatus();
+      setStatus(data);
+    } catch {
+      setVersionError('Failed to restore model version');
+    } finally {
+      setRestoringVersion(false);
+    }
+  };
 
   const overallHealth = useMemo(() => {
     if (modelStatuses.length === 0) return 0;
@@ -491,8 +557,213 @@ const MlStatusPage = () => {
               </Grid>
             );
           })}
+
+          {/* Model Version Management */}
+          <Grid item xs={12} sx={{ mt: 4, mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="h5" fontWeight={800} sx={{ color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(99, 102, 241, 0.1)' }}>
+                  <IconifyIcon icon="mdi:history" sx={{ color: '#6366f1' }} />
+                </Box>
+                Model Registry & Rollback
+              </Typography>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Paper 
+              sx={{ 
+                p: { xs: 3, md: 4 }, 
+                borderRadius: 4, 
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+                boxShadow: '0 8px 32px rgba(99, 102, 241, 0.1)',
+              }}
+            >
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="body2" sx={{ color: '#818cf8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, mb: 1 }}>
+                    ⚡ Restore Previous Models
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                    Switch back to a previously trained model version if the current model is underperforming.
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  sx={{
+                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                    color: '#fff',
+                    fontWeight: 800,
+                    py: 1.5,
+                    px: 3,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    '&:hover': {
+                      boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)',
+                      transform: 'translateY(-2px)',
+                    },
+                    display: 'flex',
+                    gap: 1.5,
+                    alignItems: 'center',
+                    width: 'fit-content'
+                  }}
+                  onClick={handleOpenVersionDialog}
+                  startIcon={<IconifyIcon icon="mdi:history" />}
+                >
+                  Browse Model Versions
+                </Button>
+              </Stack>
+            </Paper>
+          </Grid>
         </>
       )}
+
+      {/* Model Version Selection Dialog */}
+      <Dialog 
+        open={showVersionDialog} 
+        onClose={handleCloseVersionDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            background: 'rgba(20, 20, 30, 0.95)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#fff', fontSize: '1.3rem' }}>
+          Restore Model Version
+        </DialogTitle>
+        <DialogContent sx={{ py: 2 }}>
+          {versionError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {versionError}
+            </Alert>
+          )}
+          <Stack spacing={2}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+              Select Model:
+            </Typography>
+            <Stack spacing={1}>
+              {Object.keys(modelVersions).map((modelKey) => (
+                <Button
+                  key={modelKey}
+                  variant={selectedModel === modelKey ? 'contained' : 'outlined'}
+                  sx={{
+                    justifyContent: 'flex-start',
+                    color: selectedModel === modelKey ? '#fff' : 'text.primary',
+                    background: selectedModel === modelKey ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
+                    borderColor: selectedModel === modelKey ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255, 255, 255, 0.1)',
+                    textTransform: 'none',
+                    py: 1,
+                  }}
+                  onClick={() => {
+                    setSelectedModel(modelKey);
+                    setSelectedVersion('');
+                  }}
+                >
+                  {modelKey}
+                </Button>
+              ))}
+            </Stack>
+
+            {selectedModel && modelVersions[selectedModel] && (
+              <>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mt: 2 }}>
+                  Available Versions:
+                </Typography>
+                <List sx={{ 
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 2,
+                  maxHeight: 300,
+                  overflow: 'auto'
+                }}>
+                  {modelVersions[selectedModel].map((version) => (
+                    <ListItemButton
+                      key={version.version_id}
+                      selected={selectedVersion === version.version_id}
+                      onClick={() => setSelectedVersion(version.version_id)}
+                      sx={{
+                        py: 1.5,
+                        px: 2,
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                        '&.Mui-selected': {
+                          bgcolor: 'rgba(99, 102, 241, 0.2)',
+                        },
+                        '&:hover': {
+                          bgcolor: 'rgba(99, 102, 241, 0.1)',
+                        }
+                      }}
+                    >
+                      <Radio
+                        checked={selectedVersion === version.version_id}
+                        sx={{ mr: 2 }}
+                      />
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {new Date(version.timestamp).toLocaleString()}
+                            {version.is_current && (
+                              <Chip 
+                                label="CURRENT" 
+                                size="small" 
+                                sx={{ 
+                                  ml: 1, 
+                                  height: 20,
+                                  bgcolor: 'rgba(16, 185, 129, 0.2)',
+                                  color: '#34d399',
+                                  fontWeight: 700
+                                }} 
+                              />
+                            )}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {version.version_id}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button 
+            onClick={handleCloseVersionDialog}
+            sx={{ color: 'text.secondary' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRestoreVersion}
+            disabled={!selectedModel || !selectedVersion || restoringVersion}
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              color: '#fff',
+              fontWeight: 700,
+              textTransform: 'none',
+            }}
+          >
+            {restoringVersion ? (
+              <>
+                <CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />
+                Restoring...
+              </>
+            ) : (
+              'Restore Version'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Grid>
   );
 };

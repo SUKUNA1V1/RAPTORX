@@ -19,6 +19,7 @@ class User(Base):
     clearance_level = Column(Integer, nullable=False, default=1)
     is_active = Column(Boolean, nullable=False, default=True)
     pin_hash = Column(String, nullable=True)
+    mfa_enabled = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     last_seen_at = Column(DateTime(timezone=True), nullable=True)
