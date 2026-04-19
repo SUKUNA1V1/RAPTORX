@@ -1944,6 +1944,7 @@ docker-compose logs -f postgres
 ```bash
 # Verify environment variables are loaded
 python -c "import os; print(os.getenv('DATABASE_URL'))"
+```
 
 # Check .env file format
 cat backend/.env | head -5
