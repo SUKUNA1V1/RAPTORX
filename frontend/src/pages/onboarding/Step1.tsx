@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Alert from '@mui/material/Alert';
-import FormGroup from '@mui/material/FormGroup';
 import Typography from '@mui/material/Typography';
 import OnboardingLayout from 'components/onboarding/OnboardingLayout';
 import IconifyIcon from 'components/base/IconifyIcon';
@@ -27,13 +24,7 @@ const TIMEZONES = [
   'Australia/Sydney',
 ];
 
-const COMPLIANCE_OPTIONS = [
-  { value: 'SOC2', label: 'SOC2' },
-  { value: 'ISO27001', label: 'ISO27001' },
-  { value: 'HIPAA', label: 'HIPAA' },
-  { value: 'PCI-DSS', label: 'PCI-DSS' },
-  { value: 'GDPR', label: 'GDPR' },
-];
+
 
 const OnboardingStep1 = () => {
   const navigate = useNavigate();
@@ -74,15 +65,7 @@ const OnboardingStep1 = () => {
     }
   };
 
-  const handleComplianceChange = (value: string, checked: boolean) => {
-    setFormData(prev => {
-      const current = prev.compliance_requirements || [];
-      if (checked) {
-        return { ...prev, compliance_requirements: [...current, value] };
-      }
-      return { ...prev, compliance_requirements: current.filter(v => v !== value) };
-    });
-  };
+
 
   const handleNext = async () => {
     setApiError('');
@@ -318,30 +301,7 @@ const OnboardingStep1 = () => {
           />
         </Stack>
 
-        {/* Compliance Section */}
-        <Typography variant="h6" fontWeight={700} sx={{ mt: 4, mb: 2, color: 'error.main' }}>
-          Compliance Requirements
-        </Typography>
-        <FormGroup sx={{ mb: 2 }}>
-          <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 2.5 }}>
-            {COMPLIANCE_OPTIONS.map(option => (
-              <FormControlLabel
-                key={option.value}
-                control={
-                  <Checkbox
-                    checked={formData.compliance_requirements?.includes(option.value) || false}
-                    onChange={(e) => handleComplianceChange(option.value, e.target.checked)}
-                    sx={{ '&.Mui-checked': { color: 'error.main' } }}
-                  />
-                }
-                label={
-                  <Typography variant="body2" fontWeight={600}>{option.label}</Typography>
-                }
-                sx={{ flex: '0 0 auto' }}
-              />
-            ))}
-          </Stack>
-        </FormGroup>
+
       </Box>
     </OnboardingLayout>
   );
