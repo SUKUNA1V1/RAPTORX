@@ -99,10 +99,21 @@ export interface AccessLogItem {
   } | null;
 }
 
-export interface AccessLogsResponse {
-  items: AccessLogItem[];
+export interface PaginationMetadata {
+  page: number;
+  page_size: number;
   total: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMetadata;
+}
+
+export interface AccessLogsResponse extends PaginatedResponse<AccessLogItem> {}
 
 export interface AlertItem {
   id: number;
@@ -239,24 +250,35 @@ export interface SystemHealth {
 
 export const apiClient = {
   getOverview: async () => (await api.get<OverviewStats>('/stats/overview')).data,
-  getAccessLogs: async () =>
-    (await api.get<AccessLogsResponse>('/access/logs', { params: { limit: 10000 } })).data,
-  getAlerts: async (limit = 10000) => (await api.get<AlertItem[]>('/alerts', { params: { limit } })).data,
+  getAccessLogs: async (): Promise<{ items: AccessLogItem[]; total: number }> => {
+    const response = await api.get<AccessLogsResponse>('/access/logs', { params: { page: 1, page_size: 10000 } });
+    return { items: response.data.data, total: response.data.pagination.total };
+  },
+  getAlerts: async (limit = 10000) => {
+    const response = await api.get<PaginatedResponse<AlertItem>>('/alerts', { params: { page: 1, page_size: limit } });
+    return response.data.data;
+  },
 
   getOpenAlertsCount: async (): Promise<number> => {
-    const data = await api.get<AlertItem[]>('/alerts', { params: { limit: 10000 } });
-    return data.data.filter(a => a.status === 'open').length;
+    const response = await api.get<PaginatedResponse<AlertItem>>('/alerts', { params: { page: 1, page_size: 10000 } });
+    return response.data.data.filter(a => a.status === 'open').length;
   },
   resolveAlert: async (alertId: number) =>
     (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/resolve`)).data,
   markAlertFalsePositive: async (alertId: number) =>
     (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/false-positive`)).data,
-  getUsers: async () => (await api.get<UserItem[]>('/users', { params: { limit: 10000 } })).data,
+  getUsers: async () => {
+    const response = await api.get<PaginatedResponse<UserItem>>('/users', { params: { page: 1, page_size: 10000 } });
+    return response.data.data;
+  },
   createUser: async (payload: CreateUserPayload) =>
     (await api.post<UserItem>('/users', payload)).data,
   updateUser: async (userId: number, payload: CreateUserPayload) =>
     (await api.put<UserItem>(`/users/${userId}`, payload)).data,
-  getAccessPoints: async () => (await api.get<AccessPointItem[]>('/access-points')).data,
+  getAccessPoints: async () => {
+    const response = await api.get<PaginatedResponse<AccessPointItem>>('/access-points', { params: { page: 1, page_size: 10000 } });
+    return response.data.data;
+  },
   createAccessPoint: async (payload: CreateAccessPointPayload) =>
     (await api.post<AccessPointItem>('/access-points', payload)).data,
   updateAccessPoint: async (accessPointId: number, payload: CreateAccessPointPayload) =>
