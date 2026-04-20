@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Alert from '@mui/material/Alert';
+import Card from '@mui/material/Card';
 import FormLabel from '@mui/material/FormLabel';
 import RadioGroup from '@mui/material/RadioGroup';
 import Radio from '@mui/material/Radio';
@@ -103,15 +104,22 @@ const Step6 = () => {
       loading={loading}
       nextButtonLabel="Continue to Review"
     >
-      <Stack spacing={3}>
-        {/* Info Box */}
-        <Card sx={{ p: 2, bgcolor: 'info.lighter', border: 'none' }}>
-          <Box component="p" sx={{ m: 0 }}>
-            Configure data settings and privacy options for your organization.
-          </Box>
-        </Card>
-
-        {apiError && <Alert severity="error">{apiError}</Alert>}
+      <Box sx={{
+        bgcolor: 'background.default',
+        borderRadius: 3,
+        p: { xs: 2, md: 4 },
+        boxShadow: '0 2px 12px rgba(59,130,246,0.04)',
+        maxWidth: 700,
+        mx: 'auto',
+        mt: 2,
+      }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: 'primary.main' }}>
+          Data Settings
+        </Typography>
+        <Box sx={{ mb: 2, color: 'text.secondary', fontWeight: 500 }}>
+          Configure data settings and privacy options for your organization.
+        </Box>
+        {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
 
         {/* Baseline Setup */}
         <Box>
@@ -228,9 +236,7 @@ const Step6 = () => {
               />
 
               <Box>
-                <FormLabel sx={{ fontWeight: 600, mb: 1, display: 'block' }}>
-                  Data Retention Period (days)
-                </FormLabel>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Data Retention Period (days)</Typography>
                 <TextField
                   type="number"
                   fullWidth
@@ -238,6 +244,18 @@ const Step6 = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, data_retention_days: parseInt(e.target.value, 10) }))}
                   inputProps={{ min: 7, max: 2555 }}
                   helperText="How long to keep historical access logs (7-2555 days)"
+                  variant="outlined"
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                      borderRadius: 1.5,
+                      bgcolor: 'rgba(255, 255, 255, 0.02)',
+                      transition: 'all 0.2s',
+                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                      '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                      '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                    },
+                  }}
                 />
               </Box>
             </Stack>
@@ -268,7 +286,7 @@ const Step6 = () => {
             </Box>
           </Stack>
         </Box>
-      </Stack>
+      </Box>
     </OnboardingLayout>
   );
 };

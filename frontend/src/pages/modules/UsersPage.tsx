@@ -44,7 +44,7 @@ const UsersPage = () => {
       try {
         setLoading(true);
         const data = await apiClient.getUsers();
-        setUsers(data);
+        setUsers(data.items);
       } catch {
         setError('Failed to load users from backend API.');
       } finally {

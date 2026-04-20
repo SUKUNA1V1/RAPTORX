@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -13,12 +12,8 @@ import DialogActions from '@mui/material/DialogActions';
 import Alert from '@mui/material/Alert';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import FormLabel from '@mui/material/FormLabel';
+import Typography from '@mui/material/Typography';
 import DeleteIcon from '@mui/icons-material/Delete';
-
 import AddIcon from '@mui/icons-material/Add';
 import OnboardingLayout from 'components/onboarding/OnboardingLayout';
 import CSVImporter from 'components/onboarding/CSVImporter';
@@ -170,18 +165,24 @@ const Step3 = () => {
       loading={loading}
       nextButtonLabel="Continue to Access Points"
     >
-      <Stack spacing={3}>
-        {/* Info Box */}
-        <Card sx={{ p: 2, bgcolor: 'info.lighter', border: 'none' }}>
-          <Box component="p" sx={{ m: 0 }}>
-            Define your physical infrastructure: buildings, floors, zones, and rooms. You can add them manually or import from CSV.
-          </Box>
-        </Card>
+      <Box sx={{
+        bgcolor: 'background.default',
+        borderRadius: 3,
+        p: { xs: 2, md: 4 },
+        boxShadow: '0 2px 12px rgba(59,130,246,0.04)',
+        maxWidth: 700,
+        mx: 'auto',
+        mt: 2,
+      }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: 'primary.main' }}>
+          Buildings & Zones
+        </Typography>
+        <Box sx={{ mb: 2, color: 'text.secondary', fontWeight: 500 }}>
+          Define your physical infrastructure: buildings, floors, zones, and rooms. You can add them manually or import from CSV.
+        </Box>
+        {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
 
-        {apiError && <Alert severity="error">{apiError}</Alert>}
-
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
           <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
             <Tab label="Manual Entry" />
             <Tab label="CSV Import" />
@@ -189,44 +190,33 @@ const Step3 = () => {
           </Tabs>
         </Box>
 
-        {/* Manual Entry Tab */}
         <TabPanel value={tabValue} index={0}>
           <Stack spacing={2}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowBuildingDialog(true)}>
               Add Building
             </Button>
-
             {buildings.length === 0 ? (
-              <Card sx={{ p: 3, textAlign: 'center' }}>
-                <Box component="p" sx={{ m: 0, color: 'text.secondary' }}>
-                  No buildings added yet. Add one to get started.
-                </Box>
-              </Card>
+              <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary', bgcolor: 'background.default', borderRadius: 2, border: '1px dashed', borderColor: 'divider' }}>
+                No buildings added yet. Add one to get started.
+              </Box>
             ) : (
-              <List>
+              <Stack spacing={1}>
                 {buildings.map(building => (
-                  <Card key={building.id} sx={{ mb: 1, p: 1.5 }}>
-                    <ListItem
-                      disablePadding
-                      secondaryAction={
-                        <IconButton edge="end" size="small" color="error" onClick={() => setBuildings(prev => prev.filter(b => b.id !== building.id))}>
-                          <DeleteIcon />
-                        </IconButton>
-                      }
-                    >
-                      <ListItemText
-                        primary={<strong>{building.name}</strong>}
-                        secondary={`${building.floors?.length || 0} floor(s)`}
-                      />
-                    </ListItem>
-                  </Card>
+                  <Box key={building.id} sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>{building.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">{building.floors?.length || 0} floor(s)</Typography>
+                    </Box>
+                    <IconButton size="small" color="error" onClick={() => setBuildings(prev => prev.filter(b => b.id !== building.id))}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 ))}
-              </List>
+              </Stack>
             )}
           </Stack>
         </TabPanel>
 
-        {/* CSV Import Tab */}
         <TabPanel value={tabValue} index={1}>
           <CSVImporter
             title="Import Buildings & Zones"
@@ -237,57 +227,52 @@ const Step3 = () => {
           />
         </TabPanel>
 
-        {/* Review Tab */}
         <TabPanel value={tabValue} index={2}>
           {buildings.length === 0 ? (
             <Alert severity="warning">No buildings defined yet</Alert>
           ) : (
             <Stack spacing={2}>
               {buildings.map(building => (
-                <Card key={building.id} sx={{ p: 2 }}>
-                  <Stack spacing={1}>
-                    <FormLabel sx={{ fontWeight: 600 }}>📍 {building.name}</FormLabel>
-                    {building.floors?.map(floor => (
-                      <Box key={floor.id} sx={{ pl: 2 }}>
-                        <FormLabel sx={{ fontSize: '0.9rem' }}>🏢 {floor.name}</FormLabel>
-                        <Stack sx={{ pl: 2 }}>
-                          {floor.zones?.map(zone => (
-                            <Box key={zone.id}>
-                              <FormLabel sx={{ fontSize: '0.85rem' }}>🔲 {zone.name}</FormLabel>
-                              {zone.rooms?.length ? (
-                                <Box sx={{ pl: 2, fontSize: '0.8rem', color: 'text.secondary' }}>
-                                  Rooms: {zone.rooms.map(r => r.name).join(', ')}
-                                </Box>
-                              ) : null}
-                            </Box>
-                          ))}
-                        </Stack>
-                      </Box>
-                    ))}
-                  </Stack>
-                </Card>
+                <Box key={building.id} sx={{ p: 2, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>📍 {building.name}</Typography>
+                  {building.floors?.map(floor => (
+                    <Box key={floor.id} sx={{ pl: 2, mb: 1 }}>
+                      <Typography variant="caption" sx={{ fontSize: '0.9rem', fontWeight: 600 }}>🏢 {floor.name}</Typography>
+                      {floor.zones?.map(zone => (
+                        <Box key={zone.id} sx={{ pl: 2 }}>
+                          <Typography variant="caption" sx={{ fontSize: '0.85rem', fontWeight: 600 }}>🔲 {zone.name}</Typography>
+                          {zone.rooms?.length && (
+                            <Typography variant="caption" sx={{ display: 'block', pl: 1, fontSize: '0.8rem', color: 'text.secondary' }}>
+                              Rooms: {zone.rooms.map(r => r.name).join(', ')}
+                            </Typography>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+                  ))}
+                </Box>
               ))}
             </Stack>
           )}
         </TabPanel>
-      </Stack>
+      </Box>
 
-      {/* Building Dialog */}
       <Dialog open={showBuildingDialog} onClose={() => setShowBuildingDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Add Building</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <TextField
-            autoFocus
-            label="Building Name"
-            fullWidth
-            placeholder="Main Office"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                const value = (e.target as HTMLInputElement).value;
-                handleAddBuilding({ name: value, floors: [] });
-              }
-            }}
-          />
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <TextField
+              fullWidth
+              placeholder="Main Office"
+              variant="outlined"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  const value = (e.target as HTMLInputElement).value;
+                  handleAddBuilding({ name: value, floors: [] });
+                }
+              }}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowBuildingDialog(false)}>Cancel</Button>

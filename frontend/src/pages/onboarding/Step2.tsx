@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
-import FormLabel from '@mui/material/FormLabel';
+import Typography from '@mui/material/Typography';
+// import Divider from '@mui/material/Divider';
+// import Paper from '@mui/material/Paper';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import OnboardingLayout from 'components/onboarding/OnboardingLayout';
+import IconifyIcon from 'components/base/IconifyIcon';
 import RoleSelector from 'components/onboarding/RoleSelector';
 import { OnboardingManager } from 'lib/onboarding';
 import paths from 'routes/paths';
@@ -135,105 +137,129 @@ const OnboardingStep2 = () => {
       loading={loading}
       nextButtonLabel="Continue to Buildings & Zones"
     >
-      <Stack spacing={3}>
-        {/* Info Box */}
-        <Card sx={{ p: 2, bgcolor: 'info.lighter', border: 'none' }}>
-          <Box component="p" sx={{ m: 0 }}>
-            Create initial administrator accounts. You can add more users later in the system.
-          </Box>
-        </Card>
+      <Box sx={{
+        bgcolor: 'background.default',
+        borderRadius: 3,
+        p: { xs: 2, md: 4 },
+        boxShadow: '0 2px 12px rgba(59,130,246,0.04)',
+        maxWidth: 600,
+        mx: 'auto',
+        mt: 2,
+      }}>
+        {apiError && <Alert severity="error" sx={{ mb: 3 }}>{apiError}</Alert>}
 
-        {apiError && <Alert severity="error">{apiError}</Alert>}
-
-        {/* Admin Accounts */}
-        <Box>
-          <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>Administrator Accounts</span>
-            <Button startIcon={<AddIcon />} onClick={addAdmin} disabled={loading} size="small">
-              Add Admin
-            </Button>
-          </FormLabel>
-
-          <Stack spacing={2}>
-            {formData.initial_admins.map((admin, index) => (
-              <Card key={index} sx={{ p: 2.5 }}>
-                <Stack spacing={2}>
-                  {/* Header */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <FormLabel sx={{ fontWeight: 600 }}>Admin #{index + 1}</FormLabel>
-                    <IconButton
-                      size="small"
-                      onClick={() => removeAdmin(index)}
-                      disabled={loading || formData.initial_admins.length === 1}
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-
-                  {/* Name and Email */}
-                  <Stack spacing={2}>
-                    <TextField
-                      label="Admin Name *"
-                      value={admin.name}
-                      onChange={(e) => handleAdminChange(index, 'name', e.target.value)}
-                      fullWidth
-                      placeholder="John Doe"
-                      error={!!errors[`admin_${index}_name`]}
-                      helperText={errors[`admin_${index}_name`]}
-                    />
-
-                    <TextField
-                      label="Email Address *"
-                      type="email"
-                      value={admin.email}
-                      onChange={(e) => handleAdminChange(index, 'email', e.target.value)}
-                      fullWidth
-                      placeholder="john@acme.com"
-                      error={!!errors[`admin_${index}_email`]}
-                      helperText={errors[`admin_${index}_email`]}
-                    />
-                  </Stack>
-
-                  {/* Role Selection */}
-                  <Box>
-                    <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'block' }}>Role *</FormLabel>
-                    <RoleSelector
-                      value={admin.role}
-                      onChange={(role) => handleAdminChange(index, 'role', role)}
-                      disabled={loading}
-                    />
-                  </Box>
-                </Stack>
-              </Card>
-            ))}
-          </Stack>
-        </Box>
-
-        {/* Integration Info */}
-        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-          <Stack spacing={1}>
-            <Box component="p" sx={{ m: 0, fontSize: '0.875rem', fontWeight: 600 }}>
-              Advanced: Integration Setup
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: 'primary.main' }}>
+          Administrator Accounts
+        </Typography>
+        <Stack spacing={2} direction="column">
+          {formData.initial_admins.map((admin, index) => (
+            <Box key={index} sx={{ mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 2, bgcolor: 'background.default', boxShadow: 'none' }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" fontWeight={700}>
+                  Administrator #{index + 1}
+                </Typography>
+                {formData.initial_admins.length > 1 && (
+                  <IconButton
+                    size="small"
+                    onClick={() => removeAdmin(index)}
+                    disabled={loading}
+                    color="error"
+                    sx={{ borderRadius: 1 }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Stack>
+              <Stack spacing={0} direction="column">
+                <TextField
+                  value={admin.name}
+                  onChange={(e) => handleAdminChange(index, 'name', e.target.value)}
+                  fullWidth
+                  placeholder="John Doe"
+                  required
+                  error={!!errors[`admin_${index}_name`]}
+                  helperText={errors[`admin_${index}_name`] || 'Full name of the administrator'}
+                  variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                        <IconifyIcon icon="mingcute:user-add-fill" fontSize={20} />
+                      </Box>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 0,
+                      borderTopLeftRadius: 8,
+                      borderTopRightRadius: 8,
+                      bgcolor: 'background.default',
+                      borderBottom: 'none',
+                    },
+                  }}
+                />
+                <TextField
+                  type="email"
+                  value={admin.email}
+                  onChange={(e) => handleAdminChange(index, 'email', e.target.value)}
+                  fullWidth
+                  placeholder="john@acme.com"
+                  required
+                  error={!!errors[`admin_${index}_email`]}
+                  helperText={errors[`admin_${index}_email`] || 'Business email address'}
+                  variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                        <IconifyIcon icon="mingcute:mail-line" fontSize={20} />
+                      </Box>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 0,
+                      borderBottomLeftRadius: 8,
+                      borderBottomRightRadius: 8,
+                      bgcolor: 'background.default',
+                    },
+                  }}
+                />
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+                    Role <span style={{ color: '#ef4444' }}>*</span>
+                  </Typography>
+                  <RoleSelector
+                    value={admin.role}
+                    onChange={(role) => handleAdminChange(index, 'role', role)}
+                    disabled={loading}
+                  />
+                </Box>
+              </Stack>
             </Box>
-            <Box component="p" sx={{ m: 0, fontSize: '0.75rem', color: 'text.secondary' }}>
+          ))}
+          <Button
+            startIcon={<AddIcon />}
+            onClick={addAdmin}
+            disabled={loading}
+            variant="contained"
+            size="medium"
+            sx={{ borderRadius: 2, fontWeight: 700, mt: 1 }}
+          >
+            Add Admin
+          </Button>
+        </Stack>
+
+        <Box sx={{ mt: 4, p: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+          <Stack spacing={1}>
+            <Typography variant="subtitle2" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconifyIcon icon="mingcute:info-fill" fontSize={18} sx={{ color: 'primary.main' }} />
+              Advanced: Identity Integration
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
               After onboarding, you can configure identity integrations (Okta, Azure AD, LDAP, SCIM) in Admin Settings.
-            </Box>
+            </Typography>
           </Stack>
         </Box>
-
-        {/* Help Text */}
-        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-          <Stack spacing={1}>
-            <Box component="p" sx={{ m: 0, fontSize: '0.875rem', fontWeight: 600 }}>
-              Next Step: Define Buildings & Zones
-            </Box>
-            <Box component="p" sx={{ m: 0, fontSize: '0.75rem', color: 'text.secondary' }}>
-              After this step, you'll configure your physical infrastructure (buildings, floors, zones, and rooms).
-            </Box>
-          </Stack>
-        </Box>
-      </Stack>
+      </Box>
     </OnboardingLayout>
   );
 };

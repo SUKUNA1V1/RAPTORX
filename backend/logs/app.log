@@ -211,3 +211,625 @@
 2026-04-19 14:28:57 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 684.26ms (status: 200)
 2026-04-19 14:28:58 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 1300.00ms
 2026-04-19 14:28:58 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 1332.96ms (status: 200)
+2026-04-19 21:52:02 - app.routes.access - DEBUG - [access.py:99] - Decision engine initialized
+2026-04-19 21:53:52 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:53:52 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:53:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 21591.57ms (status: 500)
+2026-04-19 21:53:54 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:54:03 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:03 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 19194.19ms (status: 200)
+2026-04-19 21:54:06 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:06 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:54:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 21243.47ms (status: 500)
+2026-04-19 21:54:10 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:10 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:10 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 22071.27ms
+2026-04-19 21:54:12 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:12 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 24951.84ms (status: 200)
+2026-04-19 21:54:12 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:12 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:54:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 26687.26ms (status: 500)
+2026-04-19 21:54:14 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/explainations/feature-importance took 562.28ms (status: 200)
+2026-04-19 21:54:15 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:54:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 44962.22ms (status: 200)
+2026-04-19 21:54:20 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:20 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 18250.98ms (status: 200)
+2026-04-19 21:54:30 - app.middleware.csrf - WARNING - [csrf.py:62] - CSRF token missing for POST /api/ml/use-models from 127.0.0.1
+2026-04-19 21:54:38 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:54:43 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:43 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:43 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 27494.56ms
+2026-04-19 21:54:50 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:50 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:50 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 19213.63ms
+2026-04-19 21:54:52 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:52 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22198.41ms (status: 200)
+2026-04-19 21:54:55 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:55 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:55 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 24350.64ms
+2026-04-19 21:54:57 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:58 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:58 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 23902.39ms
+2026-04-19 21:54:59 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:54:59 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:54:59 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 18695.18ms
+2026-04-19 21:55:00 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:55:00 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:55:00 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 21100.13ms
+2026-04-19 21:55:02 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:55:02 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 46858.17ms
+2026-04-19 21:55:18 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:55:18 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:55:18 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:55:18 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 21975.01ms
+2026-04-19 21:55:21 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:55:21 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:55:21 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 25417.24ms
+2026-04-19 21:55:21 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:55:21 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:55:21 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 21484.01ms (status: 200)
+2026-04-19 21:55:37 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:55:37 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 43015.94ms
+2026-04-19 21:55:53 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:55:53 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:55:53 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 23230.55ms (status: 200)
+2026-04-19 21:56:02 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:56:09 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:09 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:56:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 23405.95ms
+2026-04-19 21:56:12 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:12 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:56:12 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 26048.26ms
+2026-04-19 21:56:12 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:12 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 23998.71ms (status: 500)
+2026-04-19 21:56:15 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:15 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:56:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 27285.18ms (status: 200)
+2026-04-19 21:56:23 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:23 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:56:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 18306.72ms (status: 200)
+2026-04-19 21:56:23 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:23 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:56:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20661.76ms (status: 200)
+2026-04-19 21:56:26 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:26 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 20083.21ms (status: 500)
+2026-04-19 21:56:26 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:26 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 22429.56ms (status: 500)
+2026-04-19 21:56:27 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:28 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 24026.94ms (status: 500)
+2026-04-19 21:56:30 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:56:30 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 45315.70ms (status: 200)
+2026-04-19 21:56:31 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:56:31 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:31 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 24824.47ms (status: 500)
+2026-04-19 21:56:56 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:57:09 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:57:09 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:57:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 21862.83ms
+2026-04-19 21:57:11 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:57:11 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:57:11 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 23119.54ms
+2026-04-19 21:57:19 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:57:19 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:57:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 19112.27ms (status: 200)
+2026-04-19 21:57:22 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:57:22 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 51925.04ms (status: 200)
+2026-04-19 21:57:23 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:57:23 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:57:23 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:57:23 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 19501.95ms
+2026-04-19 21:57:28 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:57:28 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:57:28 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 25976.58ms
+2026-04-19 21:57:31 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:57:31 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 21:57:31 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 27818.40ms
+2026-04-19 21:57:43 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:57:43 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 40671.75ms
+2026-04-19 21:57:50 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 21:58:06 - app.routes.access - DEBUG - [access.py:99] - Decision engine initialized
+2026-04-19 21:58:25 - app.routes.access - DEBUG - [access.py:99] - Decision engine initialized
+2026-04-19 21:58:48 - app.routes.access - DEBUG - [access.py:99] - Decision engine initialized
+2026-04-19 21:59:25 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 21:59:45 - app.routes.access - DEBUG - [access.py:99] - Decision engine initialized
+2026-04-19 22:00:21 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:00:42 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:00:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 42298.11ms (status: 200)
+2026-04-19 22:00:52 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:00:52 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:00:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22623.61ms (status: 200)
+2026-04-19 22:00:56 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:00:56 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:00:56 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 22703.01ms (status: 500)
+2026-04-19 22:01:00 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:00 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:00 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 20997.43ms
+2026-04-19 22:01:07 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:07 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:07 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22279.76ms (status: 200)
+2026-04-19 22:01:10 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:01:13 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:13 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:01:13 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 25035.30ms (status: 500)
+2026-04-19 22:01:15 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:15 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 21279.10ms (status: 200)
+2026-04-19 22:01:17 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:17 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:01:17 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 21147.04ms (status: 500)
+2026-04-19 22:01:19 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:19 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:01:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 27663.55ms (status: 500)
+2026-04-19 22:01:22 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:22 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:22 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 21816.86ms
+2026-04-19 22:01:26 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:26 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20100.37ms (status: 200)
+2026-04-19 22:01:32 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:32 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:32 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 25702.33ms (status: 200)
+2026-04-19 22:01:34 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:34 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:34 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 26243.13ms
+2026-04-19 22:01:38 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:01:38 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 53088.44ms (status: 200)
+2026-04-19 22:01:38 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:52 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:01:52 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:01:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22217.95ms (status: 200)
+2026-04-19 22:02:06 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:02:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 51020.00ms
+2026-04-19 22:02:20 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:02:45 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:02:45 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 46036.44ms (status: 200)
+2026-04-19 22:02:49 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:02:56 - app.middleware.csrf - WARNING - [csrf.py:62] - CSRF token missing for POST /login from 127.0.0.1
+2026-04-19 22:03:15 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:03:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 45586.13ms (status: 200)
+2026-04-19 22:03:23 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:03:48 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:03:48 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:created_at:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-19 22:03:48 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 18771.40ms (status: 200)
+2026-04-19 22:03:49 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:03:49 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 49164.99ms (status: 200)
+2026-04-19 22:04:21 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:04:22 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:04:22 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:04:22 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 19772.64ms (status: 500)
+2026-04-19 22:04:40 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:04:40 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:04:40 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 23657.10ms (status: 500)
+2026-04-19 22:04:45 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:04:45 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 45417.35ms (status: 200)
+2026-04-19 22:04:47 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:04:47 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:04:47 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 23398.29ms (status: 500)
+2026-04-19 22:04:49 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:04:59 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:04:59 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:04:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 21431.69ms (status: 500)
+2026-04-19 22:05:14 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:05:14 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 45039.37ms (status: 200)
+2026-04-19 22:05:21 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:05:21 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:05:21 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 22078.43ms (status: 500)
+2026-04-19 22:05:27 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:05:49 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:05:49 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:05:49 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 49924.38ms (status: 200)
+2026-04-19 22:06:01 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-19 22:06:01 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:06:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 27540.41ms (status: 500)
+2026-04-19 22:06:10 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-19 22:06:10 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 40462.61ms (status: 200)
+2026-04-19 22:06:25 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:created_at:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:01:45 - app.routes.access - DEBUG - [access.py:99] - Decision engine initialized
+2026-04-20 16:01:48 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on REFRESH_TOKENS took 109.14ms
+2026-04-20 16:01:48 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on REFRESH_TOKENS took 109.83ms
+2026-04-20 16:02:04 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 232.04ms
+2026-04-20 16:02:05 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 676.35ms
+2026-04-20 16:02:05 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 708.93ms (status: 200)
+2026-04-20 16:02:14 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:02:16 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:02:16 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:02:16 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 20746.73ms (status: 200)
+2026-04-20 16:02:18 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:02:18 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:02:18 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 19519.79ms
+2026-04-20 16:02:27 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:02:27 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:02:27 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 27656.29ms
+2026-04-20 16:02:28 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:02:28 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:02:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 24771.99ms (status: 200)
+2026-04-20 16:02:34 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:02:34 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:02:34 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 23369.15ms
+2026-04-20 16:02:35 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:02:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 46375.92ms (status: 200)
+2026-04-20 16:02:50 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/admin/list took 858.40ms (status: 200)
+2026-04-20 16:02:56 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:02:56 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:02:56 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 20521.44ms (status: 200)
+2026-04-20 16:02:57 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:03:09 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:09 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:03:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 22663.57ms
+2026-04-20 16:03:13 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:13 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:03:13 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 27522.01ms
+2026-04-20 16:03:16 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:16 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:03:16 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 25694.47ms (status: 200)
+2026-04-20 16:03:17 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:03:17 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 42448.66ms (status: 200)
+2026-04-20 16:03:20 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:23 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:23 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:03:23 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 21338.04ms
+2026-04-20 16:03:25 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:25 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:03:25 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 22594.81ms
+2026-04-20 16:03:26 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:26 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:03:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 21249.47ms (status: 200)
+2026-04-20 16:03:28 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:28 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:03:28 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 25139.01ms
+2026-04-20 16:03:43 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:03:43 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 41684.95ms
+2026-04-20 16:03:47 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:59 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:03:59 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:03:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 23537.53ms (status: 200)
+2026-04-20 16:04:08 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:04:08 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 48144.19ms (status: 200)
+2026-04-20 16:04:10 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:04:26 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:04:26 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:04:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20510.98ms (status: 200)
+2026-04-20 16:04:34 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:04:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 43992.00ms (status: 200)
+2026-04-20 16:29:21 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:30:42 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:30:47 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:30:47 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:30:47 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 19206.10ms (status: 200)
+2026-04-20 16:30:49 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:30:50 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:50:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:30:50 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 21966.90ms (status: 200)
+2026-04-20 16:30:52 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:20:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:30:52 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:20:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:30:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 21953.57ms (status: 200)
+2026-04-20 16:30:59 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:30:59 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:30:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22693.20ms (status: 200)
+2026-04-20 16:31:00 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:00 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/users took 24008.08ms (status: 200)
+2026-04-20 16:31:00 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:00 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 26192.24ms (status: 200)
+2026-04-20 16:31:00 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:31:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 39159.70ms (status: 200)
+2026-04-20 16:31:01 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:04 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:04 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 21104.14ms (status: 200)
+2026-04-20 16:31:13 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:13 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:13 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access-points took 20905.20ms (status: 200)
+2026-04-20 16:31:18 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:18 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:18 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 21046.03ms (status: 200)
+2026-04-20 16:31:24 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:31:24 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access-points took 47218.85ms (status: 200)
+2026-04-20 16:31:38 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:50:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:38 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:50:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:38 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access-points took 24346.24ms (status: 200)
+2026-04-20 16:31:40 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:40 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:40 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 26323.40ms (status: 200)
+2026-04-20 16:31:48 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:31:48 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:31:48 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 27372.82ms (status: 200)
+2026-04-20 16:31:59 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:32:03 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:32:03 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:32:03 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 19769.16ms (status: 200)
+2026-04-20 16:32:19 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:32:19 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:32:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20556.28ms (status: 200)
+2026-04-20 16:32:22 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:32:22 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 46012.24ms (status: 200)
+2026-04-20 16:32:48 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:33:37 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:33:37 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:33:37 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22589.32ms (status: 200)
+2026-04-20 16:33:38 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:33:57 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:33:57 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:33:57 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 27303.15ms (status: 200)
+2026-04-20 16:33:59 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:33:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 44788.63ms (status: 200)
+2026-04-20 16:34:05 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:34:29 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:34:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 45193.16ms (status: 200)
+2026-04-20 16:34:39 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:34:59 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:34:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 45195.54ms (status: 200)
+2026-04-20 16:35:08 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:08 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:35:08 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 25549.17ms (status: 200)
+2026-04-20 16:35:09 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:20:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:09 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:20:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:35:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 26927.61ms (status: 200)
+2026-04-20 16:35:10 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:10 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:10:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:35:10 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 19216.20ms (status: 200)
+2026-04-20 16:35:23 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:23 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:35:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 24537.20ms (status: 200)
+2026-04-20 16:35:25 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:25 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:35:25 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 27030.91ms (status: 200)
+2026-04-20 16:35:25 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:35:35 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:35 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:10:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:35:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/users took 22351.28ms (status: 200)
+2026-04-20 16:35:36 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:36 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:35:36 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22864.42ms (status: 200)
+2026-04-20 16:35:47 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:35:47 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 47308.38ms (status: 200)
+2026-04-20 16:35:51 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:20:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:53 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:35:53 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:35:53 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 25617.91ms (status: 200)
+2026-04-20 16:36:07 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:36:07 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:36:07 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 24359.47ms (status: 200)
+2026-04-20 16:36:11 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:20:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:36:11 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:20:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:36:11 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 24610.97ms (status: 200)
+2026-04-20 16:36:17 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:36:17 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 51879.02ms (status: 200)
+2026-04-20 16:36:20 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:36:39 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:36:39 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:36:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 26716.36ms (status: 200)
+2026-04-20 16:36:42 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:36:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 44457.43ms (status: 200)
+2026-04-20 16:36:49 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:36:49 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:36:49 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20860.22ms (status: 200)
+2026-04-20 16:36:50 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:36:50 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:36:50 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 21359.13ms (status: 200)
+2026-04-20 16:36:59 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:36:59 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_logs:None:None:None:None:None:1:10:timestamp:desc: Object of type datetime is not JSON serializable
+2026-04-20 16:36:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 25265.09ms (status: 200)
+2026-04-20 16:37:06 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:37:08 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:37:08 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:10:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:37:08 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22377.36ms (status: 200)
+2026-04-20 16:37:17 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:37:17 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:37:17 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 19505.69ms (status: 200)
+2026-04-20 16:37:22 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:37:22 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for users:None:None:None:None:1:10:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:37:22 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/users took 24323.46ms (status: 200)
+2026-04-20 16:37:31 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:37:31 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:37:31 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 18555.74ms (status: 200)
+2026-04-20 16:37:34 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:37:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 50821.22ms (status: 200)
+2026-04-20 16:37:38 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:37:50 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:37:50 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:37:50 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22540.54ms (status: 200)
+2026-04-20 16:38:02 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:38:02 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access-points took 52423.74ms (status: 200)
+2026-04-20 16:38:07 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:38:19 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:38:19 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:38:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20780.94ms (status: 200)
+2026-04-20 16:38:29 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:38:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 46419.12ms (status: 200)
+2026-04-20 16:38:30 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:38:48 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:38:48 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:38:48 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20348.45ms (status: 200)
+2026-04-20 16:38:54 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:38:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 41552.16ms (status: 200)
+2026-04-20 16:39:07 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:39:07 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:39:07 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 24391.56ms (status: 200)
+2026-04-20 16:39:18 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:39:35 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:39:35 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:39:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 23043.19ms (status: 200)
+2026-04-20 16:39:37 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:39:37 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 39575.52ms (status: 200)
+2026-04-20 16:39:55 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:40:28 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:40:33 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:40:33 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:40:33 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20592.37ms (status: 200)
+2026-04-20 16:40:36 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:40:36 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:10:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:40:36 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 20119.43ms (status: 200)
+2026-04-20 16:40:49 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:40:49 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:40:49 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 21216.86ms (status: 200)
+2026-04-20 16:40:51 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:40:51 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 47198.36ms (status: 200)
+2026-04-20 16:40:55 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:41:04 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:41:04 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:10:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:41:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access-points took 23767.72ms (status: 200)
+2026-04-20 16:41:06 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:41:06 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:41:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 23362.02ms (status: 200)
+2026-04-20 16:41:13 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:41:16 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:41:16 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/users took 48021.71ms (status: 200)
+2026-04-20 16:41:21 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:41:35 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:41:35 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:41:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 22384.11ms (status: 200)
+2026-04-20 16:41:47 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:41:47 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:41:47 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 19222.71ms (status: 200)
+2026-04-20 16:41:47 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:41:47 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 49508.34ms (status: 200)
+2026-04-20 16:41:49 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_logs:None:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:42:04 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:42:04 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:10:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:42:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 24942.29ms (status: 200)
+2026-04-20 16:42:07 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:42:07 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:42:07 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 24922.85ms (status: 200)
+2026-04-20 16:42:09 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:42:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 42429.49ms (status: 200)
+2026-04-20 16:42:17 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for users:None:None:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:42:21 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for alerts:None:None:None:None:1:500:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:42:21 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for alerts:None:None:None:None:1:500:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:42:21 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 23248.71ms (status: 200)
+2026-04-20 16:42:21 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:42:32 - app.services.cache_service - WARNING - [cache_service.py:101] - Cache get failed for access_points:None:None:1:10:timestamp:desc: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-20 16:42:32 - app.services.cache_service - WARNING - [cache_service.py:136] - Cache set failed for access_points:None:None:1:10:timestamp:desc: Object of type PaginatedResponse is not JSON serializable
+2026-04-20 16:42:32 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access-points took 28507.14ms (status: 200)
+2026-04-20 16:42:38 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:42:46 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-20 16:42:46 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/users took 54605.86ms (status: 200)
+2026-04-20 16:42:55 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:00 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:05 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:10 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:18 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:22 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:33 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 534.77ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 559.92ms (status: 200)
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 583.32ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 586.96ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 590.53ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 657.25ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 668.99ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 684.21ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 685.21ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 686.16ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 699.88ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 724.66ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 759.33ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 789.06ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 790.83ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 794.26ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 797.89ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 819.24ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 870.13ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 873.31ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 875.69ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 901.67ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 903.55ms (status: 200)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 908.90ms (status: 200)
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 960.19ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 961.49ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 965.32ms (status: 500)
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 1016.16ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 1019.66ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 1020.19ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 1023.19ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 1024.43ms (status: 500)
+2026-04-20 16:43:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 1233.72ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 2047.88ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 2070.30ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 2070.78ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 2073.05ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 2075.91ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 2079.54ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 2083.05ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 2085.41ms (status: 200)
+2026-04-20 16:43:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 2089.18ms (status: 200)
+2026-04-20 16:43:36 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:39 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:45 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:43:46 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:46 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:47 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:47 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:44:01 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:44:01 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:44:02 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 614.00ms (status: 200)
+2026-04-20 16:45:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 663.47ms (status: 200)
+2026-04-20 16:47:00 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 856.67ms (status: 200)
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 1009.50ms (status: 200)
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 1029.96ms (status: 200)
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 1040.89ms (status: 200)
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 1044.34ms (status: 200)
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 1054.82ms (status: 200)
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 1071.02ms (status: 200)
+2026-04-20 16:47:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 1098.17ms (status: 200)
+2026-04-20 17:06:49 - app.middleware.csrf - WARNING - [csrf.py:62] - CSRF token missing for POST /api/ml/use-models from 127.0.0.1
+2026-04-20 17:14:34 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:14:35 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ORGANIZATIONS took 112.03ms
+2026-04-20 17:14:48 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:14:51 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 210.86ms
+2026-04-20 17:14:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 638.48ms (status: 401)
+2026-04-20 17:14:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 624.38ms (status: 401)
+2026-04-20 17:14:59 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on REFRESH_TOKENS took 100.42ms
+2026-04-20 17:14:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1012.61ms (status: 200)
+2026-04-20 17:15:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 608.30ms (status: 200)
+2026-04-20 17:15:00 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 818.52ms
+2026-04-20 17:15:00 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 598.82ms
+2026-04-20 17:15:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 848.05ms (status: 200)
+2026-04-20 17:15:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 629.67ms (status: 200)
+2026-04-20 17:20:52 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:21:03 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:21:15 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:21:25 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:21:46 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on LOGIN_ATTEMPTS took 768.42ms
+2026-04-20 17:21:47 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on LOGIN_ATTEMPTS took 725.52ms
+2026-04-20 17:21:47 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 1752.23ms (status: 401)
+2026-04-20 17:21:50 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 693.76ms (status: 401)
+2026-04-20 17:22:37 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:26:05 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:27:53 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:28:40 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:28:49 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:28:58 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:29:07 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 17:31:52 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 18:02:00 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 18:02:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 992.43ms (status: 200)
+2026-04-20 18:24:44 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 632.38ms (status: 200)
+2026-04-20 20:44:14 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 709.47ms (status: 200)
+2026-04-20 20:48:43 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-20 20:49:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 823.40ms (status: 200)
+2026-04-20 20:49:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 833.93ms (status: 200)
+2026-04-20 20:49:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 849.58ms (status: 200)
+2026-04-20 20:49:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 881.43ms (status: 200)
+2026-04-20 20:50:10 - app.middleware.csrf - WARNING - [csrf.py:62] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-04-20 20:56:09 - app.middleware.csrf - WARNING - [csrf.py:62] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-04-20 21:01:34 - app.middleware.csrf - WARNING - [csrf.py:62] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-04-20 21:02:17 - app.middleware.csrf - WARNING - [csrf.py:62] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1

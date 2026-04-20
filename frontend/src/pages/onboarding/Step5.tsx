@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Dialog from '@mui/material/Dialog';
@@ -11,6 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Alert from '@mui/material/Alert';
+import Card from '@mui/material/Card';
 import FormLabel from '@mui/material/FormLabel';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
@@ -145,15 +146,22 @@ const Step5 = () => {
       loading={loading}
       nextButtonLabel="Continue to Data Settings"
     >
-      <Stack spacing={3}>
-        {/* Info Box */}
-        <Card sx={{ p: 2, bgcolor: 'info.lighter', border: 'none' }}>
-          <Box component="p" sx={{ m: 0 }}>
-            Define access control policies. Set who can access what, when, and under what conditions.
-          </Box>
-        </Card>
-
-        {apiError && <Alert severity="error">{apiError}</Alert>}
+      <Box sx={{
+        bgcolor: 'background.default',
+        borderRadius: 3,
+        p: { xs: 2, md: 4 },
+        boxShadow: '0 2px 12px rgba(59,130,246,0.04)',
+        maxWidth: 700,
+        mx: 'auto',
+        mt: 2,
+      }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: 'primary.main' }}>
+          Access Policies
+        </Typography>
+        <Box sx={{ mb: 2, color: 'text.secondary', fontWeight: 500 }}>
+          Define access control policies. Set who can access what, when, and under what conditions.
+        </Box>
+        {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
 
         {/* Dry-Run Mode Toggle */}
         <Card sx={{ p: 2, bgcolor: 'warning.lighter' }}>
@@ -233,10 +241,10 @@ const Step5 = () => {
         </Stack>
 
         {/* Simulation Result */}
-        {simulationResult && <Alert severity="info">{simulationResult}</Alert>}
+        {simulationResult && <Alert severity="info" sx={{ mt: 2 }}>{simulationResult}</Alert>}
 
         {/* Help Text */}
-        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+        <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
           <Stack spacing={1}>
             <Box component="p" sx={{ m: 0, fontSize: '0.875rem', fontWeight: 600 }}>
               💡 Tip: Start with Conservative Defaults
@@ -246,22 +254,36 @@ const Step5 = () => {
             </Box>
           </Stack>
         </Box>
-      </Stack>
+      </Box>
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onClose={() => setShowDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingIndex !== null ? 'Edit Policy' : 'Add Policy'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2}>
-            <TextField
-              label="Policy Name *"
-              fullWidth
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              error={!!errors.name}
-              helperText={errors.name}
-              placeholder="Business Hours Access"
-            />
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Policy Name *</Typography>
+              <TextField
+                fullWidth
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                error={!!errors.name}
+                helperText={errors.name}
+                placeholder="Business Hours Access"
+                variant="outlined"
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    transition: 'all 0.2s',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                  },
+                }}
+              />
+            </Box>
 
             {/* Days Selection */}
             <Box>
@@ -284,24 +306,52 @@ const Step5 = () => {
 
             {/* Time Window */}
             <Stack direction="row" spacing={1}>
-              <TextField
-                label="Start Time *"
-                type="time"
-                value={formData.time_start}
-                onChange={(e) => setFormData(prev => ({ ...prev, time_start: e.target.value }))}
-                error={!!errors.time_start}
-                helperText={errors.time_start}
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                label="End Time *"
-                type="time"
-                value={formData.time_end}
-                onChange={(e) => setFormData(prev => ({ ...prev, time_end: e.target.value }))}
-                error={!!errors.time_end}
-                helperText={errors.time_end}
-                InputLabelProps={{ shrink: true }}
-              />
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Start Time *</Typography>
+                <TextField
+                  fullWidth
+                  type="time"
+                  value={formData.time_start}
+                  onChange={(e) => setFormData(prev => ({ ...prev, time_start: e.target.value }))}
+                  error={!!errors.time_start}
+                  helperText={errors.time_start}
+                  variant="outlined"
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                      borderRadius: 1.5,
+                      bgcolor: 'rgba(255, 255, 255, 0.02)',
+                      transition: 'all 0.2s',
+                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                      '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                      '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                    },
+                  }}
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>End Time *</Typography>
+                <TextField
+                  fullWidth
+                  type="time"
+                  value={formData.time_end}
+                  onChange={(e) => setFormData(prev => ({ ...prev, time_end: e.target.value }))}
+                  error={!!errors.time_end}
+                  helperText={errors.time_end}
+                  variant="outlined"
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': { 
+                      borderRadius: 1.5,
+                      bgcolor: 'rgba(255, 255, 255, 0.02)',
+                      transition: 'all 0.2s',
+                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                      '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                      '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                    },
+                  }}
+                />
+              </Box>
             </Stack>
 
             {/* Advanced Options */}

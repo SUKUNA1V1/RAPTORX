@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -178,9 +177,17 @@ const Step7 = () => {
       loading={loading}
       nextButtonLabel="🚀 Go Live"
     >
-      <Stack spacing={3}>
+      <Box sx={{
+        bgcolor: 'background.default',
+        borderRadius: 3,
+        p: { xs: 2, md: 4 },
+        boxShadow: '0 2px 12px rgba(99,130,246,0.04)',
+        maxWidth: 700,
+        mx: 'auto',
+        mt: 2,
+      }}>
         {/* Success Banner */}
-        <Card sx={{ p: 2.5, bgcolor: 'success.lighter', border: '2px solid', borderColor: 'success.main' }}>
+        <Box sx={{ p: 2.5, bgcolor: 'success.lighter', border: '2px solid', borderColor: 'success.main', borderRadius: 2, mb: 3 }}>
           <Stack direction="row" spacing={1.5} alignItems="flex-start">
             <CheckCircleIcon sx={{ color: 'success.main', fontSize: 28, mt: 0.5 }} />
             <Box>
@@ -192,40 +199,40 @@ const Step7 = () => {
               </Typography>
             </Box>
           </Stack>
-        </Card>
+        </Box>
 
-        {apiError && <Alert severity="error">{apiError}</Alert>}
+        {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
 
         {/* Quick Stats */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 1.5 }}>
-          <Card sx={{ p: 1.5, textAlign: 'center' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 1.5, mb: 3 }}>
+          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Admins</Box>
             <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
               {summary.identity_roles?.initial_admins?.length || 0}
             </Box>
-          </Card>
-          <Card sx={{ p: 1.5, textAlign: 'center' }}>
+          </Box>
+          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Buildings</Box>
             <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
               {summary.buildings_zones?.buildings?.length || 0}
             </Box>
-          </Card>
-          <Card sx={{ p: 1.5, textAlign: 'center' }}>
+          </Box>
+          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Access Points</Box>
             <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
               {summary.access_points?.access_points?.length || 0}
             </Box>
-          </Card>
-          <Card sx={{ p: 1.5, textAlign: 'center' }}>
+          </Box>
+          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Policies</Box>
             <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
               {summary.policies?.policies?.length || 0}
             </Box>
-          </Card>
+          </Box>
         </Box>
 
         {/* Configuration Review */}
-        <Box>
+        <Box sx={{ mb: 3 }}>
           <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'block' }}>
             Configuration Summary
           </FormLabel>
@@ -387,7 +394,7 @@ const Step7 = () => {
             </Button>
           </Stack>
         </Box>
-      </Stack>
+      </Box>
 
       {/* System Check Dialog */}
       <Dialog open={showSystemCheck} onClose={() => setShowSystemCheck(false)} maxWidth="sm" fullWidth>

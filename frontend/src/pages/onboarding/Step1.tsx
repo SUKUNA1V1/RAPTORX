@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Alert from '@mui/material/Alert';
-import FormLabel from '@mui/material/FormLabel';
 import FormGroup from '@mui/material/FormGroup';
+import Typography from '@mui/material/Typography';
 import OnboardingLayout from 'components/onboarding/OnboardingLayout';
+import IconifyIcon from 'components/base/IconifyIcon';
 import { OnboardingManager } from 'lib/onboarding';
 import paths from 'routes/paths';
 import type { CompanyProfileData } from 'types/onboarding';
@@ -118,148 +118,231 @@ const OnboardingStep1 = () => {
       loading={loading}
       nextButtonLabel="Continue to Identity & Roles"
     >
-      <Stack spacing={3}>
-        {/* Info Box */}
-        <Card sx={{ p: 2, bgcolor: 'info.lighter', border: 'none' }}>
-          <Box component="p" sx={{ m: 0 }}>
-            Enter your organization's basic information. You can update these details later if needed.
-          </Box>
-        </Card>
+      <Box sx={{
+        bgcolor: 'background.default',
+        borderRadius: 3,
+        p: { xs: 2, md: 4 },
+        boxShadow: '0 2px 12px rgba(99,102,241,0.04)',
+        maxWidth: 600,
+        mx: 'auto',
+        mt: 2,
+      }}>
+        {apiError && <Alert severity="error" sx={{ mb: 3 }}>{apiError}</Alert>}
 
-        {apiError && <Alert severity="error">{apiError}</Alert>}
+        {/* Company Information Section */}
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: 'primary.main' }}>
+          Company Information
+        </Typography>
+        <Stack spacing={0} direction="column">
+          <TextField
+            name="company_name"
+            value={formData.company_name}
+            onChange={handleChange}
+            fullWidth
+            error={!!errors.company_name}
+            helperText={errors.company_name || 'Legal name of your organization'}
+            placeholder="Acme Corporation"
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                  <IconifyIcon icon="mingcute:building-2-fill" fontSize={20} />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 0,
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                bgcolor: 'background.default',
+                borderBottom: 'none',
+              },
+            }}
+          />
+          <TextField
+            name="industry"
+            value={formData.industry || ''}
+            onChange={handleChange}
+            fullWidth
+            placeholder="e.g., Finance, Healthcare, Technology"
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                  <IconifyIcon icon="mingcute:briefcase-fill" fontSize={20} />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 0,
+                bgcolor: 'background.default',
+                borderBottom: 'none',
+              },
+            }}
+          />
+          <TextField
+            name="country"
+            value={formData.country || ''}
+            onChange={handleChange}
+            fullWidth
+            placeholder="United States"
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                  <IconifyIcon icon="mingcute:global-line" fontSize={20} />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 0,
+                bgcolor: 'background.default',
+                borderBottom: 'none',
+              },
+            }}
+          />
+          <TextField
+            select
+            name="timezone"
+            value={formData.timezone || ''}
+            onChange={handleChange}
+            fullWidth
+            error={!!errors.timezone}
+            helperText={errors.timezone || 'Your organization timezone'}
+            SelectProps={{ native: true }}
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                  <IconifyIcon icon="mingcute:time-line" fontSize={20} />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 0,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8,
+                bgcolor: 'background.default',
+              },
+            }}
+          >
+            <option value="" disabled>Select a timezone...</option>
+            {TIMEZONES.map(tz => (
+              <option key={tz} value={tz}>{tz}</option>
+            ))}
+          </TextField>
+        </Stack>
 
-        {/* Company Information */}
-        <Box>
-          <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'block' }}>Company Information</FormLabel>
-          <Stack spacing={2}>
-            <TextField
-              label="Company Name *"
-              name="company_name"
-              value={formData.company_name}
-              onChange={handleChange}
-              fullWidth
-              error={!!errors.company_name}
-              helperText={errors.company_name}
-              placeholder="Acme Corporation"
-            />
+        {/* Primary Security Contact Section */}
+        <Typography variant="h6" fontWeight={700} sx={{ mt: 4, mb: 2, color: 'success.main' }}>
+          Primary Security Contact
+        </Typography>
+        <Stack spacing={0} direction="column">
+          <TextField
+            name="primary_contact_name"
+            value={formData.primary_contact_name || ''}
+            onChange={handleChange}
+            fullWidth
+            placeholder="John Doe"
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                  <IconifyIcon icon="mingcute:user-add-fill" fontSize={20} />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 0,
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                bgcolor: 'background.default',
+                borderBottom: 'none',
+              },
+            }}
+          />
+          <TextField
+            name="primary_contact_email"
+            type="email"
+            value={formData.primary_contact_email || ''}
+            onChange={handleChange}
+            fullWidth
+            error={!!errors.primary_contact_email}
+            helperText={errors.primary_contact_email || 'We\'ll send security notifications here'}
+            placeholder="john@acme.com"
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                  <IconifyIcon icon="mingcute:mail-line" fontSize={20} />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 0,
+                bgcolor: 'background.default',
+                borderBottom: 'none',
+              },
+            }}
+          />
+          <TextField
+            name="primary_contact_phone"
+            value={formData.primary_contact_phone || ''}
+            onChange={handleChange}
+            fullWidth
+            error={!!errors.primary_contact_phone}
+            helperText={errors.primary_contact_phone || 'For urgent security contact'}
+            placeholder="+1 (555) 123-4567"
+            variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <Box sx={{ mr: 1.5, display: 'flex', color: 'text.secondary' }}>
+                  <IconifyIcon icon="mingcute:phone-fill" fontSize={20} />
+                </Box>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 0,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8,
+                bgcolor: 'background.default',
+              },
+            }}
+          />
+        </Stack>
 
-            <TextField
-              label="Industry"
-              name="industry"
-              value={formData.industry || ''}
-              onChange={handleChange}
-              fullWidth
-              placeholder="e.g., Finance, Healthcare, Technology"
-            />
-
-            <TextField
-              label="Country"
-              name="country"
-              value={formData.country || ''}
-              onChange={handleChange}
-              fullWidth
-              placeholder="United States"
-            />
-
-            <TextField
-              select
-              label="Timezone *"
-              name="timezone"
-              value={formData.timezone || ''}
-              onChange={handleChange}
-              fullWidth
-              error={!!errors.timezone}
-              helperText={errors.timezone}
-              SelectProps={{
-                native: true,
-              }}
-            >
-              <option value="">Select a timezone...</option>
-              {TIMEZONES.map(tz => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </TextField>
+        {/* Compliance Section */}
+        <Typography variant="h6" fontWeight={700} sx={{ mt: 4, mb: 2, color: 'error.main' }}>
+          Compliance Requirements
+        </Typography>
+        <FormGroup sx={{ mb: 2 }}>
+          <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 2.5 }}>
+            {COMPLIANCE_OPTIONS.map(option => (
+              <FormControlLabel
+                key={option.value}
+                control={
+                  <Checkbox
+                    checked={formData.compliance_requirements?.includes(option.value) || false}
+                    onChange={(e) => handleComplianceChange(option.value, e.target.checked)}
+                    sx={{ '&.Mui-checked': { color: 'error.main' } }}
+                  />
+                }
+                label={
+                  <Typography variant="body2" fontWeight={600}>{option.label}</Typography>
+                }
+                sx={{ flex: '0 0 auto' }}
+              />
+            ))}
           </Stack>
-        </Box>
-
-        {/* Primary Security Contact */}
-        <Box>
-          <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'block' }}>
-            Primary Security Contact
-          </FormLabel>
-          <Stack spacing={2}>
-            <TextField
-              label="Contact Name"
-              name="primary_contact_name"
-              value={formData.primary_contact_name || ''}
-              onChange={handleChange}
-              fullWidth
-              placeholder="John Doe"
-            />
-
-            <TextField
-              label="Email Address"
-              name="primary_contact_email"
-              type="email"
-              value={formData.primary_contact_email || ''}
-              onChange={handleChange}
-              fullWidth
-              error={!!errors.primary_contact_email}
-              helperText={errors.primary_contact_email}
-              placeholder="john@acme.com"
-            />
-
-            <TextField
-              label="Phone Number"
-              name="primary_contact_phone"
-              value={formData.primary_contact_phone || ''}
-              onChange={handleChange}
-              fullWidth
-              error={!!errors.primary_contact_phone}
-              helperText={errors.primary_contact_phone}
-              placeholder="+1 (555) 123-4567"
-            />
-          </Stack>
-        </Box>
-
-        {/* Compliance Requirements */}
-        <Box>
-          <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'block' }}>
-            Compliance Requirements (Optional)
-          </FormLabel>
-          <FormGroup>
-            <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 2 }}>
-              {COMPLIANCE_OPTIONS.map(option => (
-                <FormControlLabel
-                  key={option.value}
-                  control={
-                    <Checkbox
-                      checked={formData.compliance_requirements?.includes(option.value) || false}
-                      onChange={(e) => handleComplianceChange(option.value, e.target.checked)}
-                    />
-                  }
-                  label={option.label}
-                  sx={{ flex: '0 0 auto' }}
-                />
-              ))}
-            </Stack>
-          </FormGroup>
-        </Box>
-
-        {/* Help Text */}
-        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-          <Stack spacing={1}>
-            <Box component="p" sx={{ m: 0, fontSize: '0.875rem', fontWeight: 600 }}>
-              Next Step: Create Admin Users
-            </Box>
-            <Box component="p" sx={{ m: 0, fontSize: '0.75rem', color: 'text.secondary' }}>
-              After this step, you'll create the initial administrator accounts for your organization.
-            </Box>
-          </Stack>
-        </Box>
-      </Stack>
+        </FormGroup>
+      </Box>
     </OnboardingLayout>
   );
 };

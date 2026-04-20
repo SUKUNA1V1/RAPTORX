@@ -4,6 +4,7 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Dialog from '@mui/material/Dialog';
@@ -171,18 +172,24 @@ const Step4 = () => {
       loading={loading}
       nextButtonLabel="Continue to Access Policies"
     >
-      <Stack spacing={3}>
-        {/* Info Box */}
-        <Card sx={{ p: 2, bgcolor: 'info.lighter', border: 'none' }}>
-          <Box component="p" sx={{ m: 0 }}>
-            Configure access points (doors, readers, gates). You can add them manually or import from CSV.
-          </Box>
-        </Card>
+      <Box sx={{
+        bgcolor: 'background.default',
+        borderRadius: 3,
+        p: { xs: 2, md: 4 },
+        boxShadow: '0 2px 12px rgba(59,130,246,0.04)',
+        maxWidth: 700,
+        mx: 'auto',
+        mt: 2,
+      }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: 'primary.main' }}>
+          Access Points
+        </Typography>
+        <Box sx={{ mb: 2, color: 'text.secondary', fontWeight: 500 }}>
+          Configure access points (doors, readers, gates). You can add them manually or import from CSV.
+        </Box>
+        {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
 
-        {apiError && <Alert severity="error">{apiError}</Alert>}
-
-        {/* Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
           <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
             <Tab label="Manual Entry" />
             <Tab label="CSV Import" />
@@ -190,7 +197,6 @@ const Step4 = () => {
           </Tabs>
         </Box>
 
-        {/* Manual Entry Tab */}
         <TabPanel value={tabValue} index={0}>
           <Stack spacing={2}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowDialog(true)}>
@@ -291,58 +297,128 @@ const Step4 = () => {
             </TableContainer>
           )}
         </TabPanel>
-      </Stack>
+      </Box>
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onClose={() => setShowDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingIndex !== null ? 'Edit Access Point' : 'Add Access Point'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2}>
-            <TextField
-              label="Name *"
-              fullWidth
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Door A-101"
-            />
-            <TextField
-              select
-              label="Type *"
-              fullWidth
-              value={formData.type}
-              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))} // eslint-disable-line @typescript-eslint/no-explicit-any
-              SelectProps={{ native: true }}
-            >
-              <option value="door">Door</option>
-              <option value="reader">Reader</option>
-              <option value="gate">Gate</option>
-            </TextField>
-            <TextField
-              label="Building ID *"
-              fullWidth
-              value={formData.building_id}
-              onChange={(e) => setFormData(prev => ({ ...prev, building_id: e.target.value }))}
-              placeholder="building_123"
-            />
-            <TextField
-              select
-              label="Status *"
-              fullWidth
-              value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))} // eslint-disable-line @typescript-eslint/no-explicit-any
-              SelectProps={{ native: true }}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="maintenance">Maintenance</option>
-            </TextField>
-            <TextField
-              label="IP Address"
-              fullWidth
-              value={formData.ip_address || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, ip_address: e.target.value || undefined }))}
-              placeholder="192.168.1.100"
-            />
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Name *</Typography>
+              <TextField
+                fullWidth
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Door A-101"
+                variant="outlined"
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    transition: 'all 0.2s',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                  },
+                }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Type *</Typography>
+              <TextField
+                select
+                fullWidth
+                value={formData.type}
+                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))} // eslint-disable-line @typescript-eslint/no-explicit-any
+                SelectProps={{ native: true }}
+                variant="outlined"
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    transition: 'all 0.2s',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                  },
+                }}
+              >
+                <option value="door">Door</option>
+                <option value="reader">Reader</option>
+                <option value="gate">Gate</option>
+              </TextField>
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Building ID *</Typography>
+              <TextField
+                fullWidth
+                value={formData.building_id}
+                onChange={(e) => setFormData(prev => ({ ...prev, building_id: e.target.value }))}
+                placeholder="building_123"
+                variant="outlined"
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    transition: 'all 0.2s',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                  },
+                }}
+              />
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Status *</Typography>
+              <TextField
+                select
+                fullWidth
+                value={formData.status}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))} // eslint-disable-line @typescript-eslint/no-explicit-any
+                SelectProps={{ native: true }}
+                variant="outlined"
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    transition: 'all 0.2s',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                  },
+                }}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="maintenance">Maintenance</option>
+              </TextField>
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>IP Address</Typography>
+              <TextField
+                fullWidth
+                value={formData.ip_address || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, ip_address: e.target.value || undefined }))}
+                placeholder="192.168.1.100"
+                variant="outlined"
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(255, 255, 255, 0.02)',
+                    transition: 'all 0.2s',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                  },
+                }}
+              />
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>

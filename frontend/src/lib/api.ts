@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAccessToken, refreshAccessToken, logout } from './auth';
 
+// API client configuration
 const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const API_BASE_URL = envApiBaseUrl && envApiBaseUrl.trim() ? envApiBaseUrl : '/api';
 
@@ -250,34 +251,42 @@ export interface SystemHealth {
 
 export const apiClient = {
   getOverview: async () => (await api.get<OverviewStats>('/stats/overview')).data,
-  getAccessLogs: async (): Promise<{ items: AccessLogItem[]; total: number }> => {
-    const response = await api.get<AccessLogsResponse>('/access/logs', { params: { page: 1, page_size: 10000 } });
-    return { items: response.data.data, total: response.data.pagination.total };
+  
+  /**
+   * Load access logs with pagination support
+   */
+  getAccessLogs: async (page: number = 1, pageSize: number = 50): Promise<{ items: AccessLogItem[]; total: number; pagination: PaginationMetadata }> => {
+    const response = await api.get<AccessLogsResponse>('/access/logs', { params: { page, page_size: pageSize } });
+    return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
-  getAlerts: async (limit = 10000) => {
-    const response = await api.get<PaginatedResponse<AlertItem>>('/alerts', { params: { page: 1, page_size: limit } });
-    return response.data.data;
+
+  /**
+   * Load alerts with pagination support
+   */
+  getAlerts: async (page: number = 1, pageSize: number = 50): Promise<{ items: AlertItem[]; total: number; pagination: PaginationMetadata }> => {
+    const response = await api.get<PaginatedResponse<AlertItem>>('/alerts', { params: { page, page_size: pageSize } });
+    return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
 
   getOpenAlertsCount: async (): Promise<number> => {
-    const response = await api.get<PaginatedResponse<AlertItem>>('/alerts', { params: { page: 1, page_size: 10000 } });
-    return response.data.data.filter(a => a.status === 'open').length;
+    const result = await apiClient.getAlerts(1, 500);
+    return result.items.filter(a => a.status === 'open').length;
   },
   resolveAlert: async (alertId: number) =>
     (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/resolve`)).data,
   markAlertFalsePositive: async (alertId: number) =>
     (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/false-positive`)).data,
-  getUsers: async () => {
-    const response = await api.get<PaginatedResponse<UserItem>>('/users', { params: { page: 1, page_size: 10000 } });
-    return response.data.data;
+  getUsers: async (page: number = 1, pageSize: number = 50): Promise<{ items: UserItem[]; total: number; pagination: PaginationMetadata }> => {
+    const response = await api.get<PaginatedResponse<UserItem>>('/users', { params: { page, page_size: pageSize } });
+    return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
   createUser: async (payload: CreateUserPayload) =>
     (await api.post<UserItem>('/users', payload)).data,
   updateUser: async (userId: number, payload: CreateUserPayload) =>
     (await api.put<UserItem>(`/users/${userId}`, payload)).data,
-  getAccessPoints: async () => {
-    const response = await api.get<PaginatedResponse<AccessPointItem>>('/access-points', { params: { page: 1, page_size: 10000 } });
-    return response.data.data;
+  getAccessPoints: async (page: number = 1, pageSize: number = 50): Promise<{ items: AccessPointItem[]; total: number; pagination: PaginationMetadata }> => {
+    const response = await api.get<PaginatedResponse<AccessPointItem>>('/access-points', { params: { page, page_size: pageSize } });
+    return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
   createAccessPoint: async (payload: CreateAccessPointPayload) =>
     (await api.post<AccessPointItem>('/access-points', payload)).data,

@@ -67,7 +67,7 @@ const AlertsPage = () => {
       setError('');
       setSelected(new Set());
       const data = await apiClient.getAlerts();
-      setAlerts(data);
+      setAlerts(data.items);
     } catch {
       setError('Failed to load alerts from the backend API.');
     } finally {

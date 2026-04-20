@@ -38,3 +38,67 @@
 2026-04-13 12:08:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 7.56ms
 2026-04-18 21:43:25 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 365.96ms
 2026-04-18 21:43:54 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 768.02ms
+2026-04-19 21:53:52 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:54:06 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:54:10 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 22071.27ms
+2026-04-19 21:54:12 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:54:43 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 27494.56ms
+2026-04-19 21:54:50 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 19213.63ms
+2026-04-19 21:54:55 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 24350.64ms
+2026-04-19 21:54:58 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 23902.39ms
+2026-04-19 21:54:59 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 18695.18ms
+2026-04-19 21:55:00 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 21100.13ms
+2026-04-19 21:55:02 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 46858.17ms
+2026-04-19 21:55:18 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 21975.01ms
+2026-04-19 21:55:21 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 25417.24ms
+2026-04-19 21:55:37 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 43015.94ms
+2026-04-19 21:56:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 23405.95ms
+2026-04-19 21:56:12 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 26048.26ms
+2026-04-19 21:56:12 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:26 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:26 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:28 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:56:31 - app.routes.access - ERROR - [access.py:716] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 21:57:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 21862.83ms
+2026-04-19 21:57:11 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 23119.54ms
+2026-04-19 21:57:23 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 19501.95ms
+2026-04-19 21:57:28 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 25976.58ms
+2026-04-19 21:57:31 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 27818.40ms
+2026-04-19 21:57:43 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 40671.75ms
+2026-04-19 22:00:56 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:01:00 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 20997.43ms
+2026-04-19 22:01:13 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:01:17 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:01:19 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:01:22 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 21816.86ms
+2026-04-19 22:01:34 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 26243.13ms
+2026-04-19 22:02:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 51020.00ms
+2026-04-19 22:04:22 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:04:40 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:04:47 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:04:59 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:05:21 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-19 22:06:01 - app.routes.access - ERROR - [access.py:709] - Error listing access logs: type object 'AccessLog' has no attribute 'created_at'
+2026-04-20 16:02:18 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 19519.79ms
+2026-04-20 16:02:27 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 27656.29ms
+2026-04-20 16:02:34 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 23369.15ms
+2026-04-20 16:03:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 22663.57ms
+2026-04-20 16:03:13 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 27522.01ms
+2026-04-20 16:03:23 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 21338.04ms
+2026-04-20 16:03:25 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 22594.81ms
+2026-04-20 16:03:28 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 25139.01ms
+2026-04-20 16:03:43 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 41684.95ms
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:34 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:39 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:46 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:46 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:47 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined
+2026-04-20 16:43:47 - app.routes.alerts - ERROR - [alerts.py:138] - Error listing alerts: name 'cache_key' is not defined

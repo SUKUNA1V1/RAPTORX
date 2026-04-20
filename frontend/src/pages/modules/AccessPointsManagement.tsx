@@ -62,7 +62,7 @@ const AccessPointsManagement = () => {
       try {
         setLoading(true);
         const data = await apiClient.getAccessPoints();
-        setPoints(data);
+        setPoints(data.items);
       } catch {
         setError('Failed to load access points management data from backend API.');
       } finally {
@@ -110,7 +110,7 @@ const AccessPointsManagement = () => {
       });
 
       const updated = await apiClient.getAccessPoints();
-      setPoints(updated);
+      setPoints(updated.items);
     } catch (err) {
       const detail = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to create access point: ${detail}`);
@@ -123,7 +123,7 @@ const AccessPointsManagement = () => {
     setView('review');
     try {
       const data = await apiClient.getAccessPoints();
-      setPoints(data);
+      setPoints(data.items);
     } catch {
       setError('Failed to load access points.');
     }
@@ -171,7 +171,7 @@ const AccessPointsManagement = () => {
       setEditingPoint(null);
 
       const reloaded = await apiClient.getAccessPoints();
-      setPoints(reloaded);
+      setPoints(reloaded.items);
     } catch (err) {
       const detail = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to update access point: ${detail}`);

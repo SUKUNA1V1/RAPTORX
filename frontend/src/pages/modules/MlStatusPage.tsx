@@ -62,6 +62,7 @@ const MlStatusPage = () => {
   const [error, setError] = useState('');
   const [modelStatuses, setModelStatuses] = useState<ModelStatus[]>([]);
   const [modelVersions, setModelVersions] = useState<Record<string, ModelVersion[]>>({});
+  const [loadingVersions, setLoadingVersions] = useState(false);
   const [showVersionDialog, setShowVersionDialog] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedVersion, setSelectedVersion] = useState('');
@@ -123,6 +124,7 @@ const MlStatusPage = () => {
   }, []);
 
   const loadModelVersions = async () => {
+    setLoadingVersions(true);
     try {
       const response = await apiClient.getModelVersions() as {
         available_versions?: Record<string, ModelVersion[]>;
@@ -132,8 +134,12 @@ const MlStatusPage = () => {
       };
       setModelVersions(response.available_versions || {});
       setVersionError('');
-    } catch {
+    } catch (err) {
+      console.error('Failed to load model versions:', err);
       setVersionError('Failed to load model versions');
+      setModelVersions({});
+    } finally {
+      setLoadingVersions(false);
     }
   };
 
@@ -644,6 +650,16 @@ const MlStatusPage = () => {
               {versionError}
             </Alert>
           )}
+          {loadingVersions ? (
+            <Stack sx={{ py: 4, alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              <CircularProgress sx={{ color: '#6366f1' }} />
+              <Typography sx={{ color: 'text.secondary' }}>Loading model versions...</Typography>
+            </Stack>
+          ) : Object.keys(modelVersions).length === 0 ? (
+            <Alert severity="info">
+              No model versions available. Train a model first.
+            </Alert>
+          ) : (
           <Stack spacing={2}>
             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
               Select Model:
@@ -734,6 +750,7 @@ const MlStatusPage = () => {
               </>
             )}
           </Stack>
+          )}
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
           <Button 

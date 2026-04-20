@@ -40,7 +40,7 @@ const AccessPointsPage = () => {
       try {
         setLoading(true);
         const data = await apiClient.getAccessPoints();
-        setPoints(data);
+        setPoints(data.items);
       } catch {
         setError('Failed to load access points from backend API.');
       } finally {

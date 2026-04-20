@@ -11,7 +11,7 @@ from ..models import Organization, User, AuditLog
 from ..routes.auth import get_current_user
 from ..services.onboarding_service import get_onboarding_configuration
 
-router = APIRouter(prefix="/api/ml", tags=["ml"])
+router = APIRouter(prefix="/ml", tags=["ml"])
 
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
@@ -22,6 +22,23 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
             detail="Only admins can access ML endpoints"
         )
     return current_user
+
+
+@router.get("/status", status_code=status.HTTP_200_OK)
+def ml_status_public():
+    """
+    Public endpoint: Return model loading/threshold status for frontend diagnostics.
+    No authentication required - used by dashboard to show ML system health.
+    """
+    try:
+        from .access import get_engine
+        engine = get_engine()
+        return engine.status()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get ML status: {str(e)}"
+        )
 
 
 @router.post("/generate-training-data")
@@ -271,7 +288,9 @@ async def use_models(
             )
         
         # Check if trained models exist
-        model_dir = f"ml/models/org_{org.id}"
+        # Compute correct path to ml/models from project root
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__ or ".")))
+        model_dir = os.path.normpath(os.path.join(project_root, "..", "ml", "models", f"org_{org.id}"))
         
         if not os.path.exists(model_dir):
             raise HTTPException(
@@ -315,13 +334,13 @@ async def use_models(
         )
 
 
-@router.get("/status")
-async def get_ml_status(
+@router.get("/status-admin")
+async def get_ml_status_admin(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """
-    Get current ML status including:
+    Admin-only endpoint: Get detailed ML status including:
     - Current decision mode (hard_rules or ml_models)
     - Whether training data exists
     - Whether trained models exist
@@ -338,6 +357,11 @@ async def get_ml_status(
         
         training_data_file = f"data/raw/org_{org.id}_training_data.csv"
         model_dir = f"ml/models/org_{org.id}"
+        
+        # Compute correct absolute paths
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__ or ".")))
+        training_data_file = os.path.normpath(os.path.join(project_root, "..", training_data_file))
+        model_dir = os.path.normpath(os.path.join(project_root, "..", model_dir))
         
         has_training_data = os.path.exists(training_data_file)
         has_models = os.path.exists(model_dir)
@@ -559,11 +583,18 @@ async def get_model_versions(
     """
     try:
         import sys
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        from pathlib import Path
+        
+        # Get the project root directory (one level above backend)
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        project_root = os.path.dirname(backend_dir)  # Go up one more level to project root
+        sys.path.insert(0, project_root)
         
         from scripts.model_registry import _load_registry, _versions_root
         
-        models_dir = "ml/models"
+        # Compute correct path to ml/models from project root
+        models_dir = os.path.join(project_root, "ml", "models")
+        models_dir = os.path.normpath(os.path.abspath(models_dir))
         registry = _load_registry(models_dir)
         
         # Get current versions
@@ -615,12 +646,18 @@ async def restore_model_version(
     try:
         import sys
         import shutil
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-        
-        from scripts.model_registry import _load_registry, _versions_root, _save_registry
         from pathlib import Path
         
-        models_dir = "ml/models"
+        # Get the project root directory
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        project_root = os.path.dirname(backend_dir)
+        sys.path.insert(0, project_root)
+        
+        from scripts.model_registry import _load_registry, _versions_root, _save_registry
+        
+        # Compute correct path to ml/models from project root
+        models_dir = os.path.join(project_root, "ml", "models")
+        models_dir = os.path.normpath(os.path.abspath(models_dir))
         registry = _load_registry(models_dir)
         current = registry.get("current", {})
         
@@ -754,12 +791,16 @@ def _train_models_task(
     """Background task: Train ML ensemble models on training data."""
     try:
         import sys
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        
+        # Get the project root directory
+        backend_file_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__ or ".")))
+        project_root = os.path.dirname(backend_file_dir)
+        sys.path.insert(0, project_root)
         
         from scripts.run_full_pipeline import run_training_pipeline
         
-        # Ensure output directory exists
-        model_dir = f"ml/models/org_{org_id}"
+        # Ensure output directory exists with correct absolute path
+        model_dir = os.path.join(project_root, "ml", "models", f"org_{org_id}")
         os.makedirs(model_dir, exist_ok=True)
         
         # Run training pipeline

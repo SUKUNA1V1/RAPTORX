@@ -156,14 +156,6 @@ def list_access_points(
 ):
     """Return access points list with optional filters and pagination. Requires authentication."""
     try:
-        # Generate cache key from filters
-        cache_key = f"access_points:{status_filter}:{building}:{params.page}:{params.page_size}:{params.sort_by}:{params.sort_order}"
-        
-        # Try cache first
-        cached_result = CacheService.get(cache_key)
-        if cached_result:
-            return cached_result
-        
         # Build query
         query = db.query(AccessPoint)
         if status_filter:
@@ -201,9 +193,6 @@ def list_access_points(
                 has_prev=params.page > 1
             )
         )
-        
-        # Cache result
-        CacheService.set(cache_key, response, CacheConfig.TTL_MEDIUM)
         
         return response
     except Exception as exc:
@@ -628,15 +617,6 @@ def list_access_logs(
     - sort_order: asc or desc (default desc)
     """
     try:
-        # Generate cache key from parameters
-        cache_key = f"access_logs:{user_id}:{access_point_id}:{decision}:{date_from}:{date_to}:{params.page}:{params.page_size}:{params.sort_by}:{params.sort_order}"
-        
-        # Try to get from cache
-        cached_result = CacheService.get(cache_key)
-        if cached_result:
-            logger.debug(f"Cache hit for access logs: {cache_key}")
-            return cached_result
-        
         # Build query
         query = db.query(AccessLog).options(
             joinedload(AccessLog.user), joinedload(AccessLog.access_point)
@@ -701,9 +681,6 @@ def list_access_logs(
             "page_size": params.page_size,
             "total": total
         }
-        
-        # Cache the result
-        CacheService.set(cache_key, response_data, CacheConfig.TTL_SHORT)
         
         # Return paginated response
         total_pages = ceil(total / params.page_size) if params.page_size > 0 else 0

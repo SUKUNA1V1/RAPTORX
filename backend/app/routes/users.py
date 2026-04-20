@@ -32,14 +32,6 @@ def list_users(
 ):
     """List users with optional filters and pagination. Requires authentication."""
     try:
-        # Generate cache key from filters
-        cache_key = f"users:{role}:{department}:{is_active}:{search}:{params.page}:{params.page_size}:{params.sort_by}:{params.sort_order}"
-        
-        # Try cache first
-        cached_result = CacheService.get(cache_key)
-        if cached_result:
-            return cached_result
-        
         # Build query
         query = db.query(User)
         if role:
@@ -89,9 +81,6 @@ def list_users(
                 has_prev=params.page > 1
             )
         )
-        
-        # Cache result
-        CacheService.set(cache_key, response, CacheConfig.TTL_MEDIUM)
         
         return response
     except Exception as exc:

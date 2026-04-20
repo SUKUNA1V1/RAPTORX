@@ -37,14 +37,6 @@ def list_alerts(
 ):
     """List alerts with optional filters and pagination. Requires authentication."""
     try:
-        # Generate cache key from filters
-        cache_key = f"alerts:{severity}:{status_filter}:{date_from}:{date_to}:{params.page}:{params.page_size}:{params.sort_by}:{params.sort_order}"
-        
-        # Try cache first (short TTL due to frequent changes)
-        cached_result = CacheService.get(cache_key)
-        if cached_result:
-            return cached_result
-        
         # Build query for counting
         count_query = db.query(AnomalyAlert)
         if severity:
@@ -137,9 +129,6 @@ def list_alerts(
                 has_prev=params.page > 1
             )
         )
-        
-        # Cache result (short TTL for alerts)
-        CacheService.set(cache_key, response, CacheConfig.TTL_SHORT)
         
         return response
     except Exception as exc:

@@ -54,7 +54,7 @@ const UsersManagement = () => {
       try {
         setLoading(true);
         const data = await apiClient.getUsers();
-        setUsers(data);
+        setUsers(data.items);
       } catch {
         setError('Failed to load user management data from backend API.');
       } finally {
@@ -95,7 +95,7 @@ const UsersManagement = () => {
 
       // Reload users list
       const updated = await apiClient.getUsers();
-      setUsers(updated);
+      setUsers(updated.items);
     } catch (err) {
       const detail = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to create user: ${detail}`);
@@ -108,7 +108,7 @@ const UsersManagement = () => {
     setView('review');
     try {
       const data = await apiClient.getUsers();
-      setUsers(data);
+      setUsers(data.items);
     } catch {
       setError('Failed to load users.');
     }
@@ -151,7 +151,7 @@ const UsersManagement = () => {
 
       // Reload users list
       const reloaded = await apiClient.getUsers();
-      setUsers(reloaded);
+      setUsers(reloaded.items);
     } catch (err) {
       const detail = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to update user: ${detail}`);

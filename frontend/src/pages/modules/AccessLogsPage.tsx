@@ -37,21 +37,20 @@ const AccessLogsPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
 
+  const [totalRecords, setTotalRecords] = useState(0);
+
   const openExplainer = (logId: number) => {
     navigate(`/pages/decision-explanation/${logId}`);
   };
 
-  const load = async () => {
+  const load = async (pageNum: number = 1) => {
     try {
       setLoading(true);
       setError('');
-      const data = await apiClient.getAccessLogs();
-      const items = Array.isArray(data?.items)
-        ? data.items
-        : Array.isArray(data)
-          ? data
-          : [];
+      const data = await apiClient.getAccessLogs(pageNum, rowsPerPage);
+      const items = Array.isArray(data?.items) ? data.items : [];
       setLogs(items);
+      setTotalRecords(data?.total || 0);
     } catch (err) {
       let detail = '';
       if (err instanceof Error) {
@@ -68,8 +67,8 @@ const AccessLogsPage = () => {
   };
 
   useEffect(() => {
-    void load();
-  }, []);
+    void load(page + 1); // page is 0-indexed, backend expects 1-indexed
+  }, [page, rowsPerPage]);
 
   // Apply filters whenever logs or filter state changes
   useEffect(() => {
@@ -94,8 +93,16 @@ const AccessLogsPage = () => {
     });
 
     setFilteredLogs(filtered);
-    setPage(0); // Reset pagination on filter change
   }, [logs, searchText, decisionFilter, riskFilter]);
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <Stack spacing={4} sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -214,7 +221,7 @@ const AccessLogsPage = () => {
       {!loading && !error && logs.length > 0 && (
         <Stack spacing={2}>
           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-            Showing {filteredLogs.length} of {logs.length} records
+            Showing {filteredLogs.length} of {totalRecords} records
           </Typography>
           <Paper 
             sx={{ 
@@ -238,7 +245,7 @@ const AccessLogsPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredLogs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((log) => {
+                {filteredLogs.map((log) => {
                   const isGranted = log.decision === 'granted';
                   const riskColor = Number(log.risk_score || 0) > 0.7 ? '#ef4444' : Number(log.risk_score || 0) > 0.4 ? '#f59e0b' : '#10b981';
                   
@@ -299,14 +306,11 @@ const AccessLogsPage = () => {
             </Table>
             <TablePagination
               component="div"
-              count={filteredLogs.length}
+              count={totalRecords}
               page={page}
-              onPageChange={(_, newPage) => setPage(newPage)}
+              onPageChange={handleChangePage}
               rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => {
-                setRowsPerPage(parseInt(e.target.value, 10));
-                setPage(0);
-              }}
+              onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[20, 50, 100]}
               sx={{
                 color: 'text.secondary',
