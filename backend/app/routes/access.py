@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional
+from math import ceil
 import threading
 import logging
 
@@ -13,7 +14,7 @@ from ..schemas.access_point import AccessPointCreate, AccessPointResponse, Acces
 from ..services import AccessDecisionEngine, create_alert, extract_features
 from ..services.ml_service import FEATURE_COLS
 from ..services.cache_service import CacheService, CacheConfig, cache_context
-from ..models.pagination import PaginationParams, PaginatedResponse, get_pagination_offset
+from ..models.pagination import PaginationParams, PaginatedResponse, PaginationMetadata, get_pagination_offset, create_paginated_response
 from ..routes.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -175,7 +176,7 @@ def list_access_points(
         
         # Apply sorting
         try:
-            sort_field = getattr(AccessPoint, params.sort_by, AccessPoint.created_at)
+            sort_field = getattr(AccessPoint, params.sort_by, AccessPoint.installed_at)
             if params.sort_order == "asc":
                 query = query.order_by(sort_field.asc())
             else:
@@ -188,11 +189,17 @@ def list_access_points(
         access_points = query.offset(offset).limit(params.page_size).all()
         
         # Build response
+        total_pages = ceil(total / params.page_size) if params.page_size > 0 else 0
         response = PaginatedResponse(
             data=access_points,
-            page=params.page,
-            page_size=params.page_size,
-            total=total
+            pagination=PaginationMetadata(
+                page=params.page,
+                page_size=params.page_size,
+                total=total,
+                total_pages=total_pages,
+                has_next=params.page < total_pages,
+                has_prev=params.page > 1
+            )
         )
         
         # Cache result
@@ -592,13 +599,6 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@ml_router.get("/status", status_code=status.HTTP_200_OK)
-def ml_status():
-    """Return model loading/threshold status for frontend diagnostics."""
-    engine = get_engine()
-    return engine.status()
-
-
 @router.get("/logs", status_code=status.HTTP_200_OK)
 def list_access_logs(
     params: PaginationParams = Depends(),
@@ -661,7 +661,7 @@ def list_access_logs(
         offset = get_pagination_offset(params.page, params.page_size)
         
         # Get sorted results
-        sort_field = getattr(AccessLog, params.sort_by, AccessLog.created_at)
+        sort_field = getattr(AccessLog, params.sort_by, AccessLog.timestamp)
         if params.sort_order == "asc":
             query = query.order_by(sort_field.asc())
         else:
@@ -706,11 +706,17 @@ def list_access_logs(
         CacheService.set(cache_key, response_data, CacheConfig.TTL_SHORT)
         
         # Return paginated response
+        total_pages = ceil(total / params.page_size) if params.page_size > 0 else 0
         return PaginatedResponse(
             data=items,
-            page=params.page,
-            page_size=params.page_size,
-            total=total
+            pagination=PaginationMetadata(
+                page=params.page,
+                page_size=params.page_size,
+                total=total,
+                total_pages=total_pages,
+                has_next=params.page < total_pages,
+                has_prev=params.page > 1
+            )
         )
     except Exception as exc:
         logger.error(f"Error listing access logs: {exc}")

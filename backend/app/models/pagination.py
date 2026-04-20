@@ -6,7 +6,7 @@ for consistent handling of large result sets.
 """
 
 from pydantic import BaseModel, Field
-from typing import Generic, TypeVar, List, Optional
+from typing import Generic, TypeVar, List, Optional, Any
 from math import ceil
 
 T = TypeVar('T')
@@ -33,7 +33,7 @@ class PaginationParams(BaseModel):
         description="Items per page (10-500)"
     )
     sort_by: Optional[str] = Field(
-        "created_at",
+        "timestamp",
         description="Sort field name"
     )
     sort_order: Optional[str] = Field(
@@ -47,7 +47,7 @@ class PaginationParams(BaseModel):
             "example": {
                 "page": 1,
                 "page_size": 50,
-                "sort_by": "created_at",
+                "sort_by": "timestamp",
                 "sort_order": "desc"
             }
         }
@@ -68,82 +68,61 @@ class PaginatedResponse(BaseModel, Generic[T]):
     Standard paginated response structure.
     
     Usage:
-        return PaginatedResponse(
+        return PaginatedResponse[ItemSchema](
             data=items,
-            page=params.page,
-            page_size=params.page_size,
-            total=total_count
+            pagination=PaginationMetadata(
+                page=params.page,
+                page_size=params.page_size,
+                total=total_count,
+                total_pages=ceil(total_count/params.page_size),
+                has_next=params.page < ceil(total_count/params.page_size),
+                has_prev=params.page > 1
+            )
         )
     """
     data: List[T] = Field(..., description="Items in current page")
-    pagination: PaginationMetadata
-    
-    def __init__(
-        self,
-        data: List[T],
-        page: int,
-        page_size: int,
-        total: int,
-        **kwargs
-    ):
-        """
-        Initialize paginated response.
-        
-        Args:
-            data: List of items for current page
-            page: Current page number (1-indexed)
-            page_size: Items per page
-            total: Total items across all pages
-        """
-        total_pages = ceil(total / page_size) if page_size > 0 else 0
-        
-        pagination = PaginationMetadata(
-            page=page,
-            page_size=page_size,
-            total=total,
-            total_pages=total_pages,
-            has_next=page < total_pages,
-            has_prev=page > 1
-        )
-        
-        super().__init__(data=data, pagination=pagination, **kwargs)
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
 
 
 class SimplePaginatedResponse(BaseModel):
     """
     Simple paginated response for any data type (when Generic not possible).
-    
-    Usage:
-        response = SimplePaginatedResponse(
-            data=items,
-            page=1,
-            page_size=50,
-            total=1000
-        )
     """
     data: List[dict] = Field(..., description="Items in current page")
-    pagination: PaginationMetadata
+    pagination: PaginationMetadata = Field(..., description="Pagination metadata")
+
+
+def create_paginated_response(
+    data: List[Any],
+    page: int,
+    page_size: int,
+    total: int
+) -> dict:
+    """
+    Helper function to create a paginated response dict.
     
-    def __init__(
-        self,
-        data: List[dict],
-        page: int,
-        page_size: int,
-        total: int,
-        **kwargs
-    ):
-        total_pages = ceil(total / page_size) if page_size > 0 else 0
+    Args:
+        data: List of items for current page
+        page: Current page number (1-indexed)
+        page_size: Items per page
+        total: Total items across all pages
         
-        pagination = PaginationMetadata(
-            page=page,
-            page_size=page_size,
-            total=total,
-            total_pages=total_pages,
-            has_next=page < total_pages,
-            has_prev=page > 1
-        )
-        
-        super().__init__(data=data, pagination=pagination, **kwargs)
+    Returns:
+        Dict ready to be returned as response
+    """
+    total_pages = ceil(total / page_size) if page_size > 0 else 0
+    
+    return {
+        "data": data,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1
+        }
+    }
 
 
 def get_pagination_offset(page: int, page_size: int) -> int:

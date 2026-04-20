@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from math import ceil
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -10,7 +11,7 @@ from ..database import get_db
 from ..models import AccessLog, AnomalyAlert, User
 from ..services import AlertService
 from ..routes.auth import get_current_user
-from ..models.pagination import PaginationParams, PaginatedResponse, get_pagination_offset
+from ..models.pagination import PaginationParams, PaginatedResponse, PaginationMetadata, get_pagination_offset, create_paginated_response
 from ..services.cache_service import CacheService, CacheConfig
 
 logger = logging.getLogger(__name__)
@@ -124,11 +125,17 @@ def list_alerts(
             )
         
         # Build response
+        total_pages = ceil(total / params.page_size) if params.page_size > 0 else 0
         response = PaginatedResponse(
             data=results,
-            page=params.page,
-            page_size=params.page_size,
-            total=total
+            pagination=PaginationMetadata(
+                page=params.page,
+                page_size=params.page_size,
+                total=total,
+                total_pages=total_pages,
+                has_next=params.page < total_pages,
+                has_prev=params.page > 1
+            )
         )
         
         # Cache result (short TTL for alerts)
