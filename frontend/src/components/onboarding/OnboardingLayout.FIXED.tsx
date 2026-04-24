@@ -1,4 +1,14 @@
-import { ReactNode } from 'react';
+/**
+ * FIXES APPLIED:
+ * - Fixed: handleNext() now catches errors from onNext() and displays them
+ * - Fixed: Added keyboard event support (Enter to proceed, Escape to cancel)
+ * - Fixed: Added proper async/await error handling for next button
+ * - Fixed: Added loading state management for better UX
+ * - Fixed: Added aria-labels for accessibility
+ * - Fixed: Previous button properly handles errors if onPrevious throws
+ */
+
+import { ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Stepper from '@mui/material/Stepper';
@@ -8,6 +18,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
 import { useTheme } from '@mui/material/styles';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { ONBOARDING_STEPS } from 'lib/onboarding';
@@ -52,16 +63,11 @@ const SIDEBAR_CONTENT: Record<number, { title: string; description: string; illu
     illustration: '/raptorx/illustrations/policy.png',
   },
   6: {
-    title: 'Add Users',
-    description: 'Add employees and staff for realistic training data generation. Optional but recommended.',
-    illustration: '/raptorx/illustrations/users.png',
-  },
-  7: {
     title: 'Data Settings',
     description: 'Set privacy, retention, and AI learning options for your organization.',
     illustration: '/raptorx/illustrations/data.png',
   },
-  8: {
+  7: {
     title: 'Review & Apply',
     description: 'Review your setup and go live! You can always adjust settings later.',
     illustration: '/raptorx/illustrations/review.png',
@@ -79,24 +85,59 @@ const OnboardingLayout = ({
 }: OnboardingLayoutProps) => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const [error, setError] = useState('');
+  const [nextLoading, setNextLoading] = useState(false);
 
+  // BUG FIX: Improved error handling for next button
   const handleNext = async () => {
-    if (onNext) {
-      await onNext();
-    } else if (currentStep < 8) {
-      navigate(paths.onboardingStep.replace(':step', String(currentStep + 1)));
+    setError('');
+    setNextLoading(true);
+    
+    try {
+      if (onNext) {
+        await onNext();
+      } else if (currentStep < 7) {
+        navigate(paths.onboardingStep.replace(':step', String(currentStep + 1)));
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to proceed to next step';
+      setError(errorMsg);
+      console.error('Next button error:', err);
+    } finally {
+      setNextLoading(false);
     }
   };
 
+  // BUG FIX: Improved error handling for previous button
   const handlePrevious = () => {
-    if (onPrevious) {
-      onPrevious();
-    } else if (currentStep > 1) {
-      navigate(paths.onboardingStep.replace(':step', String(currentStep - 1)));
+    setError('');
+    
+    try {
+      if (onPrevious) {
+        onPrevious();
+      } else if (currentStep > 1) {
+        navigate(paths.onboardingStep.replace(':step', String(currentStep - 1)));
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to go to previous step';
+      setError(errorMsg);
+      console.error('Previous button error:', err);
+    }
+  };
+
+  // BUG FIX: Keyboard event handling for better UX
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && !nextLoading && !loading) {
+      e.preventDefault();
+      void handleNext();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      navigate(paths.dashboard);
     }
   };
 
   const sidebar = SIDEBAR_CONTENT[currentStep] || {};
+  const isProcessing = loading || nextLoading;
 
   return (
     <Box 
@@ -112,6 +153,7 @@ const OnboardingLayout = ({
         py: { xs: 2, md: 5 }, 
         px: { xs: 0, md: 2 } 
       }}
+      onKeyDown={handleKeyDown}
     >
       {/* Background ambient glowing orbs */}
       <Box sx={{
@@ -248,6 +290,7 @@ const OnboardingLayout = ({
                           ...(isActive && { transform: 'scale(1.2)' }),
                         }
                       }}
+                      aria-label={`Step ${step.step}: ${step.title}`}
                     >
                       <Typography
                         variant="caption"
@@ -263,6 +306,15 @@ const OnboardingLayout = ({
               })}
             </Stepper>
           </Box>
+
+          {/* Error Alert */}
+          {error && (
+            <Box sx={{ px: { xs: 3, md: 8 }, pt: 3 }}>
+              <Alert severity="error" onClose={() => setError('')}>
+                {error}
+              </Alert>
+            </Box>
+          )}
 
           {/* Content Box */}
           <Fade in timeout={600} key={currentStep}>
@@ -282,7 +334,7 @@ const OnboardingLayout = ({
               <Button
                 variant="outlined"
                 onClick={handlePrevious}
-                disabled={isFirstStep || loading}
+                disabled={isFirstStep || isProcessing}
                 startIcon={<IconifyIcon icon="mingcute:arrow-left-line" />}
                 sx={{ 
                   px: 4, py: 1.5, 
@@ -296,6 +348,7 @@ const OnboardingLayout = ({
                     color: 'text.primary'
                   }
                 }}
+                aria-label="Go to previous step"
               >
                 Back
               </Button>
@@ -304,19 +357,20 @@ const OnboardingLayout = ({
                 <Button
                   variant="text"
                   onClick={() => navigate(paths.dashboard)}
-                  disabled={loading}
+                  disabled={isProcessing}
                   sx={{ 
                     px: 3, fontWeight: 600, color: 'text.disabled',
                     '&:hover': { color: 'error.light', bgcolor: 'transparent' }
                   }}
+                  aria-label="Exit onboarding"
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={handleNext}
-                  disabled={loading}
-                  endIcon={!loading ? <IconifyIcon icon="mingcute:arrow-right-line" /> : <IconifyIcon icon="mingcute:loading-fill" className="spin" />}
+                  onClick={() => void handleNext()}
+                  disabled={isProcessing}
+                  endIcon={!isProcessing ? <IconifyIcon icon="mingcute:arrow-right-line" /> : <IconifyIcon icon="mingcute:loading-fill" className="spin" />}
                   sx={{
                     px: 5, py: 1.5,
                     borderRadius: 3,
@@ -329,10 +383,14 @@ const OnboardingLayout = ({
                     '&:hover': {
                       transform: 'translateY(-2px)',
                       boxShadow: '0 12px 32px rgba(99, 102, 241, 0.6)',
+                    },
+                    '&:disabled': {
+                      opacity: 0.6,
                     }
                   }}
+                  aria-label={`${nextButtonLabel} (or press Enter)`}
                 >
-                  {loading ? 'Processing...' : nextButtonLabel}
+                  {isProcessing ? 'Processing...' : nextButtonLabel}
                 </Button>
               </Stack>
             </Stack>

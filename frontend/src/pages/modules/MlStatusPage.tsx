@@ -13,10 +13,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import List from '@mui/material/List';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemButton from '@mui/material/ListItemButton';
-import Radio from '@mui/material/Radio';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { apiClient, MlStatus } from 'lib/api';
 import { useTheme } from '@mui/material/styles';
@@ -27,6 +23,12 @@ import { TooltipComponent, LegendComponent } from 'echarts/components';
 import ReactEchart from 'components/base/ReactEchart';
 
 echarts.use([TooltipComponent, LegendComponent, PieChart, CanvasRenderer]);
+
+interface ModelVersion {
+  version_id: string;
+  timestamp: string;
+  is_current: boolean;
+}
 
 interface ModelStatus {
   name: string;
@@ -132,6 +134,7 @@ const MlStatusPage = () => {
         status?: string;
         message?: string;
       };
+      console.log('Model versions response:', response);
       setModelVersions(response.available_versions || {});
       setVersionError('');
     } catch (err) {
@@ -160,14 +163,29 @@ const MlStatusPage = () => {
 
     setRestoringVersion(true);
     try {
-      await apiClient.restoreModelVersion(selectedModel, selectedVersion);
+      console.log(`[Restore] Restoring ${selectedModel} to version ${selectedVersion}`);
+      const response = await apiClient.restoreModelVersion(selectedModel, selectedVersion);
+      console.log('[Restore] Success:', response);
+      
       setVersionError('');
+      
+      // Show success notification (you might want to add a toast here)
+      alert(`✓ Model "${selectedModel}" successfully restored to version ${selectedVersion}`);
+      
+      // Close dialog
       handleCloseVersionDialog();
-      // Reload status
+      
+      // Reload status to reflect changes
       const data = await apiClient.getMlStatus();
       setStatus(data);
-    } catch {
-      setVersionError('Failed to restore model version');
+      
+      // Reload versions to update "CURRENT" badge
+      await loadModelVersions();
+    } catch (err: unknown) {
+      console.error('[Restore] Error:', err);
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMsg = error?.response?.data?.detail || error?.message || 'Failed to restore model version';
+      setVersionError(errorMsg);
     } finally {
       setRestoringVersion(false);
     }
@@ -627,7 +645,7 @@ const MlStatusPage = () => {
         </>
       )}
 
-      {/* Model Version Selection Dialog */}
+      {/* Model Version Selection Dialog - Vertical Layout */}
       <Dialog 
         open={showVersionDialog} 
         onClose={handleCloseVersionDialog}
@@ -638,124 +656,150 @@ const MlStatusPage = () => {
             background: 'rgba(20, 20, 30, 0.95)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
+            minHeight: '600px',
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: '#fff', fontSize: '1.3rem' }}>
+        <DialogTitle sx={{ fontWeight: 800, color: '#fff', fontSize: '1.2rem', pb: 1.5 }}>
           Restore Model Version
         </DialogTitle>
-        <DialogContent sx={{ py: 2 }}>
+        
+        <DialogContent sx={{ py: 3, minHeight: '600px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {versionError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, fontWeight: 600 }}>
               {versionError}
             </Alert>
           )}
+          
           {loadingVersions ? (
-            <Stack sx={{ py: 4, alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <Stack sx={{ py: 4, alignItems: 'center', justifyContent: 'center', gap: 2, flex: 1 }}>
               <CircularProgress sx={{ color: '#6366f1' }} />
-              <Typography sx={{ color: 'text.secondary' }}>Loading model versions...</Typography>
+              <Typography sx={{ color: 'text.secondary' }}>Loading versions...</Typography>
             </Stack>
           ) : Object.keys(modelVersions).length === 0 ? (
             <Alert severity="info">
-              No model versions available. Train a model first.
+              No model versions available. Train models first.
             </Alert>
           ) : (
-          <Stack spacing={2}>
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-              Select Model:
-            </Typography>
-            <Stack spacing={1}>
-              {Object.keys(modelVersions).map((modelKey) => (
-                <Button
-                  key={modelKey}
-                  variant={selectedModel === modelKey ? 'contained' : 'outlined'}
-                  sx={{
-                    justifyContent: 'flex-start',
-                    color: selectedModel === modelKey ? '#fff' : 'text.primary',
-                    background: selectedModel === modelKey ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
-                    borderColor: selectedModel === modelKey ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255, 255, 255, 0.1)',
-                    textTransform: 'none',
-                    py: 1,
-                  }}
-                  onClick={() => {
-                    setSelectedModel(modelKey);
-                    setSelectedVersion('');
-                  }}
-                >
-                  {modelKey}
-                </Button>
-              ))}
-            </Stack>
-
-            {selectedModel && modelVersions[selectedModel] && (
-              <>
-                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mt: 2 }}>
-                  Available Versions:
+            <Stack spacing={2} sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+              {/* Model Selection Section */}
+              <Box sx={{ width: '100%' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px', mb: 2, display: 'block' }}>
+                  📦 Select Model
                 </Typography>
-                <List sx={{ 
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 2,
-                  maxHeight: 300,
-                  overflow: 'auto'
-                }}>
-                  {modelVersions[selectedModel].map((version) => (
-                    <ListItemButton
-                      key={version.version_id}
-                      selected={selectedVersion === version.version_id}
-                      onClick={() => setSelectedVersion(version.version_id)}
+                <Stack spacing={1} sx={{ width: '100%' }}>
+                  {Object.keys(modelVersions).map((modelKey) => (
+                    <Button
+                      key={modelKey}
+                      fullWidth
+                      variant={selectedModel === modelKey ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        console.log(`Selected model: ${modelKey}`);
+                        console.log('Available versions:', modelVersions[modelKey]);
+                        setSelectedModel(modelKey);
+                        setSelectedVersion('');
+                      }}
                       sx={{
                         py: 1.5,
                         px: 2,
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        '&.Mui-selected': {
-                          bgcolor: 'rgba(99, 102, 241, 0.2)',
-                        },
+                        textTransform: 'none',
+                        fontSize: '0.95rem',
+                        fontWeight: selectedModel === modelKey ? 700 : 500,
+                        justifyContent: 'center',
+                        color: selectedModel === modelKey ? '#fff' : 'text.primary',
+                        background: selectedModel === modelKey ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                        border: '1px solid',
+                        borderColor: selectedModel === modelKey ? '#8b5cf6' : 'rgba(255, 255, 255, 0.2)',
+                        transition: 'all 0.2s',
                         '&:hover': {
-                          bgcolor: 'rgba(99, 102, 241, 0.1)',
+                          borderColor: '#6366f1',
+                          background: selectedModel === modelKey ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(99, 102, 241, 0.08)',
                         }
                       }}
                     >
-                      <Radio
-                        checked={selectedVersion === version.version_id}
-                        sx={{ mr: 2 }}
-                      />
-                      <ListItemText
-                        primary={
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {new Date(version.timestamp).toLocaleString()}
-                            {version.is_current && (
-                              <Chip 
-                                label="CURRENT" 
-                                size="small" 
-                                sx={{ 
-                                  ml: 1, 
-                                  height: 20,
-                                  bgcolor: 'rgba(16, 185, 129, 0.2)',
-                                  color: '#34d399',
-                                  fontWeight: 700
-                                }} 
-                              />
-                            )}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {version.version_id}
-                          </Typography>
-                        }
-                      />
-                    </ListItemButton>
+                      {modelKey}
+                    </Button>
                   ))}
-                </List>
-              </>
-            )}
-          </Stack>
+                </Stack>
+              </Box>
+
+              {/* Divider */}
+              {selectedModel && <Box sx={{ height: '2px', background: 'rgba(99, 102, 241, 0.3)', width: '100%', borderRadius: 1 }} />}
+
+              {/* Version Selection Section */}
+              {selectedModel && (
+                <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1, minHeight: '300px' }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px', mb: 2, display: 'block' }}>
+                    📅 Select Version ({modelVersions[selectedModel]?.length || 0} available)
+                  </Typography>
+                  {modelVersions[selectedModel] && Array.isArray(modelVersions[selectedModel]) && modelVersions[selectedModel].length > 0 ? (
+                    <Stack spacing={0.5} sx={{ width: '100%', flex: 1, minHeight: '250px', maxHeight: '350px', overflow: 'auto', pr: 1, display: 'flex', flexDirection: 'column' }}>
+                      {modelVersions[selectedModel].map((version: ModelVersion, idx: number) => (
+                        <Button
+                          key={`${version.version_id}-${idx}`}
+                          fullWidth
+                          variant={selectedVersion === version.version_id ? 'contained' : 'outlined'}
+                          onClick={() => {
+                            console.log(`Selected version: ${version.version_id}`);
+                            setSelectedVersion(version.version_id);
+                          }}
+                          sx={{
+                            py: 1.5,
+                            px: 2,
+                            textTransform: 'none',
+                            fontSize: '0.85rem',
+                            fontWeight: selectedVersion === version.version_id ? 700 : 500,
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            color: selectedVersion === version.version_id ? '#fff' : 'text.primary',
+                            background: selectedVersion === version.version_id ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                            border: '1px solid',
+                            borderColor: selectedVersion === version.version_id ? '#8b5cf6' : 'rgba(255, 255, 255, 0.2)',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              borderColor: '#6366f1',
+                              background: selectedVersion === version.version_id ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(99, 102, 241, 0.08)',
+                            },
+                            display: 'flex',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+                            <span style={{ wordBreak: 'break-all' }}>{version.version_id}</span>
+                          </Box>
+                          {version.is_current && (
+                            <Chip 
+                              label="CURRENT" 
+                              size="small" 
+                              sx={{ 
+                                height: 18,
+                                bgcolor: 'rgba(16, 185, 129, 0.3)',
+                                color: '#34d399',
+                                fontWeight: 700,
+                                fontSize: '0.65rem',
+                                ml: 1,
+                                flexShrink: 0,
+                              }} 
+                            />
+                          )}
+                        </Button>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Alert severity="warning" sx={{ width: '100%' }}>
+                      {!modelVersions[selectedModel] ? 'Loading versions...' : 'No versions available for this model'}
+                    </Alert>
+                  )}
+                </Box>
+              )}
+            </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
+        
+        <DialogActions sx={{ p: 2, gap: 1, borderTop: '1px solid rgba(255, 255, 255, 0.1)', justifyContent: 'flex-end' }}>
           <Button 
             onClick={handleCloseVersionDialog}
-            sx={{ color: 'text.secondary' }}
+            sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}
           >
             Cancel
           </Button>
@@ -764,19 +808,20 @@ const MlStatusPage = () => {
             disabled={!selectedModel || !selectedVersion || restoringVersion}
             variant="contained"
             sx={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              color: '#fff',
-              fontWeight: 700,
               textTransform: 'none',
+              fontWeight: 700,
+              background: (selectedModel && selectedVersion) ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(99, 102, 241, 0.3)',
+              color: '#fff',
+              opacity: (selectedModel && selectedVersion) ? 1 : 0.6,
             }}
           >
             {restoringVersion ? (
               <>
-                <CircularProgress size={18} sx={{ mr: 1, color: 'inherit' }} />
+                <CircularProgress size={16} sx={{ mr: 1, color: 'inherit' }} />
                 Restoring...
               </>
             ) : (
-              'Restore Version'
+              'Restore'
             )}
           </Button>
         </DialogActions>

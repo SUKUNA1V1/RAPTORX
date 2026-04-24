@@ -14,6 +14,7 @@ const OnboardingStep2 = lazy(() => import('pages/onboarding/Step2'));
 const OnboardingStep3 = lazy(() => import('pages/onboarding/Step3'));
 const OnboardingStep4 = lazy(() => import('pages/onboarding/Step4'));
 const OnboardingStep5 = lazy(() => import('pages/onboarding/Step5'));
+const OnboardingStep6Users = lazy(() => import('pages/onboarding/Step6Users'));
 const OnboardingStep6 = lazy(() => import('pages/onboarding/Step6'));
 const OnboardingStep7 = lazy(() => import('pages/onboarding/Step7'));
 
@@ -34,8 +35,10 @@ const OnboardingRoutes = () => {
     case 5:
       return <OnboardingStep5 />;
     case 6:
-      return <OnboardingStep6 />;
+      return <OnboardingStep6Users />;
     case 7:
+      return <OnboardingStep6 />;
+    case 8:
       return <OnboardingStep7 />;
     default:
       return <Navigate to={paths.onboardingStep.replace(':step', '1')} replace />;

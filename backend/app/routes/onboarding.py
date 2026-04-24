@@ -1,6 +1,7 @@
 import csv
 import io
 import json
+import os
 import subprocess
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, BackgroundTasks
@@ -203,10 +204,11 @@ async def apply_onboarding(
     step4: Optional[OnboardingStep4Payload] = None,
     step5: Optional[OnboardingStep5Payload] = None,
     step6: Optional[OnboardingStep6Payload] = None,
+    background_tasks: BackgroundTasks = None,
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ) -> OrganizationResponse:
-    """Apply onboarding - create all organization configuration."""
+    """Apply onboarding - create all organization configuration and trigger training data + pipeline."""
     try:
         # Start transaction
         # 1. Create organization
@@ -345,6 +347,56 @@ async def apply_onboarding(
         )
         db.add(audit)
         db.commit()
+        
+        # Trigger background tasks: Generate training data and run full pipeline
+        if background_tasks:
+            # Get user IDs from step6 if available
+            user_ids = []
+            if step6 and hasattr(step6, 'users'):
+                user_ids = [u.get('id') if isinstance(u, dict) else u.id for u in step6.users]
+            
+            # Prepare config file for training data generation
+            config_data = get_onboarding_configuration(org.id, db)
+            config_file = f"data/raw/org_{org.id}_config.json"
+            output_file = f"data/raw/org_{org.id}_training_data.csv"
+            
+            os.makedirs("data/raw", exist_ok=True)
+            with open(config_file, 'w') as f:
+                json.dump(config_data, f, indent=2)
+            
+            # Add background tasks
+            background_tasks.add_task(
+                generate_training_data_task,
+                org_id=org.id,
+                config_file=config_file,
+                output_file=output_file,
+                db=db,
+                user_id=current_user.id,
+                specified_user_ids=user_ids or None
+            )
+            
+            # After training data generation, trigger full pipeline
+            background_tasks.add_task(
+                run_full_pipeline_task,
+                org_id=org.id,
+                db=db,
+                user_id=current_user.id
+            )
+            
+            # Log pipeline trigger
+            audit = AuditLog(
+                user_id=current_user.id,
+                action="PIPELINE_AUTO_TRIGGERED",
+                resource="organization",
+                resource_id=org.id,
+                details={
+                    "trigger": "go_live",
+                    "training_data_file": output_file,
+                    "status": "queued"
+                }
+            )
+            db.add(audit)
+            db.commit()
         
         return OrganizationResponse.model_validate(org)
     except Exception as e:
@@ -537,7 +589,8 @@ async def get_organization_configuration(
 @router.post("/generate-training-data/{org_id}")
 async def generate_training_data(
     org_id: int,
-    background_tasks: BackgroundTasks,
+    payload: dict | None = None,
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
@@ -545,13 +598,21 @@ async def generate_training_data(
     Trigger training data generation based on the organization's onboarding configuration.
     This creates synthetic training data customized to the client's infrastructure.
     
+    Request body (optional):
+    - user_ids: List of user IDs to use for training data generation (creates realistic access patterns)
+    
     Data generated includes:
     - Access logs based on buildings, zones, and access points
     - User profiles aligned with admin roles and structure
-    - Access patterns based on defined policies
+    - Access patterns based on defined policies and specified users
     - Anomalies calibrated to the organization's security baseline
     """
     try:
+        # Extract user IDs from payload if provided
+        user_ids = []
+        if payload:
+            user_ids = payload.get("user_ids", []) if isinstance(payload, dict) else []
+        
         # Retrieve onboarding configuration
         config = get_onboarding_configuration(org_id, db)
         
@@ -578,7 +639,8 @@ async def generate_training_data(
             config_file=config_file,
             output_file=output_file,
             db=db,
-            user_id=current_user.id
+            user_id=current_user.id,
+            specified_user_ids=user_ids
         )
         
         # Log the request
@@ -590,7 +652,9 @@ async def generate_training_data(
             details={
                 "config_file": config_file,
                 "output_file": output_file,
-                "org_name": config["organization"]["name"]
+                "org_name": config["organization"]["name"],
+                "specified_users": len(user_ids),
+                "user_ids": user_ids
             }
         )
         db.add(audit)
@@ -617,9 +681,16 @@ def generate_training_data_task(
     config_file: str,
     output_file: str,
     db: Session,
-    user_id: int
+    user_id: int,
+    specified_user_ids: list | None = None
 ):
-    """Background task to generate training data based on organization configuration."""
+    """
+    Background task to generate training data based on organization configuration.
+    
+    Args:
+        specified_user_ids: List of user IDs to use for training data generation.
+                           If provided, access patterns will be based on these users.
+    """
     try:
         # Import the training data generation module
         import sys
@@ -631,7 +702,8 @@ def generate_training_data_task(
         generate_data_from_config(
             config_file=config_file,
             output_file=output_file,
-            org_id=org_id
+            org_id=org_id,
+            user_ids=specified_user_ids or []
         )
         
         # Log completion
@@ -657,6 +729,96 @@ def generate_training_data_task(
             resource_id=org_id,
             details={
                 "error": str(e)
+            }
+        )
+        db.add(audit)
+        db.commit()
+
+
+def run_full_pipeline_task(
+    org_id: int,
+    db: Session,
+    user_id: int
+):
+    """
+    Background task to run the full ML pipeline for the organization.
+    
+    Pipeline Steps:
+      1. Generate synthetic data (500k access records)
+      2. Explore and prepare data (load, scale, split)
+      3. Train Isolation Forest model
+      4. Train Autoencoder model
+      5. Compare models and create ensemble
+      6. Retune decision thresholds
+      7. Quick validation test
+      8. Thread-safety validation
+      9. Full system validation
+    
+    Models are saved to ml/models/ and ready for backend testing.
+    """
+    try:
+        import sys
+        import os
+        from pathlib import Path
+        
+        # Get the project root directory
+        backend_file_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__ or ".")))
+        project_root = os.path.dirname(backend_file_dir)
+        sys.path.insert(0, project_root)
+        
+        # Import and run the full pipeline
+        from scripts.run_full_pipeline import PipelineRunner
+        
+        # Create output directories
+        Path("data/processed").mkdir(parents=True, exist_ok=True)
+        Path("ml/models").mkdir(parents=True, exist_ok=True)
+        Path("ml/results").mkdir(parents=True, exist_ok=True)
+        Path("logs").mkdir(parents=True, exist_ok=True)
+        
+        # Run pipeline in dev mode
+        runner = PipelineRunner(mode="dev")
+        success = runner.run_pipeline()
+        
+        # Log completion
+        if success:
+            audit = AuditLog(
+                user_id=user_id,
+                action="PIPELINE_COMPLETED",
+                resource="organization",
+                resource_id=org_id,
+                details={
+                    "status": "completed",
+                    "passed_steps": len(runner.passed_steps),
+                    "failed_steps": len(runner.failed_steps)
+                }
+            )
+        else:
+            audit = AuditLog(
+                user_id=user_id,
+                action="PIPELINE_FAILED",
+                resource="organization",
+                resource_id=org_id,
+                details={
+                    "status": "failed",
+                    "passed_steps": len(runner.passed_steps),
+                    "failed_steps": len(runner.failed_steps),
+                    "failures": [{"step": step[1], "reason": step[2]} for step in runner.failed_steps]
+                }
+            )
+        
+        db.add(audit)
+        db.commit()
+        
+    except Exception as e:
+        # Log pipeline execution error
+        audit = AuditLog(
+            user_id=user_id,
+            action="PIPELINE_EXECUTION_FAILED",
+            resource="organization",
+            resource_id=org_id,
+            details={
+                "error": str(e),
+                "type": type(e).__name__
             }
         )
         db.add(audit)

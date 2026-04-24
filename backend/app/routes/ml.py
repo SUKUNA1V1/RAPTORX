@@ -604,28 +604,53 @@ async def get_model_versions(
         versions_root = _versions_root(models_dir)
         all_versions = {}
         
+        print(f"[ML] Versions root: {versions_root}")
+        print(f"[ML] Versions root exists: {versions_root.exists()}")
+        
         if versions_root.exists():
-            for model_key in versions_root.iterdir():
-                if model_key.is_dir():
+            for model_key_dir in versions_root.iterdir():
+                if model_key_dir.is_dir():
+                    model_name = model_key_dir.name
+                    print(f"[ML] Processing model: {model_name}")
                     versions = []
-                    for version_dir in sorted(model_key.iterdir(), reverse=True):
-                        if version_dir.is_dir():
-                            versions.append({
-                                "version_id": version_dir.name,
-                                "timestamp": version_dir.name,  # ISO format
-                                "is_current": version_dir.name == current.get(model_key.name, {}).get("version")
-                            })
+                    
+                    # Get all version directories sorted by name (newest first)
+                    all_dirs = list(model_key_dir.iterdir())
+                    print(f"[ML]   All dirs: {[d.name for d in all_dirs]}")
+                    
+                    version_dirs = sorted(
+                        [d for d in all_dirs if d.is_dir()],
+                        key=lambda x: x.name,
+                        reverse=True
+                    )
+                    
+                    print(f"[ML]   Version dirs: {[d.name for d in version_dirs]}")
+                    
+                    for version_dir in version_dirs:
+                        current_version = current.get(model_name, {}).get("version")
+                        is_current = version_dir.name == current_version
+                        print(f"[ML]     Version {version_dir.name}: is_current={is_current}")
+                        
+                        versions.append({
+                            "version_id": version_dir.name,
+                            "timestamp": version_dir.name,
+                            "is_current": is_current
+                        })
+                    
+                    print(f"[ML]   Total versions: {len(versions)}")
                     if versions:
-                        all_versions[model_key.name] = versions
+                        all_versions[model_name] = versions
         
         return {
             "status": "ok",
             "current_versions": current,
             "available_versions": all_versions,
-            "message": f"Found {len(all_versions)} models with version history"
+            "message": f"Found {len(all_versions)} models with {sum(len(v) for v in all_versions.values())} total versions"
         }
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get model versions: {str(e)}"
@@ -648,6 +673,8 @@ async def restore_model_version(
         import shutil
         from pathlib import Path
         
+        print(f"[ML] Restoring model: {model_key}, version: {version_id}")
+        
         # Get the project root directory
         backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         project_root = os.path.dirname(backend_dir)
@@ -658,12 +685,17 @@ async def restore_model_version(
         # Compute correct path to ml/models from project root
         models_dir = os.path.join(project_root, "ml", "models")
         models_dir = os.path.normpath(os.path.abspath(models_dir))
+        print(f"[ML] Models dir: {models_dir}")
+        
         registry = _load_registry(models_dir)
         current = registry.get("current", {})
         
         # Verify version exists
         version_path = _versions_root(models_dir) / model_key / version_id
+        print(f"[ML] Checking version path: {version_path}")
+        
         if not version_path.exists():
+            print(f"[ML] Version path does not exist!")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Model version {version_id} not found"
@@ -671,6 +703,8 @@ async def restore_model_version(
         
         # Get artifacts from version directory
         artifacts = list(version_path.glob("*"))
+        print(f"[ML] Found {len(artifacts)} artifacts: {[a.name for a in artifacts]}")
+        
         if not artifacts:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -680,7 +714,10 @@ async def restore_model_version(
         # Restore artifacts to root models directory
         for src in artifacts:
             dst = Path(models_dir) / src.name
+            print(f"[ML] Copying {src.name} from {src} to {dst}")
             shutil.copy2(src, dst)
+        
+        print(f"[ML] Artifacts copied successfully")
         
         # Update registry to mark this as current
         current[model_key] = {
@@ -693,6 +730,8 @@ async def restore_model_version(
         registry["current"] = current
         registry["updated_at"] = datetime.utcnow().isoformat()
         _save_registry(models_dir, registry)
+        
+        print(f"[ML] Registry updated successfully")
         
         # Log action
         org = db.query(Organization).first()
@@ -710,6 +749,8 @@ async def restore_model_version(
         db.add(audit)
         db.commit()
         
+        print(f"[ML] Audit log created and committed")
+        
         return {
             "status": "success",
             "message": f"Model '{model_key}' restored to version {version_id}",
@@ -720,6 +761,9 @@ async def restore_model_version(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[ML] Error restoring model: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to restore model version: {str(e)}"

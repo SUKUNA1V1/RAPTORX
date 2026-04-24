@@ -20,29 +20,15 @@ interface RoleOption {
 const ROLE_OPTIONS: RoleOption[] = [
   {
     value: 'super_admin',
-    title: 'Super Admin',
-    description: 'Full system access. Can manage all configurations, users, and settings.',
-    permissions: [
-      'Manage all settings',
-      'Create/delete organizations',
-      'View all system logs',
-      'Configure policies',
-      'Manage users',
-      'Access all audit reports',
-    ],
+    title: 'super_admin',
+    description: '',
+    permissions: [],
   },
   {
     value: 'admin',
-    title: 'Admin',
-    description: 'Organizational admin. Can manage access points, policies, and users within organization.',
-    permissions: [
-      'Manage access points',
-      'Configure policies',
-      'Manage users',
-      'View organization logs',
-      'Configure buildings/zones',
-      'Generate reports',
-    ],
+    title: 'admin',
+    description: '',
+    permissions: [],
   },
 ];
 
@@ -57,14 +43,14 @@ const RoleSelector = ({ value, onChange, disabled = false }: RoleSelectorProps) 
     <RadioGroup value={value} onChange={(e) => onChange(e.target.value as 'super_admin' | 'admin')}>
       <Grid container spacing={2}>
         {ROLE_OPTIONS.map((role) => (
-          <Grid item xs={12} md={6} key={role.value}>
+          <Grid item xs={12} md={12} key={role.value}>
             <Card
               sx={{
                 p: 2.5,
                 cursor: disabled ? 'default' : 'pointer',
                 border: '2px solid',
                 borderColor: value === role.value ? 'primary.main' : 'divider',
-                bgcolor: value === role.value ? 'primary.lighter' : 'background.paper',
+                bgcolor: value === role.value ? 'primary.lighter' : '#000000',
                 transition: 'all 0.2s',
                 '&:hover': disabled ? {} : { borderColor: 'primary.main', boxShadow: 2 },
               }}
@@ -76,30 +62,12 @@ const RoleSelector = ({ value, onChange, disabled = false }: RoleSelectorProps) 
                     value={role.value}
                     control={<Radio disabled={disabled} />}
                     label={
-                      <Stack spacing={0.5}>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          {role.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {role.description}
-                        </Typography>
-                      </Stack>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {role.title}
+                      </Typography>
                     }
                     sx={{ m: 0, flex: 1 }}
                   />
-                </Box>
-
-                <Box sx={{ pl: 4 }}>
-                  <Typography variant="caption" fontWeight={600} display="block" sx={{ mb: 1 }}>
-                    Permissions:
-                  </Typography>
-                  <Stack component="ul" spacing={0.5} sx={{ pl: 1, m: 0 }}>
-                    {role.permissions.map((perm, idx) => (
-                      <Typography component="li" key={idx} variant="caption" sx={{ color: 'text.secondary' }}>
-                        {perm}
-                      </Typography>
-                    ))}
-                  </Stack>
                 </Box>
               </Stack>
             </Card>

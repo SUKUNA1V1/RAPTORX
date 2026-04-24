@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -28,7 +28,9 @@ import OnboardingLayout from 'components/onboarding/OnboardingLayout';
 import CSVImporter from 'components/onboarding/CSVImporter';
 import { OnboardingManager } from 'lib/onboarding';
 import paths from 'routes/paths';
+import IconifyIcon from 'components/base/IconifyIcon';
 import type { AccessPointsData, AccessPoint } from 'types/onboarding';
+import { premiumInputSx, formContainerSx, sectionHeaderSx, iconWrapperSx } from 'components/onboarding/PremiumStyles';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -40,7 +42,7 @@ function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
   return (
     <div hidden={value !== index} {...other}>
-      {value === index && <Box>{children}</Box>}
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -63,18 +65,10 @@ const Step4 = () => {
   });
 
   useEffect(() => {
-    const loadDraft = async () => {
-      try {
-        const draft = await OnboardingManager.loadDraft();
-        if (draft && draft.step_number >= 4) {
-          const data = draft.draft_data as unknown as AccessPointsData;
-          setAccessPoints(data.access_points || []);
-        }
-      } catch {
-        // Silently ignore
-      }
-    };
-    void loadDraft();
+    const stepData = OnboardingManager.loadStepData(4) as AccessPointsData | null;
+    if (stepData?.access_points) {
+      setAccessPoints(stepData.access_points);
+    }
   }, []);
 
   const handleAddAccessPoint = () => {
@@ -151,6 +145,20 @@ const Step4 = () => {
     }
   };
 
+  const handlePrevious = async () => {
+    try {
+      setLoading(true);
+      const data: AccessPointsData = {
+        access_points: accessPoints,
+        csv_import_count: 0,
+      };
+      await OnboardingManager.saveDraft(4, data as unknown as Record<string, unknown>);
+    } finally {
+      setLoading(false);
+      navigate(paths.onboardingStep.replace(':step', '3'));
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -168,142 +176,182 @@ const Step4 = () => {
     <OnboardingLayout
       currentStep={4}
       onNext={handleNext}
-      onPrevious={() => navigate(paths.onboardingStep.replace(':step', '3'))}
+      onPrevious={handlePrevious}
       loading={loading}
       nextButtonLabel="Continue to Access Policies"
     >
-      <Box sx={{
-        bgcolor: 'background.default',
-        borderRadius: 3,
-        p: { xs: 2, md: 4 },
-        boxShadow: '0 2px 12px rgba(59,130,246,0.04)',
-        maxWidth: 700,
-        mx: 'auto',
-        mt: 2,
-      }}>
-        <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: 'primary.main' }}>
-          Access Points
-        </Typography>
-        <Box sx={{ mb: 2, color: 'text.secondary', fontWeight: 500 }}>
-          Configure access points (doors, readers, gates). You can add them manually or import from CSV.
-        </Box>
-        {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
+      <Stack spacing={4} direction="column" sx={{ ...formContainerSx, maxWidth: 800 }}>
+        {apiError && <Alert severity="error">{apiError}</Alert>}
 
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-            <Tab label="Manual Entry" />
-            <Tab label="CSV Import" />
-            <Tab label={`Review (${accessPoints.length})`} />
-          </Tabs>
-        </Box>
+        <Box>
+          <Box sx={sectionHeaderSx}>
+            <Box sx={iconWrapperSx('16, 185, 129')}>
+              <IconifyIcon icon="mingcute:door-fill" fontSize={24} sx={{ color: '#10b981' }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 0.25, color: 'text.primary' }}>Access Points</Typography>
+              <Typography variant="caption" color="text.secondary">Configure access points (doors, readers, gates).</Typography>
+            </Box>
+          </Box>
 
-        <TabPanel value={tabValue} index={0}>
-          <Stack spacing={2}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowDialog(true)}>
-              Add Access Point
-            </Button>
+          <Box sx={{ p: 2.5, bgcolor: 'rgba(16, 185, 129, 0.05)', border: '1px solid', borderColor: 'rgba(16, 185, 129, 0.2)', borderRadius: 2.5, mb: 3 }}>
+            <Stack spacing={1}>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'rgba(16, 185, 129, 1)' }}>
+                <IconifyIcon icon="mingcute:data-analytics-fill" fontSize={18} />
+                ML Feature Collection
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ pl: 3 }}>
+                Geographic coordinates (latitude/longitude) are used to compute <strong>geographic_impossibility</strong>, <strong>distance_between_scans_km</strong>, and <strong>velocity_km_per_min</strong> features for detecting physical impossibilities and badge cloning.
+              </Typography>
+            </Stack>
+          </Box>
 
-            {accessPoints.length === 0 ? (
-              <Card sx={{ p: 3, textAlign: 'center' }}>
-                <Box component="p" sx={{ m: 0, color: 'text.secondary' }}>
-                  No access points added yet.
+          <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={(_, newValue) => setTabValue(newValue)}
+              sx={{
+                '& .MuiTab-root': { color: 'text.secondary', fontWeight: 600, textTransform: 'none', fontSize: '0.95rem' },
+                '& .Mui-selected': { color: 'primary.light' },
+                '& .MuiTabs-indicator': { backgroundColor: 'primary.main', height: 3, borderRadius: '3px 3px 0 0' }
+              }}
+            >
+              <Tab label="Manual Entry" />
+              <Tab label="CSV Import" />
+              <Tab label={`Review (${accessPoints.length})`} />
+            </Tabs>
+          </Box>
+
+          <TabPanel value={tabValue} index={0}>
+            <Stack spacing={2} direction="column">
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowDialog(true)} sx={{ alignSelf: 'flex-start', borderRadius: 2 }}>
+                Add Access Point
+              </Button>
+
+              {accessPoints.length === 0 ? (
+                <Box sx={{ 
+                  p: 4, textAlign: 'center', color: 'text.secondary', 
+                  bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, 
+                  border: '2px dashed rgba(255,255,255,0.1)' 
+                }}>
+                  <IconifyIcon icon="mingcute:sensor-line" fontSize={48} sx={{ opacity: 0.3, mb: 2 }} />
+                  <Typography variant="subtitle1" fontWeight={600}>No access points added yet</Typography>
                 </Box>
-              </Card>
+              ) : (
+                <TableContainer component={Box} sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.02)', 
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 3,
+                  overflow: 'hidden'
+                }}>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: 'rgba(255,255,255,0.04)' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Restricted</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                          Actions
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {accessPoints.map((ap, idx) => (
+                        <TableRow key={ap.id}>
+                          <TableCell sx={{ color: 'text.secondary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{ap.name}</TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <Chip label={ap.type} size="small" variant="outlined" sx={{ color: 'text.secondary', borderColor: 'rgba(255,255,255,0.2)' }} />
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            <Chip label={ap.status} size="small" color={getStatusColor(ap.status) as any} />
+                          </TableCell>
+                          <TableCell sx={{ color: 'text.secondary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{ap.is_restricted ? '✓' : '—'}</TableCell>
+                          <TableCell align="right" sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <IconButton
+                              size="small"
+                              sx={{ color: 'error.main', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' } }}
+                              onClick={() => setAccessPoints(prev => prev.filter((_, i) => i !== idx))}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Stack>
+          </TabPanel>
+
+          {/* CSV Import Tab */}
+          <TabPanel value={tabValue} index={1}>
+            <Box sx={{
+              p: 3, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, 
+              border: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              <CSVImporter
+                title="Import Access Points"
+                description="Upload a CSV file with your access points. Required columns: name, type, building_id, status, is_restricted"
+                headers={['name', 'type', 'building_id', 'status', 'is_restricted']}
+                onImport={handleCSVImport}
+                loading={csvLoading}
+              />
+            </Box>
+          </TabPanel>
+
+          {/* Review Tab */}
+          <TabPanel value={tabValue} index={2}>
+            {accessPoints.length === 0 ? (
+              <Alert severity="warning">No access points defined yet</Alert>
             ) : (
-              <TableContainer component={Card}>
+              <TableContainer component={Box} sx={{ 
+                bgcolor: 'rgba(255,255,255,0.02)', 
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 3,
+                overflow: 'hidden'
+              }}>
                 <Table size="small">
-                  <TableHead sx={{ bgcolor: 'action.hover' }}>
+                  <TableHead sx={{ bgcolor: 'rgba(255,255,255,0.04)' }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Restricted</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>
-                        Actions
-                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Name</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Type</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Building ID</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: 'text.primary', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>IP Address</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {accessPoints.map((ap, idx) => (
+                    {accessPoints.map(ap => (
                       <TableRow key={ap.id}>
-                        <TableCell>{ap.name}</TableCell>
-                        <TableCell>
-                          <Chip label={ap.type} size="small" variant="outlined" />
-                        </TableCell>
-                        <TableCell>                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        <TableCell sx={{ color: 'text.secondary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{ap.name}</TableCell>
+                        <TableCell sx={{ color: 'text.secondary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{ap.type}</TableCell>
+                        <TableCell sx={{ color: 'text.secondary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{ap.building_id}</TableCell>
+                        <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                           <Chip label={ap.status} size="small" color={getStatusColor(ap.status) as any} />
                         </TableCell>
-                        <TableCell>{ap.is_restricted ? '✓' : '—'}</TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => setAccessPoints(prev => prev.filter((_, i) => i !== idx))}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
+                        <TableCell sx={{ color: 'text.secondary', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{ap.ip_address || '—'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </TableContainer>
             )}
-          </Stack>
-        </TabPanel>
+          </TabPanel>
+        </Box>
+      </Stack>
 
-        {/* CSV Import Tab */}
-        <TabPanel value={tabValue} index={1}>
-          <CSVImporter
-            title="Import Access Points"
-            description="Upload a CSV file with your access points. Required columns: name, type, building_id, status, is_restricted"
-            headers={['name', 'type', 'building_id', 'status', 'is_restricted']}
-            onImport={handleCSVImport}
-            loading={csvLoading}
-          />
-        </TabPanel>
-
-        {/* Review Tab */}
-        <TabPanel value={tabValue} index={2}>
-          {accessPoints.length === 0 ? (
-            <Alert severity="warning">No access points defined yet</Alert>
-          ) : (
-            <TableContainer component={Card}>
-              <Table size="small">
-                <TableHead sx={{ bgcolor: 'action.hover' }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Building ID</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>IP Address</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {accessPoints.map(ap => (
-                    <TableRow key={ap.id}>
-                      <TableCell>{ap.name}</TableCell>
-                      <TableCell>{ap.type}</TableCell>
-                      <TableCell>{ap.building_id}</TableCell>
-                      <TableCell>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        <Chip label={ap.status} size="small" color={getStatusColor(ap.status) as any} />
-                      </TableCell>
-                      <TableCell>{ap.ip_address || '—'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </TabPanel>
-      </Box>
-
-      {/* Add/Edit Dialog */}
-      <Dialog open={showDialog} onClose={() => setShowDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingIndex !== null ? 'Edit Access Point' : 'Add Access Point'}</DialogTitle>
+      <Dialog open={showDialog} onClose={() => setShowDialog(false)} maxWidth="sm" fullWidth PaperProps={{
+        sx: { bgcolor: '#1a1a24', backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' }
+      }}>
+        <DialogTitle sx={{ color: 'text.primary', fontWeight: 700 }}>
+          {editingIndex !== null ? 'Edit Access Point' : 'Add Access Point'}
+        </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2}>
+          <Stack spacing={2.5} direction="column">
             <Box>
               <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Name *</Typography>
               <TextField
@@ -312,17 +360,7 @@ const Step4 = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Door A-101"
                 variant="outlined"
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { 
-                    borderRadius: 1.5,
-                    bgcolor: 'rgba(255, 255, 255, 0.02)',
-                    transition: 'all 0.2s',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
-                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
-                  },
-                }}
+                sx={premiumInputSx}
               />
             </Box>
             <Box>
@@ -332,23 +370,35 @@ const Step4 = () => {
                 fullWidth
                 value={formData.type}
                 onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))} // eslint-disable-line @typescript-eslint/no-explicit-any
-                SelectProps={{ native: true }}
                 variant="outlined"
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { 
-                    borderRadius: 1.5,
-                    bgcolor: 'rgba(255, 255, 255, 0.02)',
-                    transition: 'all 0.2s',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
-                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                sx={premiumInputSx}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        bgcolor: '#1a1a24',
+                        backgroundImage: 'none',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        '& .MuiMenuItem-root': {
+                          color: 'text.primary',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(59, 130, 246, 0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(59, 130, 246, 0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
                 }}
               >
-                <option value="door">Door</option>
-                <option value="reader">Reader</option>
-                <option value="gate">Gate</option>
+                <MenuItem value="door">Door</MenuItem>
+                <MenuItem value="reader">Reader</MenuItem>
+                <MenuItem value="gate">Gate</MenuItem>
               </TextField>
             </Box>
             <Box>
@@ -359,17 +409,7 @@ const Step4 = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, building_id: e.target.value }))}
                 placeholder="building_123"
                 variant="outlined"
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { 
-                    borderRadius: 1.5,
-                    bgcolor: 'rgba(255, 255, 255, 0.02)',
-                    transition: 'all 0.2s',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
-                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
-                  },
-                }}
+                sx={premiumInputSx}
               />
             </Box>
             <Box>
@@ -379,23 +419,35 @@ const Step4 = () => {
                 fullWidth
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))} // eslint-disable-line @typescript-eslint/no-explicit-any
-                SelectProps={{ native: true }}
                 variant="outlined"
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { 
-                    borderRadius: 1.5,
-                    bgcolor: 'rgba(255, 255, 255, 0.02)',
-                    transition: 'all 0.2s',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
-                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                sx={premiumInputSx}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        bgcolor: '#1a1a24',
+                        backgroundImage: 'none',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        '& .MuiMenuItem-root': {
+                          color: 'text.primary',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(59, 130, 246, 0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(59, 130, 246, 0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
                 }}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="maintenance">Maintenance</option>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+                <MenuItem value="maintenance">Maintenance</MenuItem>
               </TextField>
             </Box>
             <Box>
@@ -406,24 +458,83 @@ const Step4 = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, ip_address: e.target.value || undefined }))}
                 placeholder="192.168.1.100"
                 variant="outlined"
-                sx={{ 
-                  '& .MuiOutlinedInput-root': { 
-                    borderRadius: 1.5,
-                    bgcolor: 'rgba(255, 255, 255, 0.02)',
-                    transition: 'all 0.2s',
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                    '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
-                    '&.Mui-focused': { bgcolor: 'rgba(99, 102, 241, 0.03)' }
+                sx={premiumInputSx}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Restricted Area</Typography>
+              <TextField
+                select
+                fullWidth
+                value={formData.is_restricted ? 'true' : 'false'}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_restricted: e.target.value === 'true' }))}
+                variant="outlined"
+                helperText="Is this access point for restricted areas?"
+                sx={premiumInputSx}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        bgcolor: '#1a1a24',
+                        backgroundImage: 'none',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        '& .MuiMenuItem-root': {
+                          color: 'text.primary',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(59, 130, 246, 0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(59, 130, 246, 0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
                 }}
+              >
+                <MenuItem value="false">No</MenuItem>
+                <MenuItem value="true">Yes</MenuItem>
+              </TextField>
+            </Box>
+
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Latitude</Typography>
+              <TextField
+                fullWidth
+                type="number"
+                value={formData.latitude || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, latitude: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                placeholder="37.7749"
+                variant="outlined"
+                inputProps={{ step: 0.0001 }}
+                helperText="For geographic distance calculations (model feature)"
+                sx={premiumInputSx}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1 }}>Longitude</Typography>
+              <TextField
+                fullWidth
+                type="number"
+                value={formData.longitude || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, longitude: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                placeholder="-122.4194"
+                variant="outlined"
+                inputProps={{ step: 0.0001 }}
+                helperText="For geographic distance calculations (model feature)"
+                sx={premiumInputSx}
               />
             </Box>
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleAddAccessPoint}>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setShowDialog(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
+          <Button variant="contained" onClick={handleAddAccessPoint} sx={{ borderRadius: 2 }}>
             {editingIndex !== null ? 'Update' : 'Add'}
           </Button>
         </DialogActions>

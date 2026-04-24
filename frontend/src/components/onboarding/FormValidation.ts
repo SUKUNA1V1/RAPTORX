@@ -149,10 +149,6 @@ export const VALIDATION_SCHEMAS = {
     primary_contact_phone: {
       custom: (value: unknown) => !value || isValidPhone(String(value)) || 'Invalid phone format',
     },
-    timezone: {
-      required: true,
-      message: 'Timezone is required',
-    },
   },
 
   adminUser: {

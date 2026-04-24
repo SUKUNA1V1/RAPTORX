@@ -18,11 +18,13 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import GetAppIcon from '@mui/icons-material/GetApp';
 import OnboardingLayout from 'components/onboarding/OnboardingLayout';
+import IconifyIcon from 'components/base/IconifyIcon';
 import { OnboardingManager } from 'lib/onboarding';
 import paths from 'routes/paths';
+import api from 'lib/api';
 import type { ReviewSummary } from 'types/onboarding';
+import { formContainerSx, sectionHeaderSx, iconWrapperSx } from 'components/onboarding/PremiumStyles';
 
 const Step7 = () => {
   const navigate = useNavigate();
@@ -42,31 +44,27 @@ const Step7 = () => {
   useEffect(() => {
     const loadAllData = async () => {
       try {
-        const draft = await OnboardingManager.loadDraft();
-        if (!draft) {
-          setApiError('No onboarding data found. Please restart onboarding.');
-          return;
-        }
+        const allStepsData = await OnboardingManager.loadAllStepsData();
 
-        // Load all steps data
+        const companyProfile = (allStepsData[1] ?? {}) as unknown as ReviewSummary['company_profile'];
+        const identityRoles = (allStepsData[2] ?? { initial_admins: [] }) as unknown as ReviewSummary['identity_roles'];
+        const buildingsZones = (allStepsData[3] ?? { buildings: [] }) as unknown as ReviewSummary['buildings_zones'];
+        const accessPoints = (allStepsData[4] ?? { access_points: [] }) as unknown as ReviewSummary['access_points'];
+        const policies = (allStepsData[5] ?? { policies: [], dry_run_mode: false }) as unknown as ReviewSummary['policies'];
+        const dataBaseline = (allStepsData[6] ?? {
+          use_historical_logs: false,
+          privacy_mask_pii: true,
+          data_retention_days: 90,
+          start_with_conservative_defaults: true,
+        }) as unknown as ReviewSummary['data_baseline'];
+        
         const allData: ReviewSummary = {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          company_profile: (draft.draft_data as any) || {},
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          identity_roles: (draft.draft_data as any)?.identity_roles || { initial_admins: [] },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          buildings_zones: (draft.draft_data as any)?.buildings_zones || { buildings: [] },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          access_points: (draft.draft_data as any)?.access_points || { access_points: [] },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          policies: (draft.draft_data as any)?.policies || { policies: [], dry_run_mode: false },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data_baseline: (draft.draft_data as any)?.data_baseline || {
-            use_historical_logs: false,
-            privacy_mask_pii: true,
-            data_retention_days: 90,
-            start_with_conservative_defaults: true,
-          },
+          company_profile: companyProfile,
+          identity_roles: identityRoles,
+          buildings_zones: buildingsZones,
+          access_points: accessPoints,
+          policies: policies,
+          data_baseline: dataBaseline,
         };
         setSummary(allData);
       } catch {
@@ -85,7 +83,6 @@ const Step7 = () => {
       { name: 'Access Points', status: 'pending', message: 'Validating...' },
     ]);
 
-    // Simulate system checks
     setTimeout(() => {
       setSystemCheckResults([
         { name: 'Backend Connectivity', status: 'success', message: '✓ Connected' },
@@ -100,374 +97,362 @@ const Step7 = () => {
   const handleGoLive = async () => {
     try {
       setLoading(true);
-      const fullData = {
-        company_profile: summary?.company_profile,
-        identity_roles: summary?.identity_roles,
-        buildings_zones: summary?.buildings_zones,
-        access_points: summary?.access_points,
-        policies: summary?.policies,
-        data_baseline: summary?.data_baseline,
+      setApiError('');
+      
+      // Prepare all onboarding data for the backend
+      const onboardingPayload = {
+        step1: summary?.company_profile,
+        step2: summary?.identity_roles,
+        step3: summary?.buildings_zones,
+        step4: summary?.access_points,
+        step5: summary?.policies,
+        step6: OnboardingManager.loadStepData(6) || {},
       };
 
-      // Apply onboarding
-      const response = await OnboardingManager.apply(fullData);
-      const orgId = response?.data?.id;
+      // Call the apply endpoint which will:
+      // 1. Create the organization and all configurations
+      // 2. Automatically generate training data based on org config
+      // 3. Start the full ML pipeline in the background
+      const response = await api.post('/onboarding/apply', onboardingPayload);
 
-      OnboardingManager.clearDraft();
-
-      // Trigger training data generation asynchronously (in background)
-      if (orgId) {
-        try {
-          const trainingResponse = await fetch(`/api/onboarding/generate-training-data/${orgId}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (trainingResponse.ok) {
-            const trainingData = await trainingResponse.json();
-            console.log('Training data generation started:', trainingData);
-          }
-        } catch (err) {
-          console.warn('Training data generation request failed (will retry in background):', err);
-          // Non-blocking - continue even if training data generation fails
-        }
+      if (response.data?.id) {
+        // Success! Organization created and pipeline is starting
+        OnboardingManager.clearDraft();
+        
+        // Show success message
+        console.log('✓ Organization created:', response.data.name);
+        console.log('✓ Training data generation started');
+        console.log('✓ ML Pipeline queued for execution');
+        
+        // Navigate to dashboard after a brief delay to show the organization was created
+        setTimeout(() => {
+          navigate(paths.dashboard);
+        }, 1500);
       }
-
-      // Redirect to dashboard
-      navigate(paths.dashboard);
-    } catch (err) {
-      setApiError('Failed to complete onboarding. Please try again.');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      const errorMessage = error?.response?.data?.detail || 'Failed to complete onboarding. Please try again.';
+      setApiError(errorMessage);
+      console.error('Onboarding failed:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExportConfig = () => {
-    const config = {
-      timestamp: new Date().toISOString(),
-      summary,
-    };
-    const dataStr = JSON.stringify(config, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `onboarding-config-${Date.now()}.json`;
-    link.click();
-  };
-
   if (!summary) {
     return (
-      <OnboardingLayout currentStep={7} loading={true} nextButtonLabel="Complete Setup">
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <CircularProgress />
+      <OnboardingLayout currentStep={8} loading={true} nextButtonLabel="Complete Setup">
+        <Box sx={{ textAlign: 'center', py: 4, my: 'auto' }}>
+          <CircularProgress sx={{ color: 'primary.main' }} />
         </Box>
       </OnboardingLayout>
     );
   }
 
+  const premiumAccordionSx = {
+    bgcolor: 'transparent',
+    color: 'text.primary',
+    boxShadow: 'none',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    '&:before': { display: 'none' },
+    '&.Mui-expanded': { m: 0 }
+  };
+
   return (
     <OnboardingLayout
-      currentStep={7}
-      onNext={handleGoLive}
-      onPrevious={() => navigate(paths.onboardingStep.replace(':step', '6'))}
+      currentStep={8}
+      onNext={async () => setShowConfirm(true)}
+      onPrevious={() => navigate(paths.onboardingStep.replace(':step', '7'))}
       loading={loading}
       nextButtonLabel="🚀 Go Live"
     >
-      <Box sx={{
-        bgcolor: 'background.default',
-        borderRadius: 3,
-        p: { xs: 2, md: 4 },
-        boxShadow: '0 2px 12px rgba(99,130,246,0.04)',
-        maxWidth: 700,
-        mx: 'auto',
-        mt: 2,
-      }}>
-        {/* Success Banner */}
-        <Box sx={{ p: 2.5, bgcolor: 'success.lighter', border: '2px solid', borderColor: 'success.main', borderRadius: 2, mb: 3 }}>
-          <Stack direction="row" spacing={1.5} alignItems="flex-start">
-            <CheckCircleIcon sx={{ color: 'success.main', fontSize: 28, mt: 0.5 }} />
+      <Stack spacing={4} direction="column" sx={formContainerSx}>
+        <Box>
+          <Box sx={sectionHeaderSx}>
+            <Box sx={iconWrapperSx('16, 185, 129')}>
+              <IconifyIcon icon="mingcute:check-circle-fill" fontSize={24} sx={{ color: '#10b981' }} />
+            </Box>
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Configuration Complete
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Review your settings below and go live when ready.
-              </Typography>
-            </Box>
-          </Stack>
-        </Box>
-
-        {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
-
-        {/* Quick Stats */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 1.5, mb: 3 }}>
-          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Admins</Box>
-            <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
-              {summary.identity_roles?.initial_admins?.length || 0}
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 0.25, color: 'text.primary' }}>Final Review</Typography>
+              <Typography variant="caption" color="text.secondary">Review your setup and activate the system.</Typography>
             </Box>
           </Box>
-          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Buildings</Box>
-            <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
-              {summary.buildings_zones?.buildings?.length || 0}
-            </Box>
-          </Box>
-          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Access Points</Box>
-            <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
-              {summary.access_points?.access_points?.length || 0}
-            </Box>
-          </Box>
-          <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Policies</Box>
-            <Box sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
-              {summary.policies?.policies?.length || 0}
-            </Box>
-          </Box>
-        </Box>
 
-        {/* Configuration Review */}
-        <Box sx={{ mb: 3 }}>
-          <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'block' }}>
-            Configuration Summary
-          </FormLabel>
-
-          {/* Company Profile */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <CheckCircleIcon sx={{ color: 'success.main', mr: 1 }} />
-              <Typography sx={{ fontWeight: 600 }}>Company Profile</Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ bgcolor: 'action.hover' }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                <Box>
-                  <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Company Name</Box>
-                  <Box sx={{ fontWeight: 500 }}>{summary.company_profile?.company_name || 'N/A'}</Box>
-                </Box>
-                <Box>
-                  <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Industry</Box>
-                  <Box sx={{ fontWeight: 500 }}>{summary.company_profile?.industry || 'N/A'}</Box>
-                </Box>
-                <Box>
-                  <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Country</Box>
-                  <Box sx={{ fontWeight: 500 }}>{summary.company_profile?.country || 'N/A'}</Box>
-                </Box>
-                <Box>
-                  <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>Timezone</Box>
-                  <Box sx={{ fontWeight: 500 }}>{summary.company_profile?.timezone || 'N/A'}</Box>
-                </Box>
+          <Box sx={{ p: 2.5, bgcolor: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 2.5, mb: 4 }}>
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <CheckCircleIcon sx={{ color: '#10b981', fontSize: 28, mt: 0.5 }} />
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+                  Configuration Complete
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Review your settings below and go live when ready.
+                </Typography>
               </Box>
-            </AccordionDetails>
-          </Accordion>
+            </Stack>
+          </Box>
 
-          {/* Admins */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <CheckCircleIcon sx={{ color: 'success.main', mr: 1 }} />
-              <Typography sx={{ fontWeight: 600 }}>
-                Administrators ({summary.identity_roles?.initial_admins?.length || 0})
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ bgcolor: 'action.hover' }}>
-              <Stack spacing={1}>
-                {summary.identity_roles?.initial_admins?.map((admin, idx) => (
-                  <Box key={idx} sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: 1 }}>
-                    <Box sx={{ fontSize: '0.9rem', fontWeight: 600 }}>{admin.name}</Box>
-                    <Box sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{admin.email}</Box>
-                    <Box sx={{ fontSize: '0.8rem', color: 'primary.main' }}>Role: {admin.role}</Box>
-                  </Box>
-                ))}
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
+          {apiError && <Alert severity="error" sx={{ mb: 3 }}>{apiError}</Alert>}
 
-          {/* Buildings & Zones */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <CheckCircleIcon sx={{ color: 'success.main', mr: 1 }} />
-              <Typography sx={{ fontWeight: 600 }}>
-                Buildings & Zones ({summary.buildings_zones?.buildings?.length || 0})
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ bgcolor: 'action.hover' }}>
-              <Stack spacing={1}>
-                {summary.buildings_zones?.buildings?.map((building, idx) => (
-                  <Box key={idx} sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: 1 }}>
-                    <Box sx={{ fontWeight: 600 }}>📍 {building.name}</Box>
-                    <Box sx={{ fontSize: '0.85rem', color: 'text.secondary', mt: 0.5 }}>
-                      {building.floors?.length || 0} floor(s)
+          {/* Quick Stats */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 4 }}>
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5, border: '1px solid rgba(255,255,255,0.08)' }}>
+              <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', fontWeight: 600, mb: 1 }}>Admins</Box>
+              <Box sx={{ fontSize: '1.5rem', fontWeight: 700, color: 'text.primary' }}>
+                {summary.identity_roles?.initial_admins?.length || 0}
+              </Box>
+            </Box>
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5, border: '1px solid rgba(255,255,255,0.08)' }}>
+              <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', fontWeight: 600, mb: 1 }}>Buildings</Box>
+              <Box sx={{ fontSize: '1.5rem', fontWeight: 700, color: 'text.primary' }}>
+                {summary.buildings_zones?.buildings?.length || 0}
+              </Box>
+            </Box>
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5, border: '1px solid rgba(255,255,255,0.08)' }}>
+              <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', fontWeight: 600, mb: 1 }}>Access Points</Box>
+              <Box sx={{ fontSize: '1.5rem', fontWeight: 700, color: 'text.primary' }}>
+                {summary.access_points?.access_points?.length || 0}
+              </Box>
+            </Box>
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5, border: '1px solid rgba(255,255,255,0.08)' }}>
+              <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', fontWeight: 600, mb: 1 }}>Policies</Box>
+              <Box sx={{ fontSize: '1.5rem', fontWeight: 700, color: 'text.primary' }}>
+                {summary.policies?.policies?.length || 0}
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Configuration Review */}
+          <Box sx={{ mb: 4 }}>
+            <FormLabel sx={{ fontWeight: 600, mb: 2, display: 'block', color: 'text.primary' }}>
+              Configuration Summary
+            </FormLabel>
+
+            <Box sx={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+              {/* Company Profile */}
+              <Accordion defaultExpanded sx={premiumAccordionSx}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+                  <CheckCircleIcon sx={{ color: '#10b981', mr: 1.5, fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 600 }}>Company Profile</Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5 }}>
+                    <Box>
+                      <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>Company Name</Box>
+                      <Box sx={{ fontWeight: 600, color: 'text.primary' }}>{summary.company_profile?.company_name || 'N/A'}</Box>
+                    </Box>
+                    <Box>
+                      <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>Industry</Box>
+                      <Box sx={{ fontWeight: 600, color: 'text.primary' }}>{summary.company_profile?.industry || 'N/A'}</Box>
+                    </Box>
+                    <Box>
+                      <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>Country</Box>
+                      <Box sx={{ fontWeight: 600, color: 'text.primary' }}>{summary.company_profile?.country || 'N/A'}</Box>
+                    </Box>
+                    <Box>
+                      <Box sx={{ fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>Timezone</Box>
+                      <Box sx={{ fontWeight: 600, color: 'text.primary' }}>{summary.company_profile?.timezone || 'N/A'}</Box>
                     </Box>
                   </Box>
-                ))}
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Access Points */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <CheckCircleIcon sx={{ color: 'success.main', mr: 1 }} />
-              <Typography sx={{ fontWeight: 600 }}>
-                Access Points ({summary.access_points?.access_points?.length || 0})
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ bgcolor: 'action.hover' }}>
-              <Box sx={{ fontSize: '0.85rem' }}>
-                {summary.access_points?.access_points
-                  ?.slice(0, 5)
-                  .map(ap => ap.name)
-                  .join(', ') || 'None'}
-                {(summary.access_points?.access_points?.length || 0) > 5 &&
-                  ` ... and ${(summary.access_points?.access_points?.length || 0) - 5} more`}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+              {/* Admins */}
+              <Accordion sx={premiumAccordionSx}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+                  <CheckCircleIcon sx={{ color: '#10b981', mr: 1.5, fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 600 }}>
+                    Administrators ({summary.identity_roles?.initial_admins?.length || 0})
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Stack spacing={1.5}>
+                    {summary.identity_roles?.initial_admins?.map((admin, idx) => (
+                      <Box key={idx} sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <Box sx={{ fontSize: '0.9rem', fontWeight: 700, color: 'text.primary', mb: 0.5 }}>{admin.name}</Box>
+                        <Box sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{admin.email}</Box>
+                        <Box sx={{ fontSize: '0.75rem', color: 'primary.light', mt: 1, fontWeight: 600, textTransform: 'uppercase' }}>ROLE: {admin.role}</Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Policies */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <CheckCircleIcon sx={{ color: 'success.main', mr: 1 }} />
-              <Typography sx={{ fontWeight: 600 }}>
-                Access Policies ({summary.policies?.policies?.length || 0})
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ bgcolor: 'action.hover' }}>
-              <Box sx={{ fontSize: '0.85rem' }}>
-                {summary.policies?.policies?.map(p => p.name).join(', ') || 'None'}
-                {summary.policies?.dry_run_mode && (
-                  <Box sx={{ color: 'warning.main', mt: 1 }}>🔔 Dry-run mode enabled (audit-only)</Box>
-                )}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+              {/* Buildings & Zones */}
+              <Accordion sx={premiumAccordionSx}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+                  <CheckCircleIcon sx={{ color: '#10b981', mr: 1.5, fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 600 }}>
+                    Buildings & Zones ({summary.buildings_zones?.buildings?.length || 0})
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Stack spacing={1.5}>
+                    {summary.buildings_zones?.buildings?.map((building, idx) => (
+                      <Box key={idx} sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <Box sx={{ fontWeight: 600, color: 'text.primary' }}>📍 {building.name}</Box>
+                        <Box sx={{ fontSize: '0.85rem', color: 'text.secondary', mt: 0.5 }}>
+                          {building.floors?.length || 0} floor(s)
+                        </Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
 
-          {/* Data Settings */}
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <CheckCircleIcon sx={{ color: 'success.main', mr: 1 }} />
-              <Typography sx={{ fontWeight: 600 }}>Data & Privacy Settings</Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ bgcolor: 'action.hover' }}>
-              <Stack spacing={1} sx={{ fontSize: '0.85rem' }}>
-                <Box>
-                  <Box sx={{ color: 'text.secondary' }}>Privacy:</Box>
-                  <Box>
-                    {summary.data_baseline?.privacy_mask_pii ? '✓ PII Masked' : '— PII Not Masked'}
+              {/* Access Points */}
+              <Accordion sx={premiumAccordionSx}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+                  <CheckCircleIcon sx={{ color: '#10b981', mr: 1.5, fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 600 }}>
+                    Access Points ({summary.access_points?.access_points?.length || 0})
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Box sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                    {summary.access_points?.access_points?.slice(0, 5).map(ap => ap.name).join(', ') || 'None'}
+                    {(summary.access_points?.access_points?.length || 0) > 5 &&
+                      ` ... and ${(summary.access_points?.access_points?.length || 0) - 5} more`}
                   </Box>
-                </Box>
-                <Box>
-                  <Box sx={{ color: 'text.secondary' }}>Data Retention:</Box>
-                  <Box>{summary.data_baseline?.data_retention_days || 90} days</Box>
-                </Box>
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
-        </Box>
+                </AccordionDetails>
+              </Accordion>
 
-        {/* Export Config */}
-        <Button
-          variant="outlined"
-          startIcon={<GetAppIcon />}
-          onClick={handleExportConfig}
-          fullWidth
-          size="small"
-        >
-          Export Configuration (Backup)
-        </Button>
+              {/* Policies */}
+              <Accordion sx={premiumAccordionSx}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+                  <CheckCircleIcon sx={{ color: '#10b981', mr: 1.5, fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 600 }}>
+                    Access Policies ({summary.policies?.policies?.length || 0})
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Box sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                    {summary.policies?.policies?.map(p => p.name).join(', ') || 'None'}
+                    {summary.policies?.dry_run_mode && (
+                      <Box sx={{ color: '#f59e0b', mt: 1, fontWeight: 600 }}>🔔 Dry-run mode enabled (audit-only)</Box>
+                    )}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
 
-        {/* System Check */}
-        <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
-          <Stack spacing={1}>
-            <Box component="p" sx={{ m: 0, fontSize: '0.875rem', fontWeight: 600 }}>
-              🔧 System Check
+              {/* Data Settings */}
+              <Accordion sx={{ ...premiumAccordionSx, borderBottom: 'none' }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.secondary' }} />}>
+                  <CheckCircleIcon sx={{ color: '#10b981', mr: 1.5, fontSize: 20 }} />
+                  <Typography sx={{ fontWeight: 600 }}>Data & Privacy Settings</Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                  <Stack spacing={2} direction="column" sx={{ fontSize: '0.85rem' }}>
+                    <Box>
+                      <Box sx={{ color: 'text.secondary', mb: 0.5 }}>Privacy Mode</Box>
+                      <Box sx={{ color: 'text.primary', fontWeight: 600 }}>
+                        {summary.data_baseline?.privacy_mask_pii ? '✓ PII Masked' : '— PII Not Masked'}
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Box sx={{ color: 'text.secondary', mb: 0.5 }}>Data Retention Policy</Box>
+                      <Box sx={{ color: 'text.primary', fontWeight: 600 }}>{summary.data_baseline?.data_retention_days || 90} days</Box>
+                    </Box>
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
             </Box>
-            <Box component="p" sx={{ m: 0, fontSize: '0.75rem', color: 'text.secondary', mb: 1 }}>
-              Before going live, run a system check to verify all components are ready.
-            </Box>
-            <Button size="small" variant="outlined" onClick={() => setShowSystemCheck(true)}>
-              Run System Check
+          </Box>
+
+          <Box sx={{ mb: 4 }}>
+            <Button 
+              size="large" 
+              variant="contained" 
+              onClick={() => setShowSystemCheck(true)}
+              fullWidth
+              sx={{ borderRadius: 2 }}
+            >
+              <Box display="flex" alignItems="center" gap={1}>
+                <IconifyIcon icon="mingcute:stethoscope-fill" /> Run System Check
+              </Box>
             </Button>
-          </Stack>
+          </Box>
         </Box>
-      </Box>
+      </Stack>
 
-      {/* System Check Dialog */}
-      <Dialog open={showSystemCheck} onClose={() => setShowSystemCheck(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>System Check Results</DialogTitle>
+      <Dialog open={showSystemCheck} onClose={() => setShowSystemCheck(false)} maxWidth="sm" fullWidth PaperProps={{
+        sx: { bgcolor: '#1a1a24', backgroundImage: 'none', border: '1px solid rgba(255,255,255,0.1)' }
+      }}>
+        <DialogTitle sx={{ color: 'text.primary', fontWeight: 700 }}>System Check Results</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           {systemCheckResults.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 3 }}>
-              <Button variant="contained" onClick={handleSystemCheck}>
-                Start Check
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Button variant="contained" onClick={handleSystemCheck} size="large" sx={{ borderRadius: 2 }}>
+                Start System Diagnostics
               </Button>
             </Box>
           ) : (
-            <Stack spacing={1.5}>
+            <Stack spacing={2}>
               {systemCheckResults.map((check, idx) => (
                 <Box
                   key={idx}
                   sx={{
-                    p: 1.5,
-                    bgcolor:
-                      check.status === 'pending'
-                        ? 'action.hover'
+                    p: 2,
+                    bgcolor: 'rgba(255,255,255,0.02)',
+                    border: '1px solid',
+                    borderColor: check.status === 'pending'
+                        ? 'rgba(255,255,255,0.1)'
                         : check.status === 'success'
-                          ? 'success.lighter'
-                          : 'error.lighter',
-                    borderRadius: 1,
+                          ? 'rgba(16, 185, 129, 0.3)'
+                          : 'rgba(239, 68, 68, 0.3)',
+                    borderRadius: 2,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 1,
+                    gap: 2,
                   }}
                 >
-                  {check.status === 'pending' && <CircularProgress size={20} />}
-                  {check.status === 'success' && <CheckCircleIcon sx={{ color: 'success.main' }} />}
-                  {check.status === 'error' && <ErrorIcon sx={{ color: 'error.main' }} />}
-                  {check.status === 'warning' && <WarningIcon sx={{ color: 'warning.main' }} />}
+                  {check.status === 'pending' && <CircularProgress size={24} sx={{ color: 'text.secondary' }} />}
+                  {check.status === 'success' && <CheckCircleIcon sx={{ color: '#10b981' }} />}
+                  {check.status === 'error' && <ErrorIcon sx={{ color: '#ef4444' }} />}
+                  {check.status === 'warning' && <WarningIcon sx={{ color: '#f59e0b' }} />}
                   <Box>
-                    <Box sx={{ fontWeight: 600, fontSize: '0.9rem' }}>{check.name}</Box>
-                    <Box sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{check.message}</Box>
+                    <Box sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'text.primary' }}>{check.name}</Box>
+                    <Box sx={{ fontSize: '0.8rem', color: 'text.secondary', mt: 0.25 }}>{check.message}</Box>
                   </Box>
                 </Box>
               ))}
             </Stack>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowSystemCheck(false)}>Close</Button>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setShowSystemCheck(false)} sx={{ color: 'text.secondary' }}>Close</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Go Live Confirmation Dialog */}
-      <Dialog open={showConfirm} onClose={() => setShowConfirm(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Confirm Go Live</DialogTitle>
+      <Dialog open={showConfirm} onClose={() => setShowConfirm(false)} maxWidth="sm" fullWidth PaperProps={{
+        sx: { bgcolor: '#1a1a24', backgroundImage: 'none', border: '1px solid rgba(239,68,68,0.3)' }
+      }}>
+        <DialogTitle sx={{ color: 'text.primary', fontWeight: 700 }}>Confirm Go Live</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2}>
-            <Box sx={{ p: 1.5, bgcolor: 'warning.lighter', borderRadius: 1 }}>
-              <Box component="p" sx={{ m: 0, fontWeight: 600, fontSize: '0.9rem' }}>
-                ⚠️ This Action is Permanent
+          <Stack spacing={3}>
+            <Box sx={{ p: 2, bgcolor: 'rgba(239, 68, 68, 0.05)', borderRadius: 2, border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+              <Box sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconifyIcon icon="mingcute:warning-fill" /> ⚠️ This Action is Permanent
               </Box>
             </Box>
-            <Box component="p" sx={{ m: 0 }}>
+            <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6 }}>
               Once you go live, the access control system will start enforcing policies immediately. All decisions are
               logged and auditable.
-            </Box>
-            <Box component="p" sx={{ m: 0, fontSize: '0.85rem', color: 'text.secondary' }}>
-              ✓ All configuration has been validated
-              <br />✓ System checks have passed
-              <br />✓ Backup has been exported
-            </Box>
+            </Typography>
+            <Stack spacing={1}>
+              <Box sx={{ fontSize: '0.85rem', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconifyIcon icon="mingcute:check-fill" sx={{ color: '#10b981' }} /> All configuration has been validated
+              </Box>
+              <Box sx={{ fontSize: '0.85rem', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconifyIcon icon="mingcute:check-fill" sx={{ color: '#10b981' }} /> System checks have passed
+              </Box>
+            </Stack>
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowConfirm(false)}>Cancel</Button>
-          <Button variant="contained" color="success" onClick={handleGoLive} disabled={loading}>
-            {loading ? 'Going Live...' : 'Confirm Go Live'}
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setShowConfirm(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
+          <Button variant="contained" color="success" onClick={handleGoLive} disabled={loading} sx={{ borderRadius: 2 }}>
+            {loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Confirm Go Live'}
           </Button>
         </DialogActions>
       </Dialog>

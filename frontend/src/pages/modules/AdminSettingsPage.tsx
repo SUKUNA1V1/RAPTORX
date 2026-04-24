@@ -241,20 +241,7 @@ const AdminSettingsPage = () => {
       setMlError(null);
       setMlSuccess(null);
       
-      const response = await fetch('/api/ml/use-hard-rules', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to switch to hard rules');
-      }
-      
-      const data = await response.json();
+      const data = await apiClient.mlUseHardRules();
       setMlMode('rules');
       setMlSuccess(data.message || '✅ Switched to Hard Rules mode. Access decisions now use predefined business rules.');
       setTimeout(() => setMlSuccess(null), 4000);
@@ -271,20 +258,7 @@ const AdminSettingsPage = () => {
       setMlError(null);
       setMlSuccess(null);
       
-      const response = await fetch('/api/ml/generate-training-data', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to generate training data');
-      }
-      
-      const data = await response.json();
+      const data = await apiClient.mlGenerateTrainingData();
       setMlSuccess(`✅ ${data.message} Training data will be saved to: ${data.output_file}`);
       setTimeout(() => setMlSuccess(null), 5000);
     } catch (error) {
@@ -300,20 +274,7 @@ const AdminSettingsPage = () => {
       setMlError(null);
       setMlSuccess(null);
       
-      const response = await fetch('/api/ml/train', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Model training failed');
-      }
-      
-      const data = await response.json();
+      const data = await apiClient.mlTrainModels();
       setMlSuccess(`✅ ${data.message} Estimated duration: ${data.estimated_duration}`);
       setTimeout(() => setMlSuccess(null), 5000);
     } catch (error) {
@@ -329,20 +290,7 @@ const AdminSettingsPage = () => {
       setMlError(null);
       setMlSuccess(null);
       
-      const response = await fetch('/api/ml/use-models', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to switch to model-based decisions');
-      }
-      
-      const data = await response.json();
+      const data = await apiClient.mlUseModels();
       setMlMode('models');
       setMlSuccess(data.message || '✅ Switched to Model-Based Decisions. Access control now uses ML ensemble models.');
       setTimeout(() => setMlSuccess(null), 4000);
@@ -355,19 +303,7 @@ const AdminSettingsPage = () => {
 
   const loadRetrainStatus = async () => {
     try {
-      const response = await fetch('/api/ml/retrain-status', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to load retrain status');
-      }
-      
-      const data: RetrainStatus = await response.json();
+      const data = await apiClient.mlGetRetrainStatus();
       setRetrainStatus(data);
       setAutoRetrainEnabled(data.auto_retrain_enabled);
       
@@ -387,19 +323,7 @@ const AdminSettingsPage = () => {
     try {
       setRetrainLoading(true);
       
-      const response = await fetch(`/api/ml/toggle-auto-retrain?enabled=${enabled}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to toggle auto-retrain');
-      }
-      
-      const data = await response.json();
+      const data = await apiClient.mlToggleAutoRetrain(enabled);
       setAutoRetrainEnabled(enabled);
       setMlSuccess(data.message || `Auto-retrain has been ${enabled ? 'enabled' : 'disabled'}`);
       setTimeout(() => setMlSuccess(null), 3000);
@@ -417,20 +341,7 @@ const AdminSettingsPage = () => {
       setMlError(null);
       setMlSuccess(null);
       
-      const response = await fetch('/api/ml/trigger-retrain', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to trigger retrain');
-      }
-      
-      const data = await response.json();
+      const data = await apiClient.mlTriggerRetrain();
       setMlSuccess(data.message || 'Model retrain has been triggered. Estimated duration: 5-10 minutes.');
       setTimeout(() => setMlSuccess(null), 5000);
       
@@ -993,6 +904,46 @@ const AdminSettingsPage = () => {
 
       {/* ML Models Tab */}
       {tab === 'ml-models' && (
+        <Stack 
+          direction="column" 
+          spacing={4}
+          sx={{ 
+            minHeight: '60vh', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            py: 8
+          }}
+        >
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography 
+              variant="h1" 
+              sx={{ 
+                fontSize: '5rem',
+                fontWeight: 900,
+                background: 'linear-gradient(135deg, #9c27b0 0%, #7209b7 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                mb: 2
+              }}
+            >
+              COMING SOON
+            </Typography>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                color: 'text.secondary',
+                fontWeight: 500,
+                fontSize: '1.5rem'
+              }}
+            >
+              Advanced ML Model Configuration
+            </Typography>
+          </Box>
+        </Stack>
+      )}
+
+      {/* OLD ML Models Tab Content - REMOVED */}
+      {false && (
         <Stack direction="column" spacing={4}>
           {mlError && <Alert severity="error">{mlError}</Alert>}
           {mlSuccess && <Alert severity="success">{mlSuccess}</Alert>}
@@ -1139,7 +1090,7 @@ const AdminSettingsPage = () => {
                   ⏱️ Auto-Retrain Status (Every 40 Days):
                 </Typography>
                 
-                {retrainStatus && (
+                {retrainStatus ? (
                   <Stack spacing={3}>
                     {/* Retrain Status Card */}
                     <Box sx={{ p: 3, borderRadius: 2, bgcolor: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
@@ -1149,8 +1100,8 @@ const AdminSettingsPage = () => {
                             <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
                               Next Retrain Countdown
                             </Typography>
-                            <Typography variant="h3" fontWeight={800} sx={{ color: retrainStatus.is_overdue ? '#ef4444' : '#a855f7', mt: 0.5 }}>
-                              {retrainStatus.is_overdue ? '⚠️ OVERDUE' : countdownTime}
+                            <Typography variant="h3" fontWeight={800} sx={{ color: retrainStatus!.is_overdue ? '#ef4444' : '#a855f7', mt: 0.5 }}>
+                              {retrainStatus!.is_overdue ? '⚠️ OVERDUE' : countdownTime}
                             </Typography>
                           </Box>
                           <Box sx={{ textAlign: 'right' }}>
@@ -1161,17 +1112,17 @@ const AdminSettingsPage = () => {
                               sx={{ mb: 1 }}
                             />
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.8rem', mt: 1 }}>
-                              {retrainStatus.message || (retrainStatus.last_training_date ? `Last trained: ${new Date(retrainStatus.last_training_date).toLocaleDateString()}` : 'Never trained')}
+                              {retrainStatus!.message || (retrainStatus!.last_training_date ? `Last trained: ${new Date(retrainStatus!.last_training_date!).toLocaleDateString()}` : 'Never trained')}
                             </Typography>
                           </Box>
                         </Box>
 
                         {/* Time Breakdown */}
-                        {retrainStatus.seconds_remaining !== null && !retrainStatus.message && (
+                        {retrainStatus!.seconds_remaining !== null && !retrainStatus!.message && (
                           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mt: 2 }}>
                             <Box sx={{ p: 2, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.05)', textAlign: 'center' }}>
                               <Typography variant="h6" sx={{ color: '#a855f7', fontWeight: 800 }}>
-                                {retrainStatus.days_remaining}
+                                {retrainStatus!.days_remaining}
                               </Typography>
                               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                                 Days
@@ -1179,7 +1130,7 @@ const AdminSettingsPage = () => {
                             </Box>
                             <Box sx={{ p: 2, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.05)', textAlign: 'center' }}>
                               <Typography variant="h6" sx={{ color: '#a855f7', fontWeight: 800 }}>
-                                {retrainStatus.hours_remaining}
+                                {retrainStatus!.hours_remaining}
                               </Typography>
                               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                                 Hours
@@ -1187,7 +1138,7 @@ const AdminSettingsPage = () => {
                             </Box>
                             <Box sx={{ p: 2, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.05)', textAlign: 'center' }}>
                               <Typography variant="h6" sx={{ color: '#a855f7', fontWeight: 800 }}>
-                                {retrainStatus.minutes_remaining}
+                                {retrainStatus!.minutes_remaining}
                               </Typography>
                               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                                 Minutes
@@ -1243,13 +1194,13 @@ const AdminSettingsPage = () => {
                         }
                       }}
                       onClick={handleManualRetrain}
-                      disabled={retrainLoading || !retrainStatus.last_training_date}
-                      title={!retrainStatus.last_training_date ? 'Train models first before manual retrain' : 'Manually trigger model retraining now'}
+                      disabled={retrainLoading || !retrainStatus!.last_training_date}
+                      title={!retrainStatus!.last_training_date ? 'Train models first before manual retrain' : 'Manually trigger model retraining now'}
                     >
                       🔄 Manually Retrain Models Now
                     </Button>
                   </Stack>
-                )}
+                ) : null}
               </Box>
             </Stack>
           </Paper>

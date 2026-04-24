@@ -5,6 +5,7 @@ from io import BytesIO
 import base64
 import qrcode
 
+from ..middleware.csrf import generate_csrf_token
 from ..database import get_db
 from ..models import User, RefreshToken
 from ..schemas.auth import (
@@ -242,6 +243,22 @@ def logout_all_sessions(
 def get_profile(current_user: User = Depends(get_current_user)):
     """Get current user profile."""
     return UserProfileResponse.model_validate(current_user)
+
+
+@router.get("/csrf-token")
+def get_csrf_token():
+    """
+    Get a CSRF token for state-changing requests.
+    
+    This endpoint is not protected and can be called by unauthenticated users
+    during onboarding. The token is included in the X-CSRF-Token header for
+    subsequent POST/PUT/DELETE/PATCH requests.
+    
+    Returns:
+    - csrf_token: A one-time use token for CSRF protection
+    """
+    token = generate_csrf_token()
+    return {"csrf_token": token}
 
 
 @router.post("/mfa/enroll", response_model=MFAEnrollResponse)

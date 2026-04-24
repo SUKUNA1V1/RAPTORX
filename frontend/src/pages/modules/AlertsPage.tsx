@@ -127,8 +127,10 @@ const AlertsPage = () => {
       setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status: updated.status } : a)));
       setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
       showSnack('Alert marked as resolved.', 'success');
-    } catch {
-      showSnack('Failed to resolve alert. Try again.', 'error');
+    } catch (err) {
+      console.error('[AlertsPage] Failed to resolve alert:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to resolve alert. Try again.';
+      showSnack(errorMsg, 'error');
     } finally {
       setActionLoading((p) => ({ ...p, [id]: null }));
     }
@@ -141,8 +143,10 @@ const AlertsPage = () => {
       setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status: updated.status } : a)));
       setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
       showSnack('Alert marked as false positive.', 'success');
-    } catch {
-      showSnack('Failed to mark as false positive. Try again.', 'error');
+    } catch (err) {
+      console.error('[AlertsPage] Failed to mark as false positive:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to mark as false positive. Try again.';
+      showSnack(errorMsg, 'error');
     } finally {
       setActionLoading((p) => ({ ...p, [id]: null }));
     }
@@ -164,7 +168,8 @@ const AlertsPage = () => {
         setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status: updated.status } : a)));
         setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
         successCount++;
-      } catch {
+      } catch (err) {
+        console.error(`[AlertsPage] Bulk ${action} failed for alert ${id}:`, err);
         failCount++;
       }
       setBulkProgress((p) => ({ ...p, done: p.done + 1 }));

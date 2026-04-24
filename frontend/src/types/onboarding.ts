@@ -19,6 +19,8 @@ export interface AdminUser {
   email: string;
   name: string;
   role: 'super_admin' | 'admin';
+  role_level?: 1 | 2 | 3; // 1=employee, 2=manager, 3=admin (for ML models)
+  clearance_level?: number; // 1-10 for restricted area access
   temp_password?: string;
 }
 
@@ -32,12 +34,18 @@ export interface IdentityRolesData {
 export interface Room {
   name: string;
   zone_id?: string;
+  room_type?: string; // 'office', 'lab', 'server_room', 'storage', etc.
+  accessibility?: boolean; // Is this room typically accessible to visitors?
 }
 
 export interface Zone {
   id?: string;
   name: string;
   floor_id?: string;
+  department?: string; // Department this zone belongs to (for zone_clearance_mismatch detection)
+  min_clearance_level?: number; // Minimum clearance to access this zone
+  typical_occupancy?: number; // Expected number of people typically in zone
+  is_restricted?: boolean; // Whether this zone requires special authorization
   rooms: Room[];
 }
 
@@ -45,6 +53,7 @@ export interface Floor {
   id?: string;
   name: string;
   building_id?: string;
+  number_of_rooms?: number;
   zones: Zone[];
 }
 
@@ -53,6 +62,12 @@ export interface Building {
   name: string;
   address?: string;
   city?: string;
+  number_of_floors?: number;
+  rooms_per_floor?: number;
+  building_type?: string; // e.g., 'office', 'hospital', 'factory'
+  square_feet?: number;
+  climate_zones?: string[];
+  peak_hours?: string;
   floors: Floor[];
 }
 
@@ -73,6 +88,8 @@ export interface AccessPoint {
   status: 'active' | 'inactive' | 'maintenance';
   required_clearance?: number;
   is_restricted: boolean;
+  latitude?: number; // For geographic_impossibility and distance_between_scans features
+  longitude?: number;
   ip_address?: string;
   device_certificate_id?: string;
 }
@@ -102,7 +119,19 @@ export interface AccessPoliciesData {
   dry_run_mode: boolean;
 }
 
-// Step 6: Data & Baseline
+// Step 6: Users for Training Data
+export interface UserBasicData {
+  users: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    badge_id: string;
+    role: string;
+    department?: string;
+  }>;
+}
+
+// Step 7: Data & Baseline
 export interface DataBaselineData {
   use_historical_logs: boolean;
   historical_logs_csv?: File;
@@ -111,13 +140,14 @@ export interface DataBaselineData {
   start_with_conservative_defaults: boolean;
 }
 
-// Step 7: Review & Go Live
+// Step 8: Review & Go Live
 export interface ReviewSummary {
   company_profile: CompanyProfileData;
   identity_roles: IdentityRolesData;
   buildings_zones: BuildingsZonesData;
   access_points: AccessPointsData;
   policies: AccessPoliciesData;
+  users?: UserBasicData;
   data_baseline: DataBaselineData;
 }
 

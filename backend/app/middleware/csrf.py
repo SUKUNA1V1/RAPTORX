@@ -24,6 +24,7 @@ CSRF_BYPASS_PATHS = {
     "/api/auth/register",
     "/api/auth/refresh",
     "/api/auth/logout",
+    "/api/auth/csrf-token",
     "/health",
     "/docs",
     "/openapi.json",

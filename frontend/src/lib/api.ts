@@ -19,22 +19,74 @@ const processQueue = () => {
   refreshQueue = [];
 };
 
-// Add Authorization header to all requests
-api.interceptors.request.use((config) => {
+// Function to fetch CSRF token (always get fresh token for one-time use)
+export const getCsrfToken = async (): Promise<string> => {
+  try {
+    const response = await api.get<{ csrf_token: string }>('/auth/csrf-token');
+    return response.data.csrf_token;
+  } catch (error) {
+    // Fallback for deployments where API base path differs from configured client baseURL.
+    try {
+      const fallbackResponse = await axios.get<{ csrf_token: string }>('/api/auth/csrf-token');
+      return fallbackResponse.data.csrf_token;
+    } catch (fallbackError) {
+      console.error('Failed to get CSRF token:', fallbackError);
+      throw fallbackError;
+    }
+  }
+};
+
+// Add Authorization and CSRF headers to all requests
+api.interceptors.request.use(async (config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Add CSRF token for state-changing requests
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(config.method?.toUpperCase() || '')) {
+    try {
+      const csrfToken = await getCsrfToken();
+      config.headers['X-CSRF-Token'] = csrfToken;
+      console.log(`[API] Added CSRF token for ${config.method?.toUpperCase()} ${config.url}`);
+    } catch (error) {
+      console.error(`[API] Failed to get CSRF token for ${config.method} ${config.url}:`, error);
+      // Still throw to let the caller know CSRF failed
+      throw new Error(`CSRF token fetch failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
   return config;
+}, (error) => {
+  // Handle request interceptor errors
+  console.error('[API] Request interceptor error:', error);
+  return Promise.reject(error);
 });
 
 // Handle 401 responses by attempting token refresh (with queue to prevent multiple refresh attempts)
+// Also handle 403 responses with CSRF-specific messaging
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
+    const detail = error.response?.data?.detail;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 403 Forbidden (CSRF or permission issues)
+    if (status === 403) {
+      console.error(`[API] 403 Forbidden on ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`, {
+        detail,
+        hasCSRFHeader: !!originalRequest.headers['X-CSRF-Token'],
+      });
+      
+      if (detail?.includes('CSRF')) {
+        const enhancedError = new Error('CSRF token validation failed. Please refresh and try again.');
+        return Promise.reject(enhancedError);
+      }
+    }
+
+    // Handle 401 Unauthorized (token expired)
+    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       if (!isRefreshing) {
@@ -273,9 +325,9 @@ export const apiClient = {
     return result.items.filter(a => a.status === 'open').length;
   },
   resolveAlert: async (alertId: number) =>
-    (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/resolve`)).data,
+    (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/resolve`, {})).data,
   markAlertFalsePositive: async (alertId: number) =>
-    (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/false-positive`)).data,
+    (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/false-positive`, {})).data,
   getUsers: async (page: number = 1, pageSize: number = 50): Promise<{ items: UserItem[]; total: number; pagination: PaginationMetadata }> => {
     const response = await api.get<PaginatedResponse<UserItem>>('/users', { params: { page, page_size: pageSize } });
     return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
@@ -295,10 +347,12 @@ export const apiClient = {
   getMlStatus: async () => (await api.get<MlStatus>('/ml/status')).data,
   getModelVersions: async () =>
     (await api.get<Record<string, unknown>>('/ml/model-versions')).data,
-  restoreModelVersion: async (modelKey: string, versionId: string) =>
-    (await api.post<{ status: string; message: string }>('/ml/restore-model-version', null, {
+  restoreModelVersion: async (modelKey: string, versionId: string) => {
+    console.log('[API] Restoring model version:', { modelKey, versionId });
+    return (await api.post<{ status: string; message: string }>('/ml/restore-model-version', null, {
       params: { model_key: modelKey, version_id: versionId }
-    })).data,
+    })).data;
+  },
   getFeatureImportance: async () =>
     (await api.get<FeatureImportanceItem[]>('/explainations/feature-importance')).data,
   getModelInsights: async () => (await api.get<Record<string, unknown>>('/explainations/model-insights')).data,
@@ -337,6 +391,26 @@ export const apiClient = {
     })).data,
   deleteAdmin: async (adminId: number) =>
     (await api.delete<{ message: string }>(`/admin/${adminId}`)).data,
+
+  // Onboarding endpoints
+  generateTrainingData: async (orgId: number, userIds?: number[]) =>
+    (await api.post<{ status: string; message: string; org_id: number }>(`/onboarding/generate-training-data/${orgId}`, { user_ids: userIds || [] })).data,
+
+  // ML Model endpoints
+  mlGenerateTrainingData: async () =>
+    (await api.post<{ status: string; message: string; config_file: string; output_file: string }>('/ml/generate-training-data', {})).data,
+  mlTrainModels: async () =>
+    (await api.post<{ status: string; message: string; training_data_file: string; estimated_duration: string }>('/ml/train', {})).data,
+  mlUseHardRules: async () =>
+    (await api.post<{ status: string; message: string; mode: string; description: string }>('/ml/use-hard-rules', {})).data,
+  mlUseModels: async () =>
+    (await api.post<{ status: string; message: string; mode: string; description: string; model_directory: string }>('/ml/use-models', {})).data,
+  mlGetRetrainStatus: async () =>
+    (await api.get<{ status: string; auto_retrain_enabled: boolean; last_training_date: string | null; next_retrain_date: string | null; seconds_remaining: number | null; days_remaining: number | null; hours_remaining: number | null; minutes_remaining: number | null; is_overdue: boolean; formatted_remaining: string }>('/ml/retrain-status')).data,
+  mlTriggerRetrain: async () =>
+    (await api.post<{ status: string; message: string; estimated_duration: string }>('/ml/trigger-retrain', {})).data,
+  mlToggleAutoRetrain: async (enabled: boolean) =>
+    (await api.post<{ status: string; message: string; auto_retrain_enabled: boolean }>('/ml/toggle-auto-retrain', {}, { params: { enabled } })).data,
 };
 
 export default api;
