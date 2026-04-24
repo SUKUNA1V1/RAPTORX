@@ -986,3 +986,110 @@
 2026-04-24 18:55:43 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
 2026-04-24 18:55:43 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/49/resolve took 27973.18ms (status: 200)
 2026-04-24 18:56:10 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/48/false-positive took 780.06ms (status: 200)
+2026-04-24 13:19:59 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-24 13:20:43 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-24 13:23:44 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-24 13:55:17 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-24 13:55:26 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 4092.40ms
+2026-04-24 13:58:51 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-24 13:59:07 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-24 14:00:18 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 4085.09ms
+2026-04-24 14:00:33 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 4198.20ms (status: 200)
+2026-04-24 14:00:38 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4086.06ms
+2026-04-24 14:00:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4068.18ms (status: 500)
+2026-04-24 14:00:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 4084.11ms (status: 500)
+2026-04-24 14:00:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4085.11ms (status: 500)
+2026-04-24 14:00:39 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4084.70ms
+2026-04-24 14:00:44 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 4056.61ms (status: 500)
+2026-04-24 14:00:44 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4076.82ms
+2026-04-24 14:00:44 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4077.81ms
+2026-04-24 14:00:44 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4110.02ms (status: 500)
+2026-04-24 14:00:44 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4111.10ms (status: 500)
+2026-04-24 14:00:48 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4056.79ms
+2026-04-24 14:00:49 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4108.75ms (status: 500)
+2026-04-24 14:00:49 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4108.75ms (status: 500)
+2026-04-24 14:00:53 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4094.70ms (status: 500)
+2026-04-24 14:00:53 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4079.07ms (status: 500)
+2026-04-24 14:00:53 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4113.09ms
+2026-04-24 14:00:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4054.93ms (status: 500)
+2026-04-24 14:00:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4085.72ms (status: 500)
+2026-04-24 14:00:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4071.94ms (status: 500)
+2026-04-24 14:00:56 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4090.84ms
+2026-04-24 14:00:58 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4098.96ms
+2026-04-24 14:00:58 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4116.53ms (status: 500)
+2026-04-24 14:00:58 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4118.15ms (status: 500)
+2026-04-24 14:00:58 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4080.13ms
+2026-04-24 14:00:59 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4075.88ms
+2026-04-24 14:01:00 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4078.69ms
+2026-04-24 14:01:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4088.76ms (status: 500)
+2026-04-24 14:01:03 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4046.53ms
+2026-04-24 14:01:03 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4072.68ms (status: 500)
+2026-04-24 14:01:03 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4098.40ms (status: 500)
+2026-04-24 14:01:04 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4082.91ms
+2026-04-24 14:01:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4055.91ms
+2026-04-24 14:01:12 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4078.44ms
+2026-04-24 14:01:31 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4056.42ms
+2026-04-24 14:01:31 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4083.79ms
+2026-04-24 14:01:35 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4085.12ms
+2026-04-24 14:01:35 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4046.62ms
+2026-04-24 14:01:38 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4088.26ms
+2026-04-24 14:01:39 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4076.58ms
+2026-04-24 14:01:39 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4084.05ms
+2026-04-24 14:01:41 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/profile failed after 4080.45ms
+2026-04-24 14:01:41 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/list failed after 4094.60ms
+2026-04-24 14:01:42 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4075.41ms
+2026-04-24 14:01:43 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4070.82ms
+2026-04-24 14:01:44 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4060.96ms
+2026-04-24 14:01:45 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/profile failed after 4061.56ms
+2026-04-24 14:01:45 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/list failed after 4079.47ms
+2026-04-24 14:01:48 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4069.77ms
+2026-04-24 14:01:52 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4093.28ms
+2026-04-24 14:01:55 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/ml/retrain-status failed after 4074.16ms
+2026-04-24 14:02:05 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4059.83ms
+2026-04-24 14:02:07 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4077.03ms
+2026-04-24 14:02:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4089.35ms
+2026-04-24 14:02:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4083.57ms
+2026-04-24 14:02:11 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4038.33ms
+2026-04-24 14:02:12 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4086.47ms
+2026-04-24 14:02:38 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4103.68ms
+2026-04-24 14:02:42 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4079.92ms
+2026-04-24 14:03:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4070.60ms
+2026-04-24 14:03:12 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4066.90ms
+2026-04-24 14:03:38 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4073.76ms
+2026-04-24 14:03:42 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4056.50ms
+2026-04-24 14:04:28 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4084.07ms
+2026-04-24 14:04:32 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4072.46ms
+2026-04-24 14:05:04 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4065.78ms
+2026-04-24 14:05:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4048.41ms
+2026-04-24 14:05:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4066.47ms
+2026-04-24 14:05:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 4082.60ms (status: 500)
+2026-04-24 14:05:09 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4082.60ms
+2026-04-24 14:05:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4101.74ms (status: 500)
+2026-04-24 14:05:10 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4133.10ms (status: 500)
+2026-04-24 14:05:12 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4055.77ms
+2026-04-24 14:05:13 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4083.84ms
+2026-04-24 14:05:14 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 4131.38ms (status: 500)
+2026-04-24 14:05:14 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4115.74ms (status: 500)
+2026-04-24 14:05:14 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access/logs failed after 4166.44ms
+2026-04-24 14:05:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4092.92ms (status: 500)
+2026-04-24 14:05:17 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4048.84ms
+2026-04-24 14:05:18 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4081.33ms
+2026-04-24 14:05:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4084.01ms (status: 500)
+2026-04-24 14:05:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 4068.39ms (status: 500)
+2026-04-24 14:05:22 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4062.43ms
+2026-04-24 14:05:23 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4069.31ms (status: 500)
+2026-04-24 14:05:24 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 4047.30ms (status: 500)
+2026-04-24 14:05:38 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4072.59ms
+2026-04-24 14:05:42 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4065.01ms
+2026-04-24 14:05:58 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4063.22ms
+2026-04-24 14:05:58 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4094.28ms
+2026-04-24 14:06:02 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4043.28ms
+2026-04-24 14:06:03 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4063.91ms
+2026-04-24 14:06:03 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/list failed after 4064.62ms
+2026-04-24 14:06:03 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/profile failed after 4096.14ms
+2026-04-24 14:06:06 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/users failed after 4069.38ms
+2026-04-24 14:06:07 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/access-points failed after 4071.15ms
+2026-04-24 14:06:07 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/list failed after 4060.25ms
+2026-04-24 14:06:07 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/profile failed after 4065.73ms
+2026-04-24 14:06:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4085.33ms
+2026-04-24 14:06:17 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized

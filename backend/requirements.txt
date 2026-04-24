@@ -20,3 +20,4 @@ qrcode
 Pillow
 requests
 python-multipart
+redis
