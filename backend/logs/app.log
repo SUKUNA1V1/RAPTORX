@@ -1093,3 +1093,54 @@
 2026-04-24 14:06:07 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/profile failed after 4065.73ms
 2026-04-24 14:06:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4085.33ms
 2026-04-24 14:06:17 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-25 16:31:43 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-25 16:31:45 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ORGANIZATIONS took 124.88ms
+2026-04-25 16:32:28 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 291.98ms
+2026-04-25 16:32:28 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 145.13ms
+2026-04-25 16:32:28 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 149.45ms
+2026-04-25 16:32:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 542.19ms (status: 200)
+2026-04-25 16:32:29 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 655.25ms
+2026-04-25 16:32:29 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 649.53ms
+2026-04-25 16:32:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 687.60ms (status: 200)
+2026-04-25 16:32:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 689.85ms (status: 200)
+2026-04-25 16:34:43 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on LOGIN_ATTEMPTS took 773.44ms
+2026-04-25 16:34:43 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 1075.70ms (status: 200)
+2026-04-25 16:34:59 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on ANOMALY_ALERTS took 117.50ms
+2026-04-25 16:35:19 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:35:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/47/resolve took 20683.97ms (status: 200)
+2026-04-25 16:35:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/database-performance took 618.35ms (status: 200)
+2026-04-25 16:35:34 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/ml/status took 622.69ms (status: 200)
+2026-04-25 16:35:45 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for alerts:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-25 16:35:45 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/47/resolve took 27331.74ms (status: 200)
+2026-04-25 16:36:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/admin/profile took 565.74ms (status: 200)
+2026-04-25 16:37:30 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:37:30 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/45/resolve took 24052.68ms (status: 200)
+2026-04-25 16:41:48 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:41:48 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/44/resolve took 25359.66ms (status: 200)
+2026-04-25 16:43:33 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-04-25 16:44:01 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:44:01 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 27352.92ms (status: 200)
+2026-04-25 16:44:24 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-25 16:44:24 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 28342.08ms (status: 200)
+2026-04-25 16:45:55 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:45:55 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 23359.29ms (status: 200)
+2026-04-25 16:46:20 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:46:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 24875.33ms (status: 200)
+2026-04-25 16:46:40 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:46:40 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 19356.04ms (status: 200)
+2026-04-25 16:47:00 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:47:00 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 20017.33ms (status: 200)
+2026-04-25 16:47:26 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:47:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 25947.68ms (status: 200)
+2026-04-25 16:47:28 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-04-25 16:47:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 26293.53ms (status: 200)
+2026-04-25 16:47:46 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:47:46 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 18919.30ms (status: 200)
+2026-04-25 16:48:06 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:48:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 19328.61ms (status: 200)
+2026-04-25 16:48:25 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:48:25 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 18654.45ms (status: 200)
+2026-04-25 16:48:46 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:48:46 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 20560.86ms (status: 200)
+2026-04-25 16:49:06 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-04-25 16:49:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 19578.31ms (status: 200)

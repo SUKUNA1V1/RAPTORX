@@ -128,6 +128,11 @@ type SimulationResult = AccessDecision & {
   scenarioUsed: ScenarioType;
 };
 
+type SimulatorSeedData = {
+  usersData: UserItem[];
+  accessPointsData: AccessPointItem[];
+};
+
 const getExpectedResults = (scenario: ScenarioType): ExpectedResult => {
   const expectations: Record<ScenarioType, ExpectedResult> = {
     normal: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.35, riskLevel: 'low', successRate: 95 },
@@ -243,16 +248,103 @@ const pickEarlyMorningTimestamp = (baseDate?: Date) => {
 
 const pickWeekendTimestamp = (baseDate?: Date) => {
   const now = baseDate ? new Date(baseDate) : new Date();
-  // Shift to next Saturday or Sunday
+  // Shift to previous Saturday or Sunday to avoid future timestamps rejected by backend.
   const dayOfWeek = now.getDay();
-  const addDays = dayOfWeek === 0 ? 0 : dayOfWeek === 6 ? 0 : (6 - dayOfWeek);
-  now.setDate(now.getDate() + addDays);
+  const subtractDays = dayOfWeek === 0 ? 0 : dayOfWeek === 6 ? 0 : (dayOfWeek + 1);
+  now.setDate(now.getDate() - subtractDays);
   now.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
   return now.toISOString();
 };
 
 const pickHighClearanceUser = (users: UserItem[]) => {
   return users.find((u) => u.is_active && (u.clearance_level ?? 1) >= 3) || randomItem(users.filter((u) => u.is_active));
+};
+
+const loadSimulatorSeedData = async (): Promise<SimulatorSeedData> => {
+  const [usersResponse, accessPointsResponse] = await Promise.all([
+    apiClient.getUsers(1, 500),
+    apiClient.getAccessPoints(1, 500),
+  ]);
+
+  return {
+    usersData: usersResponse.items ?? [],
+    accessPointsData: accessPointsResponse.items ?? [],
+  };
+};
+
+const bootstrapSimulatorSeedData = async (): Promise<void> => {
+  const uniqueSuffix = Date.now();
+
+  const demoUsers = [
+    {
+      first_name: 'Alex',
+      last_name: 'Morgan',
+      badge_id: `SIM-${uniqueSuffix}-U1`,
+      email: `sim.employee1.${uniqueSuffix}@raptorx.local`,
+      role: 'employee',
+      department: 'Engineering',
+      clearance_level: 1,
+      is_active: true,
+    },
+    {
+      first_name: 'Priya',
+      last_name: 'Chen',
+      badge_id: `SIM-${uniqueSuffix}-U2`,
+      email: `sim.manager1.${uniqueSuffix}@raptorx.local`,
+      role: 'manager',
+      department: 'IT',
+      clearance_level: 2,
+      is_active: true,
+    },
+    {
+      first_name: 'Jordan',
+      last_name: 'Reed',
+      badge_id: `SIM-${uniqueSuffix}-U3`,
+      email: `sim.security1.${uniqueSuffix}@raptorx.local`,
+      role: 'security',
+      department: 'Security',
+      clearance_level: 3,
+      is_active: true,
+    },
+  ];
+
+  const demoAccessPoints = [
+    {
+      name: 'Engineering Main Door',
+      type: 'door',
+      status: 'active',
+      building: 'HQ',
+      floor: '1',
+      zone: 'Engineering',
+      required_clearance: 1,
+      is_restricted: false,
+    },
+    {
+      name: 'IT Office Reader',
+      type: 'reader',
+      status: 'active',
+      building: 'HQ',
+      floor: '2',
+      zone: 'IT',
+      required_clearance: 2,
+      is_restricted: false,
+    },
+    {
+      name: 'Server Room Gate',
+      type: 'gate',
+      status: 'active',
+      building: 'HQ',
+      floor: '2',
+      zone: 'Server Room',
+      required_clearance: 3,
+      is_restricted: true,
+    },
+  ];
+
+  await Promise.all([
+    ...demoUsers.map((payload) => apiClient.createUser(payload)),
+    ...demoAccessPoints.map((payload) => apiClient.createAccessPoint(payload)),
+  ]);
 };
 
 const SimulatorPage = () => {
@@ -283,7 +375,7 @@ const SimulatorPage = () => {
     return { total, granted, denied, delayed, avgRisk };
   }, [results]);
 
-  const ensureSeedDataLoaded = async (): Promise<{ usersData: UserItem[]; accessPointsData: AccessPointItem[] }> => {
+  const ensureSeedDataLoaded = async (autoBootstrap: boolean = false): Promise<SimulatorSeedData> => {
     if (users.length && accessPoints.length) {
       return { usersData: users, accessPointsData: accessPoints };
     }
@@ -291,12 +383,16 @@ const SimulatorPage = () => {
     setBootstrapping(true);
     setError('');
     try {
-      const [usersData, accessPointsData] = await Promise.all([apiClient.getUsers(), apiClient.getAccessPoints()]);
-      const normalizedUsers = Array.isArray(usersData) ? usersData : [];
-      const normalizedAccessPoints = Array.isArray(accessPointsData) ? accessPointsData : [];
-      setUsers(normalizedUsers);
-      setAccessPoints(normalizedAccessPoints);
-      return { usersData: normalizedUsers, accessPointsData: normalizedAccessPoints };
+      let { usersData, accessPointsData } = await loadSimulatorSeedData();
+
+      if (autoBootstrap && (!usersData.length || !accessPointsData.length)) {
+        await bootstrapSimulatorSeedData();
+        ({ usersData, accessPointsData } = await loadSimulatorSeedData());
+      }
+
+      setUsers(usersData);
+      setAccessPoints(accessPointsData);
+      return { usersData, accessPointsData };
     } catch (err) {
       const detail = err instanceof Error ? err.message : '';
       setError(detail ? `Failed to load simulator data: ${detail}` : 'Failed to load simulator data.');
@@ -312,11 +408,18 @@ const SimulatorPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleBootstrapDemoData = async () => {
+    const { usersData, accessPointsData } = await ensureSeedDataLoaded(true);
+    if (!usersData.length || !accessPointsData.length) {
+      setError('Unable to bootstrap simulator demo data. Please verify backend API authentication and try again.');
+    }
+  };
+
   const runScenario = async () => {
     const { usersData, accessPointsData } = await ensureSeedDataLoaded();
 
     if (!usersData.length || !accessPointsData.length) {
-      setError('Simulator cannot run because users or access points are missing.');
+      setError('Simulator cannot run because users or access points are missing. Use "Bootstrap Demo Data" to create baseline records.');
       return;
     }
 
@@ -326,8 +429,8 @@ const SimulatorPage = () => {
     try {
       const generatedResults: SimulationResult[] = [];
       const safeIterations = Math.max(1, Math.min(100, iterations));
-      // Use current time so events appear on today's dashboard chart.
-      const runBaseMs = Date.now();
+      // Keep generated events in the recent past so backend timestamp validation passes.
+      const runBaseMs = Date.now() - 15 * 60 * 1000;
 
       for (let i = 0; i < safeIterations; i += 1) {
         const effectiveScenario = scenario === 'anomalous' ? randomItem(anomalyScenarios) : scenario;
@@ -354,7 +457,7 @@ const SimulatorPage = () => {
           target = (cUser && cAp) ? { user: cUser, accessPoint: cAp } : null;
           const parsedDate = new Date(customTime);
           if (!isNaN(parsedDate.getTime())) {
-            timestamp = parsedDate.toISOString();
+            timestamp = parsedDate.getTime() > Date.now() ? new Date().toISOString() : parsedDate.toISOString();
           }
         } else if (effectiveScenario === 'restricted_access') {
           target = pickRestrictedTarget(usersData, accessPointsData);
@@ -390,7 +493,7 @@ const SimulatorPage = () => {
           const firstResult = await apiClient.requestAccess({
             badge_id: target.user.badge_id,
             access_point_id: target.accessPoint.id,
-            method: 'simulator',
+            method: 'badge',
             timestamp: eventBase.toISOString(),
           });
           generatedResults.push({
@@ -403,7 +506,7 @@ const SimulatorPage = () => {
             const secondResult = await apiClient.requestAccess({
               badge_id: target.user.badge_id,
               access_point_id: randomItem(altPoints).id,
-              method: 'simulator',
+              method: 'badge',
               timestamp: new Date(eventBase.getTime() + 30 * 1000).toISOString(),
             });
             generatedResults.push({
@@ -420,7 +523,7 @@ const SimulatorPage = () => {
             const burstResult = await apiClient.requestAccess({
               badge_id: target.user.badge_id,
               access_point_id: target.accessPoint.id,
-              method: 'simulator',
+              method: 'badge',
               timestamp: new Date(eventBase.getTime() + burst * 2000).toISOString(),
             });
             generatedResults.push({
@@ -438,7 +541,7 @@ const SimulatorPage = () => {
             const repeatResult = await apiClient.requestAccess({
               badge_id: target.user.badge_id,
               access_point_id: target.accessPoint.id,
-              method: 'simulator',
+              method: 'badge',
               timestamp: new Date(eventBase.getTime() + repeat * 24 * 60 * 1000).toISOString(), // Every 24 min
             });
             generatedResults.push({
@@ -463,7 +566,7 @@ const SimulatorPage = () => {
             const seqResult = await apiClient.requestAccess({
               badge_id: lowClearanceTarget.user.badge_id,
               access_point_id: restrictedPoints[seq].id,
-              method: 'simulator',
+              method: 'badge',
               timestamp: new Date(eventBase.getTime() + seq * 5 * 60 * 1000).toISOString(), // 5 min apart
             });
             generatedResults.push({
@@ -478,7 +581,7 @@ const SimulatorPage = () => {
         const result = await apiClient.requestAccess({
           badge_id: target.user.badge_id,
           access_point_id: target.accessPoint.id,
-          method: 'simulator',
+          method: 'badge',
           timestamp,
         });
         generatedResults.push({
@@ -553,6 +656,16 @@ const SimulatorPage = () => {
                   sx={{ borderColor: 'rgba(255,255,255,0.1)', color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.2)' } }}
                 >
                   Refresh Data
+                </Button>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={() => void handleBootstrapDemoData()}
+                  disabled={loading || bootstrapping}
+                  startIcon={bootstrapping ? <CircularProgress size={16} color="inherit" /> : <IconifyIcon icon="mdi:database-plus" />}
+                  sx={{ bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
+                >
+                  Bootstrap Demo Data
                 </Button>
               </Box>
             </Box>

@@ -204,9 +204,13 @@ export interface CreateUserPayload {
   first_name: string;
   last_name: string;
   badge_id: string;
+  email?: string;
+  phone?: string;
   role: string;
   department?: string;
+  clearance_level?: number;
   is_active?: boolean;
+  pin_hash?: string;
 }
 
 export interface AccessPointItem {
@@ -368,7 +372,8 @@ export const apiClient = {
     (await api.get<Record<string, unknown>>('/stats/database-performance')).data,
   getApiPerformance: async () => (await api.get<Record<string, unknown>>('/stats/api-performance')).data,
   getSystemHealth: async () => (await api.get<SystemHealth>('/stats/system-health')).data,
-  requestAccess: async (payload: AccessRequestPayload) => (await api.post<AccessDecision>('/access/request', payload)).data,
+  requestAccess: async (payload: AccessRequestPayload) =>
+    (await api.post<AccessDecision>('/access/request', payload, { timeout: 60000 })).data,
   
   // Admin endpoints
   getAdminProfile: async (adminId: number) =>
