@@ -1144,3 +1144,4 @@
 2026-04-25 16:48:46 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 20560.86ms (status: 200)
 2026-04-25 16:49:06 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
 2026-04-25 16:49:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 19578.31ms (status: 200)
+2026-04-25 17:07:14 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
