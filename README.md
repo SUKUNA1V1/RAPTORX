@@ -3,18 +3,20 @@
 <div align="center">
 
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=flat-square)](.)
-[![Version](https://img.shields.io/badge/Version-2.0-blue?style=flat-square)](.)
+[![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](.)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009485?style=flat-square)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18.2%2B-61dafb?style=flat-square)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9%2B-3178c6?style=flat-square)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-336791?style=flat-square)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7%2B-dc382d?style=flat-square)](https://redis.io/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20%2B-FF6F00?style=flat-square)](https://www.tensorflow.org/)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](.)
 [![Last Updated](https://img.shields.io/badge/Last%20Updated-April%202026-informational?style=flat-square)](.)
 
-**An enterprise-grade AI-driven access control platform with real-time anomaly detection, ML ensemble scoring, and advanced security features**
+**An enterprise-grade AI-driven access control platform with real-time anomaly detection, ML ensemble scoring, Redis caching, pagination, and advanced security features**
 
-[Quick Start](#-quick-start) • [Architecture](#-architecture) • [Features](#-key-features) • [API](#-api-endpoints) • [Deployment](#-deployment) • [Documentation](#-documentation)
+[Quick Start](#-quick-start) • [Architecture](#-architecture) • [Features](#-key-features) • [API](#-api-endpoints) • [Database](#-database-schema) • [Deployment](#-deployment) • [Documentation](#-documentation)
 
 </div>
 
@@ -28,6 +30,7 @@
 - [🔑 Key Features](#-key-features)
 - [📊 Performance](#-performance)
 - [📁 Project Structure](#-project-structure)
+- [🗄️ Database Schema](#-database-schema)
 - [🔐 Configuration](#-configuration)
 - [🎯 API Endpoints](#-api-endpoints)
 - [🧪 Testing](#-testing)
@@ -48,7 +51,9 @@
 - **Anomaly Detection:** Identify suspicious patterns in real-time
 - **Enterprise Security:** JWT + TOTP MFA + CSRF protection + RBAC
 - **High Performance:** -85% latency with Redis caching (-95% on cache hits)
+- **Pagination Support:** Efficiently handle large datasets with configurable page sizes
 - **Full Audit Trail:** Complete compliance logging
+- **Device Certificate Management:** mTLS support with certificate pinning
 
 ---
 
@@ -58,8 +63,8 @@
 - **Python** 3.10+
 - **Node.js** 18+
 - **PostgreSQL** 14+
-- **Redis** 7+ (for caching)
-- **Docker** (recommended)
+- **Redis** 7+ (for caching and performance)
+- **Docker** (recommended for database services)
 
 ### Setup (5 minutes)
 
@@ -80,7 +85,13 @@ pip install -r requirements.txt
 
 # 4. Configure environment
 cp .env.example .env
-# Edit .env with your database credentials
+# Edit .env with your database and Redis credentials:
+# POSTGRES_USER=your_user
+# POSTGRES_PASSWORD=your_password
+# POSTGRES_DB=raptorx
+# REDIS_HOST=localhost
+# REDIS_PORT=6379
+# REDIS_CACHE_ENABLED=true
 
 # 5. Database setup
 alembic upgrade head
@@ -88,8 +99,8 @@ alembic upgrade head
 # 6. Create admin account
 python create_default_admin.py
 
-# 7. Start backend
-uvicorn app.main:app --reload
+# 7. Start backend (with auto-reload)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # 8. Frontend setup (new terminal)
 cd frontend
@@ -98,6 +109,8 @@ npm run dev
 
 # 9. Access dashboard
 # Frontend:  http://localhost:5173
+# Backend API: http://localhost:8000/docs (Swagger UI)
+# Backend Health: http://localhost:8000/health
 # Backend:   http://localhost:8000
 # API Docs:  http://localhost:8000/docs
 ```
@@ -123,7 +136,7 @@ npm run dev
 │     ┌─────────────────────────────────────┼──────────────────────┐│
 │     │             FastAPI Backend (Python 3.10+)                 ││
 │     │  ┌────────────────────────────────────────────────────┐   ││
-│     │  │         API Routes (13 Routers, 81 Endpoints)      │   ││
+│     │  │         API Routes (13 Routers, 79+ Endpoints)      │   ││
 │     │  │  • Access Control • Users • Auth • Alerts • Stats  │   ││
 │     │  └─────────────────┬──────────────────────────────────┘   ││
 │     │                    │                                        ││
@@ -160,7 +173,7 @@ npm run dev
 │     │ • Users (RBAC, MFA)    • Access Logs         │   │
 │     │ • Access Points        • Anomaly Alerts      │   │
 │     │ • Login Attempts       • Audit Trail         │   │
-│     │ • Device Certs         • 19 Tables Total     │   │
+│     │ • Device Certs         • 18 Tables Total     │   │
 │     └──────────────────────────────────────────────┘   │
 │                                                          │
 │     ┌────────────────────────────────────────────────┐   │
@@ -490,36 +503,34 @@ HTTP RESPONSE
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    DATABASE TABLES (19)                      │
+│                    DATABASE TABLES (18)                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
 │  USERS & AUTHENTICATION                                       │
 │  ├─ users                    (ID, role, department, MFA)     │
 │  ├─ login_attempts           (IP, failed_count, locked_at)   │
-│  ├─ user_roles               (user_id, role, assigned_at)    │
-│  └─ mfa_secrets              (user_id, secret, backup_codes) │
+│  ├─ mfa_secrets              (user_id, secret, backup_codes) │
+│  └─ refresh_tokens           (user_id, token_hash)           │
 │                                                               │
 │  ACCESS CONTROL CORE                                          │
 │  ├─ access_points            (ID, name, building, status)    │
 │  ├─ access_logs              (decision, badge_id, timestamp) │
-│  ├─ audit_log                (action, user_id, timestamp)    │
-│  └─ device_certificates      (device_id, cert_data)          │
+│  ├─ access_policies          (policy_id, rules)              │
+│  ├─ access_rules             (rule_id, condition)            │
+│  ├─ audit_logs               (action, user_id, timestamp)    │
+│  ├─ device_certificates      (device_id, cert_data)          │
+│  └─ onboarding_drafts        (draft_id, user_data)           │
 │                                                               │
 │  ANOMALY DETECTION & ALERTS                                   │
-│  ├─ anomaly_alerts           (severity, status, resolved_at) │
-│  ├─ alert_history            (alert_id, action, timestamp)   │
-│  └─ false_positives          (alert_id, reason, timestamp)   │
+│  └─ anomaly_alerts           (severity, status, resolved_at) │
 │                                                               │
-│  MACHINE LEARNING & MODELS                                    │
-│  ├─ ml_models                (version, accuracy, features)   │
-│  ├─ feature_extraction_logs   (user_id, features_json)       │
-│  └─ model_retraining_history  (version, status, timestamp)   │
-│                                                               │
-│  OPERATIONAL DATA                                             │
-│  ├─ access_point_schedules   (point_id, schedule)            │
-│  ├─ user_permissions         (user_id, resource, granted)    │
-│  ├─ system_config            (key, value, updated_at)        │
-│  └─ audit_trail              (event_type, details, timestamp)│
+│  ORGANIZATIONAL STRUCTURE                                     │
+│  ├─ organizations            (org_id, name)                  │
+│  ├─ org_data_settings        (setting_key, setting_value)    │
+│  ├─ buildings                (name, address, zones)          │
+│  ├─ floors                   (building_id, floor_number)     │
+│  ├─ rooms                    (floor_id, room_name)           │
+│  └─ zones                    (zone_id, description)          │
 │                                                               │
 │  INDEXES (5 Strategic)                                        │
 │  ├─ idx_access_logs_user_timestamp      (Fast access log queries)│
@@ -635,7 +646,7 @@ HTTP RESPONSE
 │  │ ├─ Automated backups   │  │ ├─ Real-time metrics    │   │
 │  │ ├─ Connection pooling  │  │ ├─ Pub/Sub (optional)   │   │
 │  │ │  (min=5, max=20)     │  │ └─ TTL management       │   │
-│  │ ├─ 19 tables optimized │  │                          │   │
+│  │ ├─ 18 tables optimized │  │                          │   │
 │  │ ├─ 5 strategic indexes │  │ Hit Rate: 75%+          │   │
 │  │ └─ Query latency: 50ms │  │ Memory: <500MB          │   │
 │  └────────────────────────┘  └──────────────────────────┘   │
@@ -666,27 +677,33 @@ HTTP RESPONSE
 
 ### Database Entity Relationship Diagram (Mermaid ERD)
 
+**Note:** The actual RaptorX database contains 18 tables optimized for access control, anomaly detection, and organizational management.
+
 ```mermaid
 erDiagram
-    USERS ||--o{ USER_ROLES : has
-    USERS ||--o{ LOGIN_ATTEMPTS : has
-    USERS ||--|| MFA_SECRETS : has
-    USERS ||--o{ USER_PERMISSIONS : has
+    USERS ||--o{ LOGIN_ATTEMPTS : "has"
+    USERS ||--|| MFA_SECRETS : "has"
+    USERS ||--o{ REFRESH_TOKENS : "creates"
     USERS ||--o{ ACCESS_LOGS : "initiates"
+    USERS ||--o{ AUDIT_LOGS : "performs"
     
-    ACCESS_POINTS ||--o{ ACCESS_LOGS : "tracks"
-    ACCESS_POINTS ||--o{ ACCESS_POINT_SCHEDULES : "defines"
-    ACCESS_POINTS ||--o{ DEVICE_CERTIFICATES : "secures"
+    ORGANIZATIONS ||--o{ ORG_DATA_SETTINGS : "configures"
+    ORGANIZATIONS ||--o{ BUILDINGS : "contains"
+    ORGANIZATIONS ||--o{ ACCESS_POINTS : "manages"
+    ORGANIZATIONS ||--o{ ONBOARDING_DRAFTS : "processes"
+    
+    BUILDINGS ||--o{ FLOORS : "has"
+    FLOORS ||--o{ ROOMS : "contains"
+    ROOMS ||--o{ ZONES : "defines"
+    
+    ACCESS_POINTS ||--o{ ACCESS_LOGS : "records"
+    ACCESS_POINTS ||--o{ DEVICE_CERTIFICATES : "uses"
+    
+    ACCESS_POLICIES ||--o{ ACCESS_RULES : "contains"
+    ACCESS_RULES ||--o{ ACCESS_LOGS : "evaluates"
     
     ACCESS_LOGS ||--o{ ANOMALY_ALERTS : "triggers"
-    ANOMALY_ALERTS ||--o{ ALERT_HISTORY : "has"
-    ANOMALY_ALERTS ||--o{ FALSE_POSITIVES : "may-have"
     
-    ML_MODELS ||--o{ FEATURE_EXTRACTION_LOGS : "uses"
-    ML_MODELS ||--o{ MODEL_RETRAINING_HISTORY : "tracks"
-    
-    SYSTEM_CONFIG ||--o{ AUDIT_TRAIL : "logs"
-
     USERS {
         int id PK
         string badge_id UK
@@ -698,15 +715,8 @@ erDiagram
         int clearance_level
         boolean is_active
         timestamp created_at
-        timestamp last_seen_at
-    }
-
-    USER_ROLES {
-        int id PK
-        int user_id FK
-        string role_name
-        timestamp assigned_at
-        string assigned_by
+        timestamp updated_at
+        timestamp last_login_at
     }
 
     LOGIN_ATTEMPTS {
@@ -715,7 +725,6 @@ erDiagram
         string ip_address
         int failed_count
         timestamp locked_until
-        timestamp last_attempt_at
         timestamp created_at
     }
 
@@ -724,29 +733,101 @@ erDiagram
         int user_id FK "UK"
         string secret
         string backup_codes
+        boolean is_enabled
         timestamp created_at
-        timestamp last_used_at
     }
 
-    USER_PERMISSIONS {
+    REFRESH_TOKENS {
         int id PK
         int user_id FK
-        string resource
-        string action
-        boolean granted
-        timestamp valid_until
+        string token_hash
+        timestamp expires_at
+        timestamp created_at
+    }
+
+    ORGANIZATIONS {
+        int id PK
+        string name UK
+        string industry
+        string country
+        int total_users
+        boolean is_active
+        timestamp created_at
+    }
+
+    ORG_DATA_SETTINGS {
+        int id PK
+        int org_id FK
+        string setting_key UK
+        string setting_value
+        timestamp updated_at
+    }
+
+    BUILDINGS {
+        int id PK
+        int org_id FK
+        string name
+        string address
+        string city
+        int total_floors
+        timestamp created_at
+    }
+
+    FLOORS {
+        int id PK
+        int building_id FK
+        int floor_number
+        string floor_name
+        timestamp created_at
+    }
+
+    ROOMS {
+        int id PK
+        int floor_id FK
+        string room_name
+        string room_type
+        timestamp created_at
+    }
+
+    ZONES {
+        int id PK
+        int org_id FK
+        string zone_id UK
+        string description
+        int restricted_level
+        timestamp created_at
     }
 
     ACCESS_POINTS {
         int id PK
-        string name
+        int org_id FK
+        string name UK
         string building
         string floor
         string zone
-        string type
+        string device_type
         int required_clearance
         string status
-        string ip_address
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ACCESS_POLICIES {
+        int id PK
+        int org_id FK
+        string policy_name
+        string description
+        boolean is_active
+        timestamp created_at
+    }
+
+    ACCESS_RULES {
+        int id PK
+        int policy_id FK
+        string rule_name
+        string condition
+        string action
+        int priority
         timestamp created_at
     }
 
@@ -757,119 +838,58 @@ erDiagram
         timestamp timestamp "INDEX"
         string decision
         float risk_score
-        string method
         string badge_id_used
+        string zone_accessed
         json context
         float if_score
         float ae_score
         string mode
+        timestamp created_at
     }
 
     ANOMALY_ALERTS {
         int id PK
-        int log_id FK
+        int access_log_id FK
         string alert_type
         string severity "INDEX"
         string status "INDEX"
         float confidence
         boolean is_resolved
         timestamp resolved_at
-        string resolved_by
         timestamp created_at
-    }
-
-    ALERT_HISTORY {
-        int id PK
-        int alert_id FK
-        string action
-        string actor_id
-        timestamp timestamp
-        string notes
-    }
-
-    FALSE_POSITIVES {
-        int id PK
-        int alert_id FK
-        string reason
-        string reported_by
-        timestamp timestamp
-    }
-
-    ACCESS_POINT_SCHEDULES {
-        int id PK
-        int access_point_id FK
-        string schedule_type
-        time start_time
-        time end_time
-        string day_of_week
     }
 
     DEVICE_CERTIFICATES {
         int id PK
-        string device_id
-        blob cert_data
+        int access_point_id FK
+        string device_name
+        string cert_fingerprint UK
+        string subject_dn
+        string status
         timestamp issued_at
         timestamp expires_at
-        boolean verified
+        timestamp last_seen_at
     }
 
-    AUDIT_LOG {
+    ONBOARDING_DRAFTS {
+        int id PK
+        int org_id FK
+        string draft_status
+        json draft_data
+        timestamp created_at
+        timestamp updated_at
+        timestamp submitted_at
+    }
+
+    AUDIT_LOGS {
         int id PK
         int user_id FK
         string action
         string resource
-        timestamp timestamp
+        string resource_id
+        json changes
         string ip_address
-        json details
-    }
-
-    ML_MODELS {
-        int id PK
-        int version
-        string model_type
-        float accuracy
-        float precision
-        float recall
-        float f1_score
-        json features_json
-        string artifact_path
         timestamp created_at
-    }
-
-    FEATURE_EXTRACTION_LOGS {
-        int id PK
-        int user_id FK
-        json features_json
-        timestamp timestamp
-        int extraction_time_ms
-        string model_version
-    }
-
-    MODEL_RETRAINING_HISTORY {
-        int id PK
-        int version
-        date retrain_date
-        float validation_f1
-        float test_f1
-        string status
-        float threshold_grant
-        float threshold_deny
-    }
-
-    SYSTEM_CONFIG {
-        int id PK
-        string key UK
-        string value
-        string updated_by
-        timestamp updated_at
-    }
-
-    AUDIT_TRAIL {
-        int id PK
-        string event_type
-        json event_data
-        timestamp timestamp
-        string severity
     }
 ```
 
@@ -1163,91 +1183,134 @@ DEBUG=false
 
 ## 🎯 API Endpoints
 
-### API Endpoint Hierarchy
+### API Endpoint Hierarchy (79 Endpoints Across 13 Routers)
 
 ```
 RaptorX API (FastAPI)
 │
-├─ /api/access              (Access Control Management)
-│  ├─ POST   /decide        → Process access request
+├─ /api/access              (Access Control Management - 4 endpoints)
+│  ├─ POST   /request       → Process access request
 │  ├─ GET    /logs          → List access logs (paginated, cached)
 │  ├─ GET    /logs/{id}     → Get single log
 │  └─ DELETE /logs          → Clear all logs
 │
-├─ /api/users               (User Management)
+├─ /api/access-points       (Physical Access Points - 4 endpoints)
+│  ├─ GET    /              → List access points (paginated, cached)
+│  ├─ POST   /              → Create access point
+│  ├─ GET    /{id}          → Get point details
+│  └─ PUT    /{id}          → Update access point
+│
+├─ /api/users               (User Management - 5 endpoints)
 │  ├─ GET    /              → List users (paginated, cached)
 │  ├─ POST   /              → Create user
 │  ├─ GET    /{id}          → Get user details
 │  ├─ PUT    /{id}          → Update user
-│  ├─ DELETE /{id}          → Delete user
-│  └─ GET    /{id}/roles    → Get user roles
+│  └─ DELETE /{id}          → Delete user
 │
-├─ /api/access-points       (Physical Access Points)
-│  ├─ GET    /              → List access points (paginated, cached)
-│  ├─ POST   /              → Create access point
-│  ├─ GET    /{id}          → Get point details
-│  ├─ PUT    /{id}          → Update access point
-│  ├─ DELETE /{id}          → Delete access point
-│  └─ GET    /{id}/schedule → Get access schedule
-│
-├─ /api/auth                (Authentication & Security)
+├─ /api/auth                (Authentication & Security - 10 endpoints)
 │  ├─ POST   /login         → User login (returns JWT + refresh)
 │  ├─ POST   /refresh       → Refresh access token
-│  ├─ POST   /logout        → Logout user
-│  ├─ POST   /mfa/enable    → Enable TOTP MFA
+│  ├─ POST   /logout        → Logout user (current session)
+│  ├─ POST   /logout-all    → Logout all sessions
+│  ├─ GET    /profile       → Get current user info
+│  ├─ GET    /csrf-token    → Get CSRF token
+│  ├─ POST   /mfa/enroll    → Enroll in TOTP MFA
 │  ├─ POST   /mfa/verify    → Verify MFA code
-│  ├─ POST   /mfa/disable   → Disable MFA
-│  └─ GET    /me            → Get current user info
+│  ├─ POST   /mfa/verify-enroll  → Verify MFA enrollment
+│  └─ POST   /mfa/disable   → Disable MFA
 │
-├─ /api/alerts              (Anomaly Detection & Alerts)
+├─ /api/alerts              (Anomaly Detection & Alerts - 4 endpoints)
 │  ├─ GET    /              → List alerts (paginated, cached)
 │  ├─ GET    /{id}          → Get alert details
 │  ├─ PUT    /{id}/resolve  → Mark alert as resolved
-│  ├─ PUT    /{id}/review   → Mark as false positive
-│  └─ DELETE /{id}          → Delete alert
+│  └─ PUT    /{id}/false-positive  → Mark as false positive
 │
-├─ /api/stats               (Dashboard & Analytics)
+├─ /api/stats               (Dashboard & Analytics - 8 endpoints)
 │  ├─ GET    /overview      → Dashboard statistics
-│  ├─ GET    /timeline      → Time-based analytics
-│  ├─ GET    /users/summary → User activity summary
-│  ├─ GET    /access/heatmap→ Access pattern heatmap
-│  └─ GET    /anomalies     → Anomaly statistics
+│  ├─ GET    /access-timeline     → Access pattern timeline
+│  ├─ GET    /monthly-timeline    → Monthly statistics
+│  ├─ GET    /anomaly-distribution → Anomaly distribution
+│  ├─ GET    /top-access-points   → Top accessed points
+│  ├─ GET    /database-performance → Database health metrics
+│  ├─ GET    /api-performance     → API performance metrics
+│  └─ GET    /system-health       → Overall system health
 │
-├─ /api/explainability      (ML Decision Explanations)
-│  ├─ GET    /decision/{id} → Explain single decision
-│  ├─ GET    /features/{id} → Feature importance breakdown
-│  ├─ GET    /models        → List available models
-│  └─ GET    /models/{ver}  → Get model specifications
+├─ /api/explainability      (ML Decision Explanations - 4 endpoints)
+│  ├─ GET    /decision/{id} → Explain single access decision
+│  ├─ GET    /feature-importance  → Global feature importance
+│  ├─ GET    /threshold-behavior  → Decision threshold analysis
+│  └─ GET    /model-insights      → ML model insights
 │
-├─ /api/audit               (Compliance & Audit)
-│  ├─ GET    /logs          → Audit log entries
-│  ├─ GET    /logs/{id}     → Get audit details
-│  ├─ GET    /export        → Export audit trail
-│  └─ GET    /compliance    → Compliance report
+├─ /api/devices             (Device Certificates - 5 endpoints)
+│  ├─ POST   /register      → Register device certificate
+│  ├─ GET    /list          → List device certificates
+│  ├─ GET    /validate      → Validate certificate fingerprint
+│  ├─ PUT    /{id}/revoke   → Revoke device certificate
+│  └─ GET    /{id}          → Get certificate details
 │
-├─ /health                  (System Health)
-│  ├─ GET    /              → Overall health status
-│  ├─ GET    /cache         → Redis cache health
-│  ├─ GET    /database      → Database connection health
-│  └─ GET    /ml            → ML model health
+├─ /api/ml                  (ML Model Management - 11 endpoints)
+│  ├─ GET    /status        → ML pipeline status
+│  ├─ POST   /generate-training-data → Generate training data
+│  ├─ POST   /train         → Train ML models
+│  ├─ POST   /use-hard-rules → Switch to hard rules mode
+│  ├─ POST   /use-models    → Switch to ML models mode
+│  ├─ GET    /status-admin  → Admin ML status view
+│  ├─ GET    /retrain-status → Auto-retrain status
+│  ├─ POST   /trigger-retrain    → Trigger manual retrain
+│  ├─ POST   /toggle-auto-retrain → Enable/disable auto-retrain
+│  ├─ GET    /model-versions    → List model versions
+│  └─ POST   /restore-model-version → Restore previous model
 │
-└─ /docs                    (Documentation)
-   ├─ GET    /              → Swagger UI
-   ├─ GET    /openapi.json  → OpenAPI schema
-   └─ GET    /redoc         → ReDoc documentation
+├─ /api/admin               (Admin Management - 7 endpoints)
+│  ├─ POST   /login         → Admin login
+│  ├─ GET    /profile       → Get admin profile
+│  ├─ PUT    /profile/username    → Update admin username
+│  ├─ PUT    /profile/password    → Update admin password
+│  ├─ GET    /list          → List all admins
+│  ├─ POST   /              → Create new admin
+│  └─ DELETE /{id}          → Delete admin user
+│
+├─ /api/onboarding          (Organization Onboarding - 10 endpoints)
+│  ├─ GET    /status        → Get onboarding status
+│  ├─ POST   /draft/save    → Save onboarding draft
+│  ├─ GET    /draft         → Get onboarding draft
+│  ├─ POST   /submit        → Submit organization onboarding
+│  ├─ POST   /apply         → Apply configuration to org
+│  ├─ POST   /import/buildings-csv  → Import buildings CSV
+│  ├─ POST   /import/access-points-csv → Import access points CSV
+│  ├─ GET    /stats         → Get onboarding statistics
+│  ├─ GET    /configuration/{org_id}  → Get org configuration
+│  └─ POST   /generate-training-data/{org_id} → Generate org data
+│
+├─ /api/websocket           (Real-time Events - 3 endpoints)
+│  ├─ WS     /ws            → WebSocket connection
+│  ├─ POST   /ws/broadcast-alert    → Broadcast alert event
+│  └─ GET    /ws/status     → WebSocket status
+│
+├─ /scheduler               (Scheduler Administration - 3 endpoints)
+│  ├─ GET    /status        → Scheduler status
+│  ├─ POST   /start         → Start scheduler
+│  └─ POST   /stop          → Stop scheduler
+│
+├─ /health                  (System Health - 1 endpoint)
+│  └─ GET    /              → Overall health status
+│
+└─ Auto-Generated (FastAPI - 2 endpoints)
+   ├─ GET    /docs          → Swagger UI
+   └─ GET    /openapi.json  → OpenAPI schema
 ```
 
-### Access Control
+### Detailed Endpoint Breakdown
 
+**Access Control**
 ```
-POST /api/access/decide            # Process access request
+POST /api/access/request           # Process access request
 GET  /api/access/logs              # List access logs (paginated, cached)
 GET  /api/access/logs/{id}         # Get single log
 DELETE /api/access/logs            # Clear logs
 ```
 
-### User Management
-
+**User Management**
 ```
 GET  /api/users                    # List users (paginated)
 GET  /api/users/{id}               # Get user details
@@ -1256,34 +1319,35 @@ PUT  /api/users/{id}               # Update user
 DELETE /api/users/{id}             # Delete user
 ```
 
-### Access Points
-
+**Access Points**
 ```
 GET  /api/access-points            # List access points (paginated)
 GET  /api/access-points/{id}       # Get details
 POST /api/access-points            # Create
 PUT  /api/access-points/{id}       # Update
-DELETE /api/access-points/{id}    # Delete
 ```
 
-### Authentication
-
+**Authentication**
 ```
 POST /api/auth/login               # User login
 POST /api/auth/refresh             # Refresh token
-POST /api/auth/logout              # Logout
-POST /api/auth/mfa/enable          # Enable MFA
-POST /api/auth/mfa/verify          # Verify MFA
+POST /api/auth/logout              # Logout (current session)
+POST /api/auth/logout-all          # Logout all sessions
+GET  /api/auth/profile             # Get current user
+GET  /api/auth/csrf-token          # Get CSRF token
+POST /api/auth/mfa/enroll          # Enroll MFA
+POST /api/auth/mfa/verify          # Verify MFA code
+POST /api/auth/mfa/verify-enroll   # Verify enrollment
+POST /api/auth/mfa/disable         # Disable MFA
 ```
 
-### Monitoring
-
+**Alerts & Analytics**
 ```
+GET  /api/alerts                   # Anomaly alerts (paginated)
 GET  /api/stats/overview           # Dashboard stats
-GET  /api/alerts                   # Anomaly alerts
+GET  /api/stats/access-timeline    # Timeline analytics
 GET  /api/explainability/decision/{id}  # Explain decision
 GET  /health                       # Health check
-GET  /health/cache                 # Cache health (NEW)
 ```
 
 ---
@@ -2002,7 +2066,7 @@ redis-cli MONITOR
 
 ```bash
 # Process access request (core feature)
-POST /api/access/decide
+POST /api/access/request
 Content-Type: application/json
 
 {
@@ -2078,7 +2142,7 @@ POST /api/auth/refresh
 Authorization: Bearer <refresh_token>
 
 # Enable MFA
-POST /api/auth/mfa/enable
+POST /api/auth/mfa/enroll
 Response: {"qr_code": "data:image/png;base64,.."}
 
 # Verify MFA
@@ -2290,8 +2354,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 | **Backend** | ~4,500 LOC (Python) |
 | **Frontend** | ~2,800 LOC (TypeScript) |
 | **Tests** | ~1,200 LOC (pytest, Jest) |
-| **Database** | 19 tables, 5 indexes |
-| **API Endpoints** | 81 endpoints across 13 routers |
+| **Database** | 18 tables, 5 indexes |
+| **API Endpoints** | 79 endpoints across 13 routers (+ 2 auto-generated: /docs, /openapi.json) |
 | **Test Coverage** | 85%+ overall |
 | **Performance** | 250+ req/sec, <100ms latency |
 | **ML Accuracy** | 95%+ on test data |
