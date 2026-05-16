@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 # Purpose: Centralized feature engineering and alert classification helpers for ML scoring.
+# FEATURE_COLS: 13 core behavioral features for ML models
+# (Models trained on 13 features; 6 additional features computed for hard rules only)
 FEATURE_COLS = [
     "hour",
     "day_of_week",
@@ -30,6 +32,11 @@ FEATURE_COLS = [
     "access_attempt_count",
     "time_of_week",
     "hour_deviation_from_norm",
+]
+
+# HARD_RULE_FEATURES: 6 additional features computed for rule-based checks
+# (Not passed to ML models, used only for hard rules like velocity, badge cloning)
+HARD_RULE_FEATURES = [
     "geographic_impossibility",
     "distance_between_scans_km",
     "velocity_km_per_min",
@@ -166,12 +173,14 @@ def get_scaler():
             scaler_path_19 = os.path.join(_models_dir(), "scaler_19.pkl")
             scaler_path_legacy = os.path.join(_models_dir(), "scaler.pkl")
             
-            if os.path.exists(scaler_path_19):
-                _SCALER = joblib.load(scaler_path_19)
-                logger.debug("Loaded 19-feature scaler")
-            elif os.path.exists(scaler_path_13):
+            # Prioritize scaler_13 since FEATURE_COLS has 13 features for ML models
+            if os.path.exists(scaler_path_13):
                 _SCALER = joblib.load(scaler_path_13)
                 logger.debug("Loaded 13-feature scaler")
+            elif os.path.exists(scaler_path_19):
+                # Fallback to 19-feature scaler if 13 not available
+                _SCALER = joblib.load(scaler_path_19)
+                logger.debug("Loaded 19-feature scaler (using first 13 features)")
             elif os.path.exists(scaler_path_legacy):
                 _SCALER = joblib.load(scaler_path_legacy)
                 logger.debug("Loaded legacy scaler")
@@ -388,7 +397,8 @@ def extract_features(user, access_point, timestamp: datetime, db: Session, faile
     scaled_list = scaler.transform([ordered_raw])[0].tolist()
     scaled = {name: scaled_list[idx] for idx, name in enumerate(FEATURE_COLS)}
 
-    return {"raw": clipped, "scaled": scaled, "list": scaled_list}
+    # Return full raw (19 features) for hard rules, scaled for ML models
+    return {"raw": raw, "scaled": scaled, "list": scaled_list}
 
 
 def determine_alert_type(features_raw: Dict, risk_score: float) -> str:

@@ -488,10 +488,23 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
             "method": payload.method or "badge",
             "timestamp": timestamp.isoformat() if timestamp else None,
         }
+        
+        # Construct 19-element feature list: 13 scaled + 6 hard rule features
+        # First 13: scaled features for ML models
+        # Last 6: hard rule features (velocity, distance, geographic_impossibility, etc.)
+        hard_rule_feature_names = [
+            "geographic_impossibility",
+            "distance_between_scans_km",
+            "velocity_km_per_min",
+            "zone_clearance_mismatch",
+            "department_zone_mismatch",
+            "concurrent_session_detected",
+        ]
+        features_19 = features["list"] + [features["raw"][name] for name in hard_rule_feature_names]
+        
         try:
             ml_result = engine.decide(
-                features["list"],
-                raw_features=features["raw"],
+                features_19,
                 audit_context=audit_context,
             )
         except Exception as exc:

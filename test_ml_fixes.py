@@ -19,18 +19,25 @@ print("=" * 80)
 print("ML MODEL FIX VERIFICATION TEST")
 print("=" * 80)
 
-# Test 1: Check FEATURE_COLS has 19 features
-print("\n[PASS] Test 1: FEATURE_COLS Configuration")
+# Test 1: Check FEATURE_COLS and HARD_RULE_FEATURES configuration
+print("\n[PASS] Test 1: Feature Configuration")
 print("-" * 80)
 try:
-    from backend.app.services.ml_service import FEATURE_COLS
-    print(f"Number of features in FEATURE_COLS: {len(FEATURE_COLS)}")
-    print(f"Features: {FEATURE_COLS}")
+    from backend.app.services.ml_service import FEATURE_COLS, HARD_RULE_FEATURES
+    print(f"Number of ML features in FEATURE_COLS: {len(FEATURE_COLS)}")
+    print(f"Number of hard rule features: {len(HARD_RULE_FEATURES)}")
+    print(f"Total: {len(FEATURE_COLS) + len(HARD_RULE_FEATURES)} features")
     
-    if len(FEATURE_COLS) == 19:
-        print("[PASS] FEATURE_COLS has correct 19 features")
+    if len(FEATURE_COLS) == 13:
+        print("[PASS] FEATURE_COLS has correct 13 features for ML models")
     else:
-        print(f"[FAIL] Expected 19 features, got {len(FEATURE_COLS)}")
+        print(f"[FAIL] Expected 13 features in FEATURE_COLS, got {len(FEATURE_COLS)}")
+        sys.exit(1)
+    
+    if len(HARD_RULE_FEATURES) == 6:
+        print("[PASS] HARD_RULE_FEATURES has correct 6 features")
+    else:
+        print(f"[FAIL] Expected 6 hard rule features, got {len(HARD_RULE_FEATURES)}")
         sys.exit(1)
 except Exception as e:
     print(f"[ERROR] Failed to import FEATURE_COLS: {e}")
@@ -216,12 +223,14 @@ print("SUMMARY")
 print("=" * 80)
 print("""
 [OK] All critical fixes verified:
-  1. FEATURE_COLS includes all 19 features
-  2. Model artifacts present and loadable
-  3. Decision engine initializes and predicts
-  4. Normal access scored lower risk than anomalies
-  5. Thresholds valid (grant < deny)
-  6. Auto-retuning file format fixed (.keras)
+  1. FEATURE_COLS has 13 features (for ML models)
+  2. HARD_RULE_FEATURES has 6 features (for hard rules)
+  3. Model artifacts present and loadable
+  4. Decision engine initializes and predicts
+  5. Normal access scored lower risk than anomalies
+  6. Thresholds valid (grant < deny)
+
+Total feature pipeline: 13 ML features + 6 hard rules = 19 total
 
 Next steps:
   • Run full integration tests on backend
