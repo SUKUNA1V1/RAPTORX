@@ -43,7 +43,7 @@ def run_retune_threshold() -> Dict[str, Any]:
         
         logger.info("Loading models...")
         if_data = retune_threshold.joblib.load("ml/models/isolation_forest.pkl")
-        ae_model = retune_threshold.keras.models.load_model("ml/models/autoencoder.h5")
+        ae_model = retune_threshold.keras.models.load_model("ml/models/autoencoder.keras")
         ae_config = retune_threshold.joblib.load("ml/models/autoencoder_config.pkl")
         logger.info("Models loaded successfully")
         

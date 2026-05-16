@@ -30,6 +30,12 @@ FEATURE_COLS = [
     "access_attempt_count",
     "time_of_week",
     "hour_deviation_from_norm",
+    "geographic_impossibility",
+    "distance_between_scans_km",
+    "velocity_km_per_min",
+    "zone_clearance_mismatch",
+    "department_zone_mismatch",
+    "concurrent_session_detected",
 ]
 
 ZONE_DEPARTMENT_MAP = {
@@ -160,12 +166,12 @@ def get_scaler():
             scaler_path_19 = os.path.join(_models_dir(), "scaler_19.pkl")
             scaler_path_legacy = os.path.join(_models_dir(), "scaler.pkl")
             
-            if os.path.exists(scaler_path_13):
-                _SCALER = joblib.load(scaler_path_13)
-                logger.debug("Loaded 13-feature scaler")
-            elif os.path.exists(scaler_path_19):
+            if os.path.exists(scaler_path_19):
                 _SCALER = joblib.load(scaler_path_19)
                 logger.debug("Loaded 19-feature scaler")
+            elif os.path.exists(scaler_path_13):
+                _SCALER = joblib.load(scaler_path_13)
+                logger.debug("Loaded 13-feature scaler")
             elif os.path.exists(scaler_path_legacy):
                 _SCALER = joblib.load(scaler_path_legacy)
                 logger.debug("Loaded legacy scaler")
