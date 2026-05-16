@@ -391,6 +391,36 @@ const bootstrapSimulatorSeedData = async (): Promise<void> => {
       required_clearance: 3,
       is_restricted: true,
     },
+    {
+      name: 'HR Office Door',
+      type: 'door',
+      status: 'active',
+      building: 'HQ',
+      floor: '3',
+      zone: 'HR',
+      required_clearance: 1,
+      is_restricted: false,
+    },
+    {
+      name: 'Finance Department Reader',
+      type: 'reader',
+      status: 'active',
+      building: 'HQ',
+      floor: '4',
+      zone: 'Finance',
+      required_clearance: 2,
+      is_restricted: false,
+    },
+    {
+      name: 'Marketing Suite Door',
+      type: 'door',
+      status: 'active',
+      building: 'HQ',
+      floor: '5',
+      zone: 'Marketing',
+      required_clearance: 1,
+      is_restricted: false,
+    },
   ];
 
   await Promise.all([
@@ -569,7 +599,10 @@ const SimulatorPage = () => {
         }
 
         if (effectiveScenario === 'badge_cloning') {
-          const altPoints = accessPointsData.filter((ap) => ap.id !== target.accessPoint.id && ap.status === 'active');
+          // Badge cloning: same badge in 2 different zones within <2 min
+          // Time: 4 seconds apart = 0.067 min (triggers concurrent_session AND velocity check)
+          // With 0.15 km distance: velocity = 0.15/0.067 = 2.2 km/min > 1.0 (triggers velocity hard rule)
+          const altPoints = accessPointsData.filter((ap) => ap.id !== target.accessPoint.id && ap.status === 'active' && ap.zone !== target.accessPoint.zone);
           const firstResult = await apiClient.requestAccess({
             badge_id: target.user.badge_id,
             access_point_id: target.accessPoint.id,
@@ -587,7 +620,7 @@ const SimulatorPage = () => {
               badge_id: target.user.badge_id,
               access_point_id: randomItem(altPoints).id,
               method: 'badge',
-              timestamp: new Date(eventBase.getTime() + 30 * 1000).toISOString(),
+              timestamp: new Date(eventBase.getTime() + 4 * 1000).toISOString(), // 4 seconds = triggers velocity > 1.0 AND concurrent session
             });
             generatedResults.push({
               ...secondResult,
@@ -712,14 +745,25 @@ const SimulatorPage = () => {
             continue;
           }
 
-          // Send 3 rapid accesses within 10 seconds to different locations
-          const selectedPoints = accessiblePoints.slice(0, 3);
+          // Send 3 rapid accesses to different zones within 4 seconds
+          // Time: 2 seconds apart = 0.033 min
+          // With 0.15-0.40 km distance: velocity = 0.15/0.033 = 4.5 km/min >> 1.0 (HARD RULE DENIED)
+          // Select points from different zones to maximize distance and trigger hard rule
+          const pointsByZone: Record<string, AccessPointItem[]> = {};
+          for (const pt of accessiblePoints) {
+            const z = pt.zone || 'default';
+            if (!pointsByZone[z]) pointsByZone[z] = [];
+            pointsByZone[z].push(pt);
+          }
+          const uniqueZones = Object.keys(pointsByZone).slice(0, 3);
+          const selectedPoints = uniqueZones.map(z => randomItem(pointsByZone[z]));
+          
           for (let rapid = 0; rapid < selectedPoints.length; rapid += 1) {
             const rapidResult = await apiClient.requestAccess({
               badge_id: rapidUser.badge_id,
               access_point_id: selectedPoints[rapid].id,
               method: 'badge',
-              timestamp: new Date(eventBase.getTime() + rapid * 3 * 1000).toISOString(), // 3 sec apart
+              timestamp: new Date(eventBase.getTime() + rapid * 2 * 1000).toISOString(), // 2 sec apart = triggers velocity > 1.0
             });
             generatedResults.push({
               ...rapidResult,
