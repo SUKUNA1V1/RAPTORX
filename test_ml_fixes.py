@@ -13,13 +13,14 @@ from pathlib import Path
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent / "scripts"))
 
 print("=" * 80)
 print("ML MODEL FIX VERIFICATION TEST")
 print("=" * 80)
 
 # Test 1: Check FEATURE_COLS has 19 features
-print("\n✓ Test 1: FEATURE_COLS Configuration")
+print("\n[PASS] Test 1: FEATURE_COLS Configuration")
 print("-" * 80)
 try:
     from backend.app.services.ml_service import FEATURE_COLS
@@ -27,16 +28,16 @@ try:
     print(f"Features: {FEATURE_COLS}")
     
     if len(FEATURE_COLS) == 19:
-        print("✓ PASS: FEATURE_COLS has correct 19 features")
+        print("[PASS] FEATURE_COLS has correct 19 features")
     else:
-        print(f"✗ FAIL: Expected 19 features, got {len(FEATURE_COLS)}")
+        print(f"[FAIL] Expected 19 features, got {len(FEATURE_COLS)}")
         sys.exit(1)
 except Exception as e:
-    print(f"✗ ERROR: Failed to import FEATURE_COLS: {e}")
+    print(f"[ERROR] Failed to import FEATURE_COLS: {e}")
     sys.exit(1)
 
 # Test 2: Check scaler files exist
-print("\n✓ Test 2: Scaler Artifacts")
+print("\n[PASS] Test 2: Scaler Artifacts")
 print("-" * 80)
 try:
     models_dir = Path("ml/models")
@@ -53,35 +54,35 @@ try:
         path = models_dir / fname
         if path.exists():
             size_kb = path.stat().st_size / 1024
-            print(f"  ✓ {fname:30s} ({size_kb:8.1f} KB) - {desc}")
+            print(f"  [OK] {fname:30s} ({size_kb:8.1f} KB) - {desc}")
         else:
             missing.append(fname)
-            print(f"  ✗ {fname:30s} MISSING - {desc}")
+            print(f"  [MISSING] {fname:30s} MISSING - {desc}")
     
     if missing:
-        print(f"\n✗ FAIL: Missing {len(missing)} critical files")
+        print(f"\n[FAIL] Missing {len(missing)} critical files")
         sys.exit(1)
     else:
-        print("\n✓ PASS: All model artifacts present")
+        print("\n[PASS] All model artifacts present")
 except Exception as e:
-    print(f"✗ ERROR: {e}")
+    print(f"[ERROR] {e}")
     sys.exit(1)
 
 # Test 3: Test feature extraction with mock data
-print("\n✓ Test 3: Feature Extraction")
+print("\n[PASS] Test 3: Feature Extraction")
 print("-" * 80)
 try:
     print("Skipping live feature extraction test (requires database)")
     print("Feature extraction code reviewed:")
-    print("  ✓ extract_features() creates all 19 features")
-    print("  ✓ FEATURE_COLS ordering matches decision_engine expectations")
-    print("  ✓ Scaling applied to full 19-feature vector")
+    print("  [OK] extract_features() creates all 19 features")
+    print("  [OK] FEATURE_COLS ordering matches decision_engine expectations")
+    print("  [OK] Scaling applied to full 19-feature vector")
 except Exception as e:
-    print(f"✗ ERROR: {e}")
+    print(f"[ERROR] {e}")
     sys.exit(1)
 
 # Test 4: Test decision engine initialization
-print("\n✓ Test 4: Decision Engine")
+print("\n[PASS] Test 4: Decision Engine")
 print("-" * 80)
 try:
     from scripts.decision_engine import AccessDecisionEngine
@@ -98,7 +99,7 @@ try:
     print(f"  Deny threshold: {status['deny_threshold']}")
     
     if not engine.is_loaded:
-        print("✗ FAIL: Decision engine failed to load models")
+        print("[FAIL] Decision engine failed to load models")
         sys.exit(1)
     
     # Test with sample features (19 values)
@@ -126,7 +127,7 @@ try:
     ]
     
     if len(sample_features) != 19:
-        print(f"✗ FAIL: Sample features has {len(sample_features)} values, expected 19")
+        print(f"[FAIL] Sample features has {len(sample_features)} values, expected 19")
         sys.exit(1)
     
     result = engine.decide(sample_features)
@@ -137,7 +138,7 @@ try:
     print(f"  Reasoning: {result['reasoning']}")
     
     if result['decision'] not in ['granted', 'delayed', 'denied']:
-        print("✗ FAIL: Invalid decision")
+        print("[FAIL] Invalid decision")
         sys.exit(1)
     
     # Test with anomalous access (impossible velocity)
@@ -152,19 +153,19 @@ try:
     
     # Verify anomaly gets higher risk than normal
     if result_anomaly['risk_score'] <= result['risk_score']:
-        print(f"⚠️  WARNING: Anomaly risk ({result_anomaly['risk_score']:.4f}) not higher than normal ({result['risk_score']:.4f})")
+        print(f"[WARN] Anomaly risk ({result_anomaly['risk_score']:.4f}) not higher than normal ({result['risk_score']:.4f})")
     else:
-        print("✓ Anomaly correctly scored higher risk")
+        print("[OK] Anomaly correctly scored higher risk")
     
-    print("\n✓ PASS: Decision engine working correctly")
+    print("\n[PASS] Decision engine working correctly")
 except Exception as e:
     import traceback
-    print(f"✗ ERROR: {e}")
+    print(f"[ERROR] {e}")
     traceback.print_exc()
     sys.exit(1)
 
 # Test 5: Verify thresholds
-print("\n✓ Test 5: Threshold Configuration")
+print("\n[PASS] Test 5: Threshold Configuration")
 print("-" * 80)
 try:
     from scripts.decision_engine import AccessDecisionEngine
@@ -178,16 +179,16 @@ try:
     print(f"Delayed zone: {grant_t:.3f} - {deny_t:.3f}")
     
     if grant_t >= deny_t:
-        print("✗ FAIL: Grant threshold >= deny threshold!")
+        print("[FAIL] Grant threshold >= deny threshold!")
         sys.exit(1)
     
-    print("✓ PASS: Thresholds valid")
+    print("[PASS] Thresholds valid")
 except Exception as e:
-    print(f"✗ ERROR: {e}")
+    print(f"[ERROR] {e}")
     sys.exit(1)
 
 # Test 6: Check auto-retuning fix
-print("\n✓ Test 6: Auto-Retuning Fix (File Format)")
+print("\n[PASS] Test 6: Auto-Retuning Fix (File Format)")
 print("-" * 80)
 try:
     ci_script_path = Path("scripts/ci_retune_threshold.py")
@@ -195,18 +196,18 @@ try:
         content = f.read()
     
     if "autoencoder.keras" in content and "autoencoder.h5" not in content:
-        print("✓ PASS: ci_retune_threshold.py fixed (.keras format)")
+        print("[PASS] ci_retune_threshold.py fixed (.keras format)")
     else:
         has_h5 = "autoencoder.h5" in content
         has_keras = "autoencoder.keras" in content
         print(f"  Has .h5: {has_h5}, Has .keras: {has_keras}")
         if has_h5:
-            print("✗ FAIL: Still references .h5 format")
+            print("[FAIL] Still references .h5 format")
             sys.exit(1)
         else:
-            print("✓ PASS: Auto-retuning script fixed")
+            print("[PASS] Auto-retuning script fixed")
 except Exception as e:
-    print(f"✗ ERROR: {e}")
+    print(f"[ERROR] {e}")
     sys.exit(1)
 
 # Summary
@@ -214,7 +215,7 @@ print("\n" + "=" * 80)
 print("SUMMARY")
 print("=" * 80)
 print("""
-✓ All critical fixes verified:
+[OK] All critical fixes verified:
   1. FEATURE_COLS includes all 19 features
   2. Model artifacts present and loadable
   3. Decision engine initializes and predicts

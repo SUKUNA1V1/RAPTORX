@@ -17,7 +17,10 @@ import joblib
 import tensorflow as tf
 from tensorflow import keras
 from datetime import datetime, timezone
-from model_registry import resolve_model_artifact_path
+try:
+    from .model_registry import resolve_model_artifact_path
+except ImportError:
+    from model_registry import resolve_model_artifact_path
 import warnings
 warnings.filterwarnings("ignore")
 
