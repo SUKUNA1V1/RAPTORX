@@ -8,8 +8,8 @@ print("Getting authentication token...")
 login_response = requests.post(
     'http://localhost:8000/api/auth/login',
     json={
-        'email': 'admin@raptorx.local',
-        'pin': 'admin123'
+        'email': 'user0999@university.edu',
+        'pin': 'admin'
     }
 )
 
@@ -21,7 +21,7 @@ if login_response.status_code != 200:
 token_data = login_response.json()
 token = token_data['access_token']
 headers = {'Authorization': f'Bearer {token}'}
-print(f"✓ Token obtained: {token[:50]}...")
+print(f"✓ Token obtained: {token[:10000]}...")
 
 # Test each endpoint
 endpoints = [

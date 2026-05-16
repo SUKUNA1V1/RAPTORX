@@ -1,8 +1,16 @@
 {
-  "timestamp": "2026-05-16T13:55:31.581584",
-  "status": "failed",
-  "metrics": {},
-  "errors": [
-    "[Errno 2] Unable to synchronously open file (unable to open file: name = 'ml/models/autoencoder.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)"
-  ]
+  "timestamp": "2026-05-16T14:30:51.706707",
+  "status": "success",
+  "metrics": {
+    "best_threshold": 0.21,
+    "validation_f1": 0.9127544661404238,
+    "test": {
+      "f1": 0.9183314356691854,
+      "precision": 0.9517270971894444,
+      "recall": 0.8872,
+      "auc": 0.9948140252631579
+    },
+    "verdict": "EXCELLENT"
+  },
+  "errors": []
 }

@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-16T13:55:51.586365+00:00",
+  "updated_at": "2026-05-16T14:31:21.319666+00:00",
   "current": {
     "isolation_forest": {
-      "version": "20260516T135551Z",
-      "updated_at": "2026-05-16T13:55:51.551132+00:00",
+      "version": "20260516T143121Z",
+      "updated_at": "2026-05-16T14:31:21.292314+00:00",
       "artifacts": {
-        "isolation_forest.pkl": "versions/isolation_forest/20260516T135551Z/isolation_forest.pkl"
+        "isolation_forest.pkl": "versions/isolation_forest/20260516T143121Z/isolation_forest.pkl"
       }
     },
     "autoencoder": {
@@ -18,10 +18,10 @@
       }
     },
     "ensemble": {
-      "version": "20260516T135551Z",
-      "updated_at": "2026-05-16T13:55:51.586352+00:00",
+      "version": "20260516T143121Z",
+      "updated_at": "2026-05-16T14:31:21.319652+00:00",
       "artifacts": {
-        "ensemble_config.pkl": "versions/ensemble/20260516T135551Z/ensemble_config.pkl"
+        "ensemble_config.pkl": "versions/ensemble/20260516T143121Z/ensemble_config.pkl"
       }
     }
   }

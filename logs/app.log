@@ -587,3 +587,69 @@
 2026-05-16 02:17:19 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
 2026-05-16 02:17:39 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
 2026-05-16 02:17:52 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 15:32:36 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 15:32:36 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 15:33:44 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 15:34:12 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 15:34:12 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 15:34:13 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 15:34:46 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 15:34:46 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 15:35:00 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 15:35:37 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 15:35:37 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 15:39:31 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 772.93ms (status: 200)
+2026-05-16 15:40:46 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 87.14ms
+2026-05-16 15:40:54 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 9.53ms
+2026-05-16 15:40:56 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 5.71ms
+2026-05-16 15:41:03 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 5.07ms
+2026-05-16 15:41:04 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 4.51ms
+2026-05-16 15:41:15 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 15:41:40 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 15:41:40 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 15:41:55 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on LOGIN_ATTEMPTS took 537.26ms
+2026-05-16 15:41:55 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 998.92ms (status: 200)
+2026-05-16 15:41:56 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/access-timeline took 548.66ms (status: 200)
+2026-05-16 15:41:56 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 100.95ms
+2026-05-16 15:41:56 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 192.75ms
+2026-05-16 15:41:56 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 714.98ms (status: 200)
+2026-05-16 15:41:57 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 133.57ms
+2026-05-16 15:41:57 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 106.76ms
+2026-05-16 15:42:13 - app.services.ml_service - DEBUG - [ml_service.py:171] - Loaded 19-feature scaler
+2026-05-16 15:42:37 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 15:42:37 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 24907.73ms (status: 200)
+2026-05-16 15:43:06 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 15:43:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 22095.83ms (status: 200)
+2026-05-16 15:45:41 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 15:51:37 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 15:51:37 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 15:51:47 - app.services.ml_service - DEBUG - [ml_service.py:179] - Loaded 13-feature scaler
+2026-05-16 15:52:11 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 15:52:11 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 23919.94ms (status: 200)
+2026-05-16 15:55:13 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on USERS took 760.25ms
+2026-05-16 15:55:13 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/users took 768.13ms (status: 200)
+2026-05-16 15:57:30 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 161.25ms
+2026-05-16 15:58:12 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 166.47ms
+2026-05-16 15:59:04 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 15:59:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 24791.63ms (status: 200)
+2026-05-16 16:03:28 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 16:03:32 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 859.66ms (status: 200)
+2026-05-16 16:07:53 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 16:08:10 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 16:08:10 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 16:08:18 - app.services.ml_service - DEBUG - [ml_service.py:179] - Loaded 13-feature scaler
+2026-05-16 16:08:18 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 16:08:22 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 682.42ms (status: 200)
+2026-05-16 16:09:43 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 667.90ms (status: 422)
+2026-05-16 16:09:53 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 780.31ms (status: 200)
+2026-05-16 16:09:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 681.31ms (status: 200)
+2026-05-16 16:09:55 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 667.36ms (status: 200)
+2026-05-16 16:10:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 666.19ms (status: 200)
+2026-05-16 16:11:40 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 16:14:46 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 16:14:46 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 16:14:54 - app.services.ml_service - DEBUG - [ml_service.py:179] - Loaded 13-feature scaler
+2026-05-16 16:14:54 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 16:14:58 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 614.74ms (status: 200)
+2026-05-16 16:15:02 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 553.58ms (status: 200)
+2026-05-16 16:18:09 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
