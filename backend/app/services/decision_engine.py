@@ -257,7 +257,8 @@ class AccessDecisionEngine:
             self.is_loaded = False
 
     def compute_risk_score(self, features: list) -> dict:
-        X = np.array(features).reshape(1, -1)
+        # Extract only first 13 features for ML models (models trained on 13, not 19)
+        X = np.array(features[:13]).reshape(1, -1)
 
         if_score = None
         ae_score = None
@@ -302,6 +303,8 @@ class AccessDecisionEngine:
         }
 
     def rule_based_score(self, features: list) -> float:
+        # Extract only first 13 features (same as ML models)
+        # Features 13-18 are hard rules and handled separately
         (
             hour,
             day_of_week,
@@ -316,7 +319,7 @@ class AccessDecisionEngine:
             access_attempt_count,
             time_of_week,
             hour_deviation_from_norm,
-        ) = features
+        ) = features[:13]
 
         score = 0.0
 
@@ -341,6 +344,7 @@ class AccessDecisionEngine:
 
     @staticmethod
     def _clone_risk_bump(features: list) -> float:
+        # Extract only first 13 features
         (
             hour,
             day_of_week,
@@ -355,7 +359,7 @@ class AccessDecisionEngine:
             access_attempt_count,
             time_of_week,
             hour_deviation_from_norm,
-        ) = features
+        ) = features[:13]
 
         bump = 0.0
         if time_since_last_access_min is not None and time_since_last_access_min < 5 and sequential_zone_violation:
