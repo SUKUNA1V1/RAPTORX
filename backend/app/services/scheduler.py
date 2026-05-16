@@ -39,7 +39,7 @@ class AutoRetrainScheduler:
         
         self.is_running = True
         self.task = asyncio.create_task(self._run_scheduler())
-        logger.info(f"✅ Auto-retrain scheduler started (checking every {self.check_interval_hours} hour(s))")
+        logger.info(f"[OK] Auto-retrain scheduler started (checking every {self.check_interval_hours} hour(s))")
     
     async def stop(self):
         """Stop the background scheduler."""
@@ -54,7 +54,7 @@ class AutoRetrainScheduler:
                 await self.task
             except asyncio.CancelledError:
                 pass
-        logger.info("✅ Auto-retrain scheduler stopped")
+        logger.info("[OK] Auto-retrain scheduler stopped")
     
     async def _run_scheduler(self):
         """Main scheduler loop."""

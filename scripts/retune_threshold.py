@@ -28,19 +28,15 @@ MIN_RECALL = float(os.getenv("RAPTORX_MIN_RECALL", "0.80"))
 
 def load_validation_data() -> pd.DataFrame:
     val_path = "data/processed/val_scaled.csv"
-    train_path = "data/processed/train_scaled.csv"
 
     try:
+        print(f"✓ Loading validation set from {val_path}")
         return pd.read_csv(val_path)
     except FileNotFoundError:
-        train_df = pd.read_csv(train_path)
-        _, val_df = train_test_split(
-            train_df,
-            test_size=0.2,
-            random_state=42,
-            stratify=train_df["label"],
+        raise FileNotFoundError(
+            f"❌ Validation set not found at {val_path}\n"
+            f"Please run 'python scripts/explore_and_prepare.py' first to create val_scaled.csv"
         )
-        return val_df.reset_index(drop=True)
 
 
 def compute_scores(X, if_data, ae_model, ae_config):
@@ -128,15 +124,14 @@ print(f"Validation anomaly ratio (tuning)  : {y_tune.mean() * 100:.2f}%")
 print(f"Minimum precision target           : {MIN_PRECISION:.2f}")
 print(f"Minimum recall target              : {MIN_RECALL:.2f}")
 
-# Find optimal grant threshold (maximize recall - catch normal cases)
-# and optimal deny threshold (maximize precision - catch anomalies)
-best_grant_t = 0.30
-best_deny_t = 0.70
+# Find optimal grant threshold (maximize F1 while meeting min precision/recall)
+best_grant_t = None
 best_f1 = 0.0
 best_metrics = {}
 results = []
+valid_results = []
 
-for t in np.arange(0.20, 0.90, 0.01):
+for t in np.arange(0.10, 0.90, 0.01):
     preds = (combined_tune >= t).astype(int)
     f1 = f1_score(y_tune, preds, zero_division=0)
     prec = precision_score(y_tune, preds, zero_division=0)
@@ -151,6 +146,14 @@ for t in np.arange(0.20, 0.90, 0.01):
         "valid": bool(valid),
     })
 
+    if valid:
+        valid_results.append({
+            "threshold": float(t),
+            "f1": f1,
+            "precision": prec,
+            "recall": rec,
+        })
+
     if f1 > best_f1 and valid:
         best_f1 = f1
         best_grant_t = float(t)
@@ -160,17 +163,48 @@ for t in np.arange(0.20, 0.90, 0.01):
             "recall": rec,
         }
 
-# Deny threshold should be higher than grant threshold
-# Use a higher percentile for deny - be stricter on denying
-# Strategy: grant at best found threshold, deny at +0.20 or higher percentile
-best_deny_t = min(0.80, best_grant_t + 0.25)
+# Check if any valid threshold was found
+if best_grant_t is None:
+    print("\n" + "=" * 60)
+    print("❌ WARNING: NO THRESHOLD MEETS MINIMUM CRITERIA")
+    print("=" * 60)
+    print(f"Min precision target: {MIN_PRECISION:.2f}")
+    print(f"Min recall target:    {MIN_RECALL:.2f}")
+    print(f"\nBest attempt:")
+    best_idx = np.argmax([r["f1"] for r in results])
+    best_attempt = results[best_idx]
+    print(f"  Threshold: {best_attempt['threshold']:.2f}")
+    print(f"  F1: {best_attempt['f1']:.4f}")
+    print(f"  Precision: {best_attempt['precision']:.4f} (target: {MIN_PRECISION:.2f})")
+    print(f"  Recall: {best_attempt['recall']:.4f} (target: {MIN_RECALL:.2f})")
+    print(f"\n⚠️  Proceeding with best-attempt threshold (may not meet requirements)")
+    best_grant_t = best_attempt['threshold']
+    best_metrics = {
+        "f1": best_attempt["f1"],
+        "precision": best_attempt["precision"],
+        "recall": best_attempt["recall"],
+    }
 
-# Validate deny threshold choice
-if best_grant_t < best_deny_t:
-    print(f"\n✓ Valid threshold pair: grant={best_grant_t:.2f}, deny={best_deny_t:.2f}")
-else:
-    print(f"\n⚠ Deny must be > grant, adjusting...")
-    best_deny_t = best_grant_t + 0.25
+# Optimize deny threshold separately for HIGH PRECISION (minimize false denials)
+# Deny should be stricter than grant (higher threshold = fewer denials = higher precision)
+best_deny_t = best_grant_t + 0.25  # Default: grant + 0.25
+
+# Search for best deny threshold with different precision targets
+if valid_results:
+    sorted_valid = sorted(valid_results, key=lambda x: x["threshold"], reverse=True)
+    # Find highest threshold that still meets min precision (stricter)
+    for high_t in sorted_valid:
+        if high_t["precision"] >= 0.90:  # Aim for 90%+ precision on deny
+            best_deny_t = max(best_deny_t, high_t["threshold"] + 0.10)
+            break
+    
+    # Ensure deny > grant with minimum gap
+    if best_deny_t <= best_grant_t:
+        best_deny_t = best_grant_t + 0.20
+
+print(f"\n✓ Grant threshold (normal if < this): {best_grant_t:.2f}")
+print(f"✓ Deny threshold (deny if >= this):   {best_deny_t:.2f}")
+print(f"✓ Threshold gap: {best_deny_t - best_grant_t:.2f}")
 
 results_df = pd.DataFrame(results).sort_values("f1", ascending=False)
 print("\nTop 15 threshold candidates:\n")
@@ -256,5 +290,69 @@ try:
     print(f"  deny_threshold:  {best_deny_t:.2f}")
 except Exception as e:
     print(f"Warning: Could not update ensemble_config: {e}")
+
+# Automatically update .env file with new thresholds
+def update_env_thresholds(grant_threshold, deny_threshold):
+    """Update .env file with new thresholds from retraining."""
+    from pathlib import Path
+    
+    env_path = Path(__file__).parent.parent / ".env"
+    
+    if not env_path.exists():
+        print(f"⚠️  Warning: .env file not found at {env_path}")
+        return False
+    
+    try:
+        # Read existing .env content
+        with open(env_path, "r") as f:
+            lines = f.readlines()
+        
+        # Update or add threshold lines
+        updated_lines = []
+        grant_found = False
+        deny_found = False
+        
+        for line in lines:
+            if line.startswith("DECISION_THRESHOLD_GRANT="):
+                updated_lines.append(f"DECISION_THRESHOLD_GRANT={grant_threshold:.2f}\n")
+                grant_found = True
+            elif line.startswith("DECISION_THRESHOLD_DENY="):
+                updated_lines.append(f"DECISION_THRESHOLD_DENY={deny_threshold:.2f}\n")
+                deny_found = True
+            else:
+                updated_lines.append(line)
+        
+        # Add missing threshold lines if not found
+        if not grant_found:
+            # Find a good place to insert (after DATABASE_URL or at the beginning)
+            insert_idx = 0
+            for idx, line in enumerate(updated_lines):
+                if line.startswith("DATABASE_URL="):
+                    insert_idx = idx + 1
+                    break
+            updated_lines.insert(insert_idx, f"DECISION_THRESHOLD_GRANT={grant_threshold:.2f}\n")
+        
+        if not deny_found:
+            # Insert after grant threshold
+            for idx, line in enumerate(updated_lines):
+                if line.startswith("DECISION_THRESHOLD_GRANT="):
+                    updated_lines.insert(idx + 1, f"DECISION_THRESHOLD_DENY={deny_threshold:.2f}\n")
+                    break
+        
+        # Write back to .env
+        with open(env_path, "w") as f:
+            f.writelines(updated_lines)
+        
+        print(f"\n✅ Updated .env file with new thresholds:")
+        print(f"   DECISION_THRESHOLD_GRANT={grant_threshold:.2f}")
+        print(f"   DECISION_THRESHOLD_DENY={deny_threshold:.2f}")
+        return True
+    
+    except Exception as e:
+        print(f"❌ Error updating .env file: {e}")
+        return False
+
+# Update .env with new thresholds
+update_env_thresholds(best_grant_t, best_deny_t)
 
 print("\n" + "=" * 60)

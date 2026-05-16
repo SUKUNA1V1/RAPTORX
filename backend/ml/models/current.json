@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-05-16T13:55:51.586365+00:00",
+  "current": {
+    "isolation_forest": {
+      "version": "20260516T135551Z",
+      "updated_at": "2026-05-16T13:55:51.551132+00:00",
+      "artifacts": {
+        "isolation_forest.pkl": "versions/isolation_forest/20260516T135551Z/isolation_forest.pkl"
+      }
+    },
+    "autoencoder": {
+      "version": "20260515T204658Z",
+      "updated_at": "2026-05-15T20:46:58.406868+00:00",
+      "artifacts": {
+        "autoencoder.keras": "versions/autoencoder/20260515T204658Z/autoencoder.keras",
+        "autoencoder_config.pkl": "versions/autoencoder/20260515T204658Z/autoencoder_config.pkl"
+      }
+    },
+    "ensemble": {
+      "version": "20260516T135551Z",
+      "updated_at": "2026-05-16T13:55:51.586352+00:00",
+      "artifacts": {
+        "ensemble_config.pkl": "versions/ensemble/20260516T135551Z/ensemble_config.pkl"
+      }
+    }
+  }
+}

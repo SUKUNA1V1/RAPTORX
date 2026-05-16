@@ -1,1 +1,123 @@
-123
+UNIVERSITY STRUCTURE - EDITABLE FORMAT
+==========================================
+
+DEPARTMENTS:
+  computer_science:
+    zones:
+      - cs_lab
+      - cs_office
+      - cs_servers_room
+      - cs_library
+      
+  economy:
+    zones:
+      - economy_library
+      - economy_office
+  business:
+    zones:
+      - business_office
+      - business_library
+  research labs :
+    zones:
+      - research_lab
+      - research_office
+      - research_storage
+  social_sciences:
+    zones:
+      - social_sciences_library
+      - social_sciences_office
+  sports:
+    zones:
+      - sports_GYM
+      - sports_office
+      - sports_storage
+      - sports_library
+
+SHARED_ZONES:
+  - main_entrance
+  - admin_building
+  - security_office
+  - restaurant
+  - parking_lot_student
+  - parking_lot_staff
+
+RESTRICTED_AREAS:
+  - cs_servers_room
+  - research_lab
+  - research_office
+  - research_storage
+  - security_office
+
+RESEARCHER_ONLY_BUILDING:
+  - research_lab
+  - research_office
+  - research_storage
+
+CLEARANCE_REQUIREMENTS:
+  cs_lab: 2
+  cs_office: 2
+  cs_servers_room: 3
+  cs_library: 1
+  economy_library: 1
+  economy_office: 2
+  business_office: 2
+  business_library: 1
+  research_lab: 3
+  research_office: 3
+  research_storage: 3
+  social_sciences_library: 1
+  social_sciences_office: 2
+  sports_GYM: 1
+  sports_office: 2
+  sports_storage: 2
+  sports_library: 1
+  admin_building: 2
+  security_office: 3
+  restaurant: 1
+  parking_lot_student: 1
+  parking_lot_staff: 2
+  main_entrance: 1
+
+USER_ROLES:
+  students:
+    name: Students
+    distribution: 50
+    clearance: 1
+    usual_hours_start: 8
+    usual_hours_end: 17
+    usual_days: [0, 1, 2, 3, 4, 5, 6]
+  teachers:
+    name: Teachers
+    distribution: 15
+    clearance: 2
+    usual_hours_start: 7
+    usual_hours_end: 18
+    usual_days: [0, 1, 2, 3, 4]
+  researchers:
+    name: Researchers
+    distribution: 10
+    clearance: 3
+    usual_hours_start: 0
+    usual_hours_end: 24
+    usual_days: [0, 1, 2, 3, 4, 5, 6]
+  admin_low:
+    name: Administration - Low Level
+    distribution: 10
+    clearance: 2
+    usual_hours_start: 8
+    usual_hours_end: 17
+    usual_days: [0, 1, 2, 3, 4]
+  admin_high:
+    name: Administration - High Level
+    distribution: 8
+    clearance: 3
+    usual_hours_start: 7
+    usual_hours_end: 22
+    usual_days: [0, 1, 2, 3, 4, 5, 6]
+  security:
+    name: Security
+    distribution: 7
+    clearance: 3
+    usual_hours_start: 0
+    usual_hours_end: 24
+    usual_days: [0, 1, 2, 3, 4, 5, 6]

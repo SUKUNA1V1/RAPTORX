@@ -1,12 +1,15 @@
 import os
 import sys
+from pathlib import Path
 from app.database import SessionLocal
 from app.models import User
 from app.utils.password import hash_password
 from datetime import datetime
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from root directory (parent of backend)
+root_env = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=root_env)
 
 # Get admin password from environment variable
 default_password = os.getenv("DEFAULT_ADMIN_PASSWORD", None)

@@ -491,7 +491,7 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
         try:
             ml_result = engine.decide(
                 features["list"],
-                raw_features=raw_list,
+                raw_features=features["raw"],
                 audit_context=audit_context,
             )
         except Exception as exc:
@@ -521,7 +521,7 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
             engine.audit_decision(
                 decision=ml_result,
                 features=features["list"],
-                raw_features=raw_list,
+                raw_features=features["raw"],
                 audit_context={**audit_context, "error": str(exc)},
                 event_type="decision_exception_fallback",
             )

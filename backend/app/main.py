@@ -61,10 +61,23 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Handle validation errors."""
+    """Handle validation errors - serialize error objects to strings."""
+    errors = exc.errors()
+    # Convert any non-serializable objects (like ValueError) to strings
+    serializable_errors = []
+    for error in errors:
+        serializable_error = {
+            "type": error.get("type"),
+            "loc": error.get("loc"),
+            "msg": error.get("msg"),
+            "input": error.get("input"),
+        }
+        # Omit ctx as it may contain non-serializable objects
+        serializable_errors.append(serializable_error)
+    
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors()},
+        content={"detail": serializable_errors},
     )
 
 

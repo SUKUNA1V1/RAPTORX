@@ -1147,3 +1147,333 @@
 2026-04-25 17:07:14 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
 2026-04-25 17:08:03 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
 2026-04-25 17:08:14 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-04-25 17:09:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 577.86ms (status: 200)
+2026-04-25 17:53:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1798.76ms (status: 200)
+2026-04-25 18:09:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1780.05ms (status: 200)
+2026-04-25 18:24:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1767.83ms (status: 200)
+2026-04-25 18:40:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1783.12ms (status: 200)
+2026-04-25 19:26:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1783.81ms (status: 200)
+2026-04-25 19:42:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1771.21ms (status: 200)
+2026-04-25 20:28:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1774.39ms (status: 200)
+2026-04-25 20:44:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1770.21ms (status: 200)
+2026-04-25 21:11:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/system-health took 2636.18ms (status: 200)
+2026-04-25 21:30:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1769.82ms (status: 200)
+2026-04-25 21:46:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1771.54ms (status: 200)
+2026-04-25 22:01:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1764.56ms (status: 200)
+2026-04-27 14:37:14 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-27 14:37:17 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ORGANIZATIONS took 101.34ms
+2026-04-27 14:38:17 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on REFRESH_TOKENS took 163.85ms
+2026-04-27 14:38:17 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on REFRESH_TOKENS took 149.10ms
+2026-04-27 14:38:17 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on AUDIT_LOGS took 142.00ms
+2026-04-27 14:38:17 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on AUDIT_LOGS took 101.49ms
+2026-04-27 14:38:17 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 738.60ms (status: 200)
+2026-04-27 14:38:17 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 242.89ms
+2026-04-27 14:38:17 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 587.22ms (status: 200)
+2026-04-27 14:52:00 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-04-27 14:52:02 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on USERS took 116.61ms
+2026-04-27 14:52:03 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-04-27 14:52:03 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 2953.08ms (status: 200)
+2026-04-27 15:09:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1768.57ms (status: 200)
+2026-04-27 15:24:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1762.45ms (status: 200)
+2026-04-27 15:56:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1775.30ms (status: 200)
+2026-04-27 16:28:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1772.48ms (status: 200)
+2026-04-27 16:44:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1780.17ms (status: 200)
+2026-04-28 16:23:05 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-04-28 16:23:07 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ORGANIZATIONS took 101.20ms
+2026-04-28 16:30:19 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on REFRESH_TOKENS took 159.70ms
+2026-04-28 16:30:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on REFRESH_TOKENS took 102.82ms
+2026-04-28 16:30:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 521.20ms (status: 200)
+2026-04-28 16:30:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 162.94ms
+2026-04-28 16:30:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ANOMALY_ALERTS took 147.25ms
+2026-04-28 16:30:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 541.50ms (status: 200)
+2026-04-28 16:34:57 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on ANOMALY_ALERTS took 391.12ms
+2026-04-28 16:34:57 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-04-28 16:37:38 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on ANOMALY_ALERTS took 307.71ms
+2026-04-28 16:37:40 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/42/false-positive took 757.30ms (status: 200)
+2026-04-28 16:48:47 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-04-28 16:57:56 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-04-28 16:57:58 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 2675.87ms (status: 200)
+2026-04-28 17:10:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/logout took 1773.39ms (status: 200)
+2026-04-28 17:12:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/37/resolve took 682.56ms (status: 200)
+2026-05-11 14:23:44 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-11 14:23:50 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ORGANIZATIONS took 156.22ms
+2026-05-11 14:29:44 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on REFRESH_TOKENS took 157.33ms
+2026-05-11 14:29:44 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 132.01ms
+2026-05-11 14:29:45 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on AUDIT_LOGS took 101.04ms
+2026-05-11 14:29:45 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on AUDIT_LOGS took 103.41ms
+2026-05-11 14:29:46 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on REFRESH_TOKENS took 337.71ms
+2026-05-11 14:29:46 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/logout took 648.14ms (status: 200)
+2026-05-11 14:29:47 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/logout took 715.42ms (status: 200)
+2026-05-11 14:30:07 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on LOGIN_ATTEMPTS took 741.90ms
+2026-05-11 14:30:07 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 1144.08ms (status: 200)
+2026-05-11 14:35:18 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on ANOMALY_ALERTS took 145.68ms
+2026-05-11 14:35:18 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-11 14:38:58 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:39:20 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:40:06 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:41:14 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:41:18 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:41:32 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:43:02 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:43:18 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:47:57 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-11 14:56:26 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-11 14:56:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 2643.11ms (status: 200)
+2026-05-11 15:36:40 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 651.97ms (status: 200)
+2026-05-11 15:52:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1801.67ms (status: 200)
+2026-05-11 16:07:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1767.45ms (status: 200)
+2026-05-11 16:23:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1769.91ms (status: 200)
+2026-05-11 16:38:42 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on REFRESH_TOKENS took 1761.39ms
+2026-05-11 16:38:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1775.11ms (status: 200)
+2026-05-11 16:54:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1781.76ms (status: 200)
+2026-05-11 17:09:42 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on REFRESH_TOKENS took 1767.59ms
+2026-05-11 17:09:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1782.17ms (status: 200)
+2026-05-11 17:40:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1772.45ms (status: 200)
+2026-05-11 17:56:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1762.83ms (status: 200)
+2026-05-11 18:11:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1792.81ms (status: 200)
+2026-05-11 18:42:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1770.38ms (status: 200)
+2026-05-11 18:58:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1796.27ms (status: 200)
+2026-05-11 19:13:42 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1789.70ms (status: 200)
+2026-05-11 19:29:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1786.51ms (status: 200)
+2026-05-11 20:00:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1770.44ms (status: 200)
+2026-05-11 21:04:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1778.52ms (status: 200)
+2026-05-11 21:20:12 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1785.02ms (status: 200)
+2026-05-12 13:11:58 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-12 13:12:02 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ORGANIZATIONS took 153.54ms
+2026-05-12 13:12:53 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 316.18ms
+2026-05-12 13:12:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 117.39ms
+2026-05-12 13:12:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 203.96ms
+2026-05-12 13:12:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 602.47ms (status: 200)
+2026-05-12 13:12:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 179.63ms
+2026-05-12 13:12:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ANOMALY_ALERTS took 305.45ms
+2026-05-12 13:12:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on REFRESH_TOKENS took 335.60ms
+2026-05-12 13:12:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 879.33ms (status: 200)
+2026-05-12 13:13:04 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on REFRESH_TOKENS took 414.69ms
+2026-05-12 13:13:04 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on REFRESH_TOKENS took 178.14ms
+2026-05-12 13:13:04 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on REFRESH_TOKENS took 240.99ms
+2026-05-12 13:13:04 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on AUDIT_LOGS took 104.13ms
+2026-05-12 13:13:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 1114.19ms (status: 200)
+2026-05-12 13:13:06 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 109.77ms
+2026-05-12 13:13:06 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 143.87ms
+2026-05-12 13:13:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 864.35ms (status: 200)
+2026-05-12 13:13:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 865.89ms (status: 200)
+2026-05-12 13:17:33 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-12 13:17:42 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-12 13:17:44 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-12 13:17:45 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-12 13:17:46 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-12 13:17:48 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-12 13:17:55 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/onboarding/draft/save from 127.0.0.1
+2026-05-13 08:25:37 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:27:20 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:28:31 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 842.05ms (status: 401)
+2026-05-16 01:29:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/overview took 772.18ms (status: 200)
+2026-05-16 01:29:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 169.90ms
+2026-05-16 01:29:20 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/monthly-timeline took 1150.45ms (status: 200)
+2026-05-16 01:32:22 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:32:30 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:35:31 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:37:45 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:37:53 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/login took 716.37ms (status: 200)
+2026-05-16 01:37:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 157.36ms
+2026-05-16 01:37:54 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 146.53ms
+2026-05-16 01:38:11 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 171.47ms
+2026-05-16 01:38:41 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/api-performance took 559.48ms (status: 200)
+2026-05-16 01:38:41 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/ml/status took 559.65ms (status: 200)
+2026-05-16 01:38:41 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/stats/database-performance took 560.31ms (status: 200)
+2026-05-16 01:39:19 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 01:39:19 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 01:39:25 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 818.53ms (status: 200)
+2026-05-16 01:39:42 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 41.64ms
+2026-05-16 01:39:45 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.74ms
+2026-05-16 01:39:51 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 516.92ms (status: 200)
+2026-05-16 01:39:56 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 771.11ms (status: 200)
+2026-05-16 01:40:47 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 165.13ms
+2026-05-16 01:46:34 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:47:32 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:50:53 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 01:51:02 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /auth/login from 127.0.0.1
+2026-05-16 01:51:17 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /auth/login from 127.0.0.1
+2026-05-16 01:51:37 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /auth/login from 127.0.0.1
+2026-05-16 01:53:53 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 9.15ms
+2026-05-16 01:54:43 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/access/request from 127.0.0.1
+2026-05-16 01:54:43 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/access/request from 127.0.0.1
+2026-05-16 01:54:44 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/access/request from 127.0.0.1
+2026-05-16 01:54:44 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/access/request from 127.0.0.1
+2026-05-16 01:56:29 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 166.02ms
+2026-05-16 01:58:23 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 01:58:23 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 01:59:57 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 722.97ms (status: 200)
+2026-05-16 01:59:58 - app.middleware.csrf - WARNING - [csrf.py:73] - CSRF token invalid for POST /api/access/request from 127.0.0.1
+2026-05-16 01:59:59 - app.middleware.csrf - WARNING - [csrf.py:73] - CSRF token invalid for POST /api/access/request from 127.0.0.1
+2026-05-16 02:00:59 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 3.01ms
+2026-05-16 02:01:48 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 135.80ms
+2026-05-16 02:01:49 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 161.93ms
+2026-05-16 02:05:19 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 5.65ms
+2026-05-16 02:06:01 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.77ms
+2026-05-16 02:06:44 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:06:46 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:07:01 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:07:01 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 02:07:16 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 837.62ms (status: 200)
+2026-05-16 02:07:22 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 677.12ms (status: 200)
+2026-05-16 02:07:24 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 876.91ms (status: 200)
+2026-05-16 02:07:26 - app.middleware.csrf - WARNING - [csrf.py:73] - CSRF token invalid for POST /api/access/request from 127.0.0.1
+2026-05-16 02:07:26 - app.middleware.csrf - WARNING - [csrf.py:73] - CSRF token invalid for POST /api/access/request from 127.0.0.1
+2026-05-16 02:07:26 - app.middleware.csrf - WARNING - [csrf.py:73] - CSRF token invalid for POST /api/access/request from 127.0.0.1
+2026-05-16 02:07:35 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/access/request from 127.0.0.1
+2026-05-16 02:08:12 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:08:13 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:08:14 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:08:15 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 02:08:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 865.04ms (status: 200)
+2026-05-16 02:08:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/auth/refresh took 868.84ms (status: 200)
+2026-05-16 02:08:21 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 558.84ms (status: 200)
+2026-05-16 02:08:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 805.26ms (status: 200)
+2026-05-16 02:08:38 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 652.59ms (status: 200)
+2026-05-16 02:08:41 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 667.37ms (status: 200)
+2026-05-16 02:08:44 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 671.64ms (status: 200)
+2026-05-16 02:13:15 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:13:17 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:14:09 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:14:11 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:14:42 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:14:44 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:14:51 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:14:51 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:14:51 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:14:52 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 02:14:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 971.07ms (status: 200)
+2026-05-16 02:14:56 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:00 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:01 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:02 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 573.30ms (status: 200)
+2026-05-16 02:15:04 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 529.47ms (status: 200)
+2026-05-16 02:15:05 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:06 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 702.42ms (status: 200)
+2026-05-16 02:15:07 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:08 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:10 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:14 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 815.53ms (status: 200)
+2026-05-16 02:15:15 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:16 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 649.63ms (status: 200)
+2026-05-16 02:15:17 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:18 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 679.45ms (status: 200)
+2026-05-16 02:15:18 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 666.13ms (status: 200)
+2026-05-16 02:15:23 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:26 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:26 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 638.18ms (status: 200)
+2026-05-16 02:15:34 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:35 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 557.24ms (status: 200)
+2026-05-16 02:17:13 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:17:16 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:17:25 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:17:29 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:18:19 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:18:21 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 02:18:23 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:18:24 - app.services.cache_service - INFO - [cache_service.py:64] - Redis connected: localhost:6379
+2026-05-16 02:18:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 757.37ms (status: 200)
+2026-05-16 02:20:58 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 536.89ms (status: 200)
+2026-05-16 02:20:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 505.13ms (status: 200)
+2026-05-16 02:24:11 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 626.15ms (status: 200)
+2026-05-16 02:24:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 569.74ms (status: 200)
+2026-05-16 02:24:29 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 666.82ms (status: 200)
+2026-05-16 02:24:56 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 862.07ms (status: 200)
+2026-05-16 02:24:57 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 669.25ms (status: 200)
+2026-05-16 02:25:03 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 665.96ms (status: 200)
+2026-05-16 02:25:08 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 676.49ms (status: 200)
+2026-05-16 02:25:48 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/62/resolve took 681.99ms (status: 200)
+2026-05-16 02:25:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/55/resolve took 656.23ms (status: 200)
+2026-05-16 02:25:53 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/57/resolve took 720.73ms (status: 200)
+2026-05-16 02:25:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: PUT /api/alerts/58/resolve took 585.27ms (status: 200)
+2026-05-16 02:26:04 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on  took 653.41ms
+2026-05-16 02:26:04 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 672.32ms (status: 200)
+2026-05-16 14:44:05 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:44:28 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:45:02 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:45:02 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 14:45:02 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 14:45:38 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:45:38 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 14:45:45 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on USERS took 213.02ms
+2026-05-16 14:45:45 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 284.95ms
+2026-05-16 14:45:45 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 263.60ms
+2026-05-16 14:45:45 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 174.89ms
+2026-05-16 14:45:45 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 14:45:47 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: UPDATE on USERS took 838.44ms
+2026-05-16 14:45:47 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on NORM, took 262.27ms
+2026-05-16 14:46:03 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 497.92ms
+2026-05-16 14:46:09 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:46:09 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 24989.22ms (status: 200)
+2026-05-16 14:46:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 281.83ms
+2026-05-16 14:46:20 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 108.09ms
+2026-05-16 14:46:25 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:46:25 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 23425.77ms (status: 200)
+2026-05-16 14:46:37 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on NORM took 506.22ms
+2026-05-16 14:46:38 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 109.38ms
+2026-05-16 14:46:41 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:46:41 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 21874.13ms (status: 200)
+2026-05-16 14:46:55 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 138.13ms
+2026-05-16 14:46:59 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:46:59 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 21985.37ms (status: 200)
+2026-05-16 14:47:12 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 242.25ms
+2026-05-16 14:47:19 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:47:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 24068.86ms (status: 200)
+2026-05-16 14:47:30 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: SELECT on ACCESS_LOGS took 384.51ms
+2026-05-16 14:47:39 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:47:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 26724.31ms (status: 200)
+2026-05-16 14:47:58 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:47:58 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 28280.98ms (status: 200)
+2026-05-16 14:48:14 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:48:14 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on ANOMALY_ALERTS took 256.83ms
+2026-05-16 14:48:14 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 26749.98ms (status: 200)
+2026-05-16 14:48:27 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:48:27 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 22529.18ms (status: 200)
+2026-05-16 14:48:50 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:48:50 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 14:48:57 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 14:48:57 - app.monitoring - WARNING - [monitoring.py:68] - Slow query detected: INSERT on NORM, took 174.41ms
+2026-05-16 14:49:19 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:49:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 22430.50ms (status: 200)
+2026-05-16 14:49:28 - app.middleware.csrf - WARNING - [csrf.py:63] - CSRF token missing for POST /api/access/request from 127.0.0.1
+2026-05-16 14:49:32 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:49:32 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 14:49:32 - raptorx.scheduler - INFO - [scheduler.py:57] - [OK] Auto-retrain scheduler stopped
+2026-05-16 14:49:44 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:49:44 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 30041.30ms (status: 200)
+2026-05-16 14:49:50 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:49:50 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 17695.01ms (status: 200)
+2026-05-16 14:49:52 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:49:52 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 20436.43ms (status: 200)
+2026-05-16 14:50:13 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:50:13 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 23544.68ms (status: 200)
+2026-05-16 14:50:15 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:50:15 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 20050.96ms (status: 200)
+2026-05-16 14:50:28 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:50:28 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 21286.87ms (status: 200)
+2026-05-16 14:50:45 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:50:45 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 21031.08ms (status: 200)
+2026-05-16 14:50:55 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:50:55 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 25255.29ms (status: 200)
+2026-05-16 14:51:07 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:51:07 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 25627.87ms (status: 200)
+2026-05-16 14:51:25 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:51:25 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 25637.63ms (status: 200)
+2026-05-16 14:51:39 - app.services.cache_service - WARNING - [cache_service.py:192] - Cache invalidation failed for access_logs:*: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
+2026-05-16 14:51:39 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 22164.84ms (status: 200)
+2026-05-16 14:54:23 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:54:23 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 14:54:36 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:54:36 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 14:54:59 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 14:55:19 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:55:19 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 20474.66ms (status: 200)
+2026-05-16 14:56:19 - app.routes.access - DEBUG - [access.py:100] - Decision engine initialized
+2026-05-16 14:56:19 - raptorx.scheduler - INFO - [scheduler.py:42] - [OK] Auto-retrain scheduler started (checking every 1 hour(s))
+2026-05-16 14:56:25 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 14:56:45 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
+2026-05-16 14:56:45 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: POST /api/access/request took 19893.52ms (status: 200)

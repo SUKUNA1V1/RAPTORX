@@ -30,6 +30,11 @@ type ScenarioType =
   | 'cross_dept'
   | 'sequential_restricted'
   | 'early_morning'
+  | 'business_hours_normal'
+  | 'cross_department'
+  | 'repeat_established'
+  | 'late_night_access'
+  | 'rapid_zone_succession'
   | 'custom';
 
 const scenarioConfig: Record<
@@ -45,9 +50,39 @@ const scenarioConfig: Record<
     description: 'Expected work-hour entry patterns with low-risk behavior.',
     severity: 'success',
   },
+  business_hours_normal: {
+    label: 'Business Hours - Normal',
+    description: 'Regular employees accessing non-restricted areas during typical work hours (9-5). Should GRANT with low risk.',
+    severity: 'success',
+  },
+  cross_department: {
+    label: 'Cross-Department Access',
+    description: 'Employee accessing different department areas during business hours. Normal cross-dept collaboration pattern.',
+    severity: 'success',
+  },
+  repeat_established: {
+    label: 'Repeat Established Pattern',
+    description: 'Same user accessing same location repeatedly. Well-established access pattern with history. Should GRANT.',
+    severity: 'success',
+  },
   unusual_hours: {
     label: 'Unusual Hours',
     description: 'Requests generated late night and early morning.',
+    severity: 'warning',
+  },
+  late_night_access: {
+    label: 'Late Night Access',
+    description: 'Employee accessing location outside standard hours (10 PM+). Anomalous timing. Should DELAY for review.',
+    severity: 'warning',
+  },
+  early_morning: {
+    label: 'Early Morning Access',
+    description: 'Access at 5-7 AM (early shift/transitional hours - should be low risk for morning teams).',
+    severity: 'warning',
+  },
+  weekend_normal: {
+    label: 'Weekend Regular Employee',
+    description: 'Regular employee accessing during weekend (may trigger false positive).',
     severity: 'warning',
   },
   badge_cloning: {
@@ -55,15 +90,25 @@ const scenarioConfig: Record<
     description: 'Same badge used in multiple points within short intervals.',
     severity: 'error',
   },
+  high_frequency: {
+    label: 'High Frequency',
+    description: 'Burst traffic to stress anomaly and rate behavior.',
+    severity: 'warning',
+  },
+  rapid_zone_succession: {
+    label: 'Rapid Zone Succession',
+    description: 'Same user accessing 3+ different zones within seconds. Physically impossible travel = DENIED.',
+    severity: 'error',
+  },
   restricted_access: {
     label: 'Restricted Access',
     description: 'Low-clearance users request high-security doors.',
     severity: 'error',
   },
-  high_frequency: {
-    label: 'High Frequency',
-    description: 'Burst traffic to stress anomaly and rate behavior.',
-    severity: 'warning',
+  sequential_restricted: {
+    label: 'Sequential Restricted Access',
+    description: 'User attempts multiple restricted areas in succession (should be DENIED).',
+    severity: 'error',
   },
   anomalous: {
     label: 'Random Anomalous',
@@ -75,25 +120,10 @@ const scenarioConfig: Record<
     description: 'Same user accessing same location multiple times (should be GRANTED every time).',
     severity: 'success',
   },
-  weekend_normal: {
-    label: 'Weekend Regular Employee',
-    description: 'Regular employee accessing during weekend (may trigger false positive).',
-    severity: 'warning',
-  },
   cross_dept: {
     label: 'Cross-Department Manager',
     description: 'Manager accessing different department areas (legitimate but may be flagged).',
     severity: 'info',
-  },
-  sequential_restricted: {
-    label: 'Sequential Restricted Access',
-    description: 'User attempts multiple restricted areas in succession (should be DENIED).',
-    severity: 'error',
-  },
-  early_morning: {
-    label: 'Early Morning Access',
-    description: 'Access at 6-7 AM (transitional hours - should be low risk for morning shift).',
-    severity: 'warning',
   },
   custom: {
     label: 'Custom Execution',
@@ -112,6 +142,11 @@ const anomalyScenarios: Array<Exclude<ScenarioType, 'normal' | 'anomalous' | 'cu
   'cross_dept',
   'sequential_restricted',
   'early_morning',
+  'business_hours_normal',
+  'cross_department',
+  'repeat_established',
+  'late_night_access',
+  'rapid_zone_succession',
 ];
 
 type ExpectedResult = {
@@ -136,14 +171,19 @@ type SimulatorSeedData = {
 const getExpectedResults = (scenario: ScenarioType): ExpectedResult => {
   const expectations: Record<ScenarioType, ExpectedResult> = {
     normal: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.35, riskLevel: 'low', successRate: 95 },
+    business_hours_normal: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.25, riskLevel: 'low', successRate: 98 },
+    cross_department: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.30, riskLevel: 'low', successRate: 95 },
+    repeat_established: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.25, riskLevel: 'low', successRate: 100 },
     unusual_hours: { decision: 'delayed', allowedDecisions: ['delayed', 'denied'], minRisk: 0.30, maxRisk: 1.0, riskLevel: 'high', successRate: 85 },
+    late_night_access: { decision: 'delayed', allowedDecisions: ['delayed'], minRisk: 0.35, maxRisk: 0.55, riskLevel: 'medium', successRate: 85 },
     badge_cloning: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.60, maxRisk: 1.0, riskLevel: 'critical', successRate: 90 },
-    restricted_access: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.85, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
     high_frequency: { decision: 'delayed', allowedDecisions: ['delayed', 'denied'], minRisk: 0.35, maxRisk: 1.0, riskLevel: 'high', successRate: 80 },
+    rapid_zone_succession: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.80, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
+    restricted_access: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.85, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
+    sequential_restricted: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.85, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
     repeat_normal: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.35, riskLevel: 'low', successRate: 100 },
     weekend_normal: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.55, riskLevel: 'medium', successRate: 90 },
     cross_dept: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.50, riskLevel: 'medium', successRate: 95 },
-    sequential_restricted: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.85, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
     early_morning: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.45, riskLevel: 'low', successRate: 90 },
     anomalous: { decision: 'delayed', allowedDecisions: ['delayed', 'denied'], minRisk: 0.35, maxRisk: 1.0, riskLevel: 'high', successRate: 75 },
     custom: { decision: 'granted', allowedDecisions: ['granted', 'denied', 'delayed'], minRisk: 0.0, maxRisk: 1.0, riskLevel: 'medium', successRate: 100 },
@@ -235,14 +275,26 @@ const pickAnomalousTarget = (users: UserItem[], accessPoints: AccessPointItem[])
 const pickUnusualHourTimestamp = (baseDate?: Date) => {
   const unusualHours = [2, 3, 4, 23];
   const now = baseDate ? new Date(baseDate) : new Date();
-  now.setHours(randomItem(unusualHours), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
+  const targetHour = randomItem(unusualHours);
+  now.setHours(targetHour, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
+  
+  // If the resulting time is in the future, use yesterday instead
+  if (now > new Date()) {
+    now.setDate(now.getDate() - 1);
+  }
   return now.toISOString();
 };
 
 const pickEarlyMorningTimestamp = (baseDate?: Date) => {
   const earlyHours = [6, 7];
   const now = baseDate ? new Date(baseDate) : new Date();
-  now.setHours(randomItem(earlyHours), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
+  const targetHour = randomItem(earlyHours);
+  now.setHours(targetHour, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
+  
+  // If the resulting time is in the future, use yesterday instead
+  if (now > new Date()) {
+    now.setDate(now.getDate() - 1);
+  }
   return now.toISOString();
 };
 
@@ -459,6 +511,27 @@ const SimulatorPage = () => {
           if (!isNaN(parsedDate.getTime())) {
             timestamp = parsedDate.getTime() > Date.now() ? new Date().toISOString() : parsedDate.toISOString();
           }
+        } else if (effectiveScenario === 'business_hours_normal') {
+          // Normal business hours access - typical 9-5 pattern
+          target = pickNormalTarget(usersData, accessPointsData);
+          const now = new Date(eventBase);
+          now.setHours(9 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60), 0, 0);
+          if (now > new Date()) {
+            now.setDate(now.getDate() - 1);
+          }
+          timestamp = now.toISOString();
+        } else if (effectiveScenario === 'cross_department') {
+          // Cross-department access from a regular employee
+          const activeUsers = usersData.filter((u) => u.is_active && (u.clearance_level ?? 1) >= 1);
+          const user = randomItem(activeUsers);
+          const deptPoints = accessPointsData.filter((ap) => ap.status === 'active' && !ap.is_restricted && (ap.required_clearance ?? 1) <= (user?.clearance_level ?? 1));
+          target = user && deptPoints.length ? { user, accessPoint: randomItem(deptPoints) } : null;
+          const now = new Date(eventBase);
+          now.setHours(9 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60), 0, 0);
+          if (now > new Date()) {
+            now.setDate(now.getDate() - 1);
+          }
+          timestamp = now.toISOString();
         } else if (effectiveScenario === 'restricted_access') {
           target = pickRestrictedTarget(usersData, accessPointsData);
         } else if (
@@ -482,6 +555,13 @@ const SimulatorPage = () => {
 
         if (effectiveScenario === 'unusual_hours') {
           timestamp = pickUnusualHourTimestamp(eventBase);
+        } else if (effectiveScenario === 'late_night_access') {
+          const now = new Date(eventBase);
+          now.setHours(22, 30 + Math.random() * 30, Math.floor(Math.random() * 60), 0);
+          if (now > new Date()) {
+            now.setDate(now.getDate() - 1);
+          }
+          timestamp = now.toISOString();
         } else if (effectiveScenario === 'weekend_normal') {
           timestamp = pickWeekendTimestamp(eventBase);
         } else if (effectiveScenario === 'early_morning') {
@@ -571,6 +651,78 @@ const SimulatorPage = () => {
             });
             generatedResults.push({
               ...seqResult,
+              expected: expectedForEvent,
+              scenarioUsed: effectiveScenario,
+            });
+          }
+          continue;
+        }
+
+        if (effectiveScenario === 'repeat_established') {
+          // Same user, same location, 3 times over time - well-established pattern
+          const activeUsers = usersData.filter((u) => u.is_active);
+          const repeatUser = randomItem(activeUsers);
+          const validPoints = accessPointsData.filter(
+            (ap) => ap.status === 'active' && !ap.is_restricted && (ap.required_clearance ?? 1) <= (repeatUser.clearance_level ?? 1)
+          );
+          const repeatPoint = validPoints.length ? randomItem(validPoints) : null;
+          
+          if (!repeatPoint) {
+            throw new Error('Cannot find suitable access point for repeat established scenario');
+          }
+
+          for (let repeat = 0; repeat < 3; repeat += 1) {
+            const repeatResult = await apiClient.requestAccess({
+              badge_id: repeatUser.badge_id,
+              access_point_id: repeatPoint.id,
+              method: 'badge',
+              timestamp: new Date(eventBase.getTime() + repeat * 24 * 60 * 60 * 1000).toISOString(), // 24 hours apart
+            });
+            generatedResults.push({
+              ...repeatResult,
+              expected: expectedForEvent,
+              scenarioUsed: effectiveScenario,
+            });
+          }
+          continue;
+        }
+
+        if (effectiveScenario === 'rapid_zone_succession') {
+          // Same user accessing 3+ different zones within seconds (physically impossible)
+          const activeUsers = usersData.filter((u) => u.is_active);
+          const rapidUser = randomItem(activeUsers);
+          const userClearance = rapidUser.clearance_level ?? 1;
+          const accessiblePoints = accessPointsData.filter(
+            (ap) => ap.status === 'active' && (ap.required_clearance ?? 1) <= userClearance
+          );
+
+          if (accessiblePoints.length < 3) {
+            // Fall back to normal scenario if not enough points
+            const singleResult = await apiClient.requestAccess({
+              badge_id: target.user.badge_id,
+              access_point_id: target.accessPoint.id,
+              method: 'badge',
+              timestamp,
+            });
+            generatedResults.push({
+              ...singleResult,
+              expected: expectedForEvent,
+              scenarioUsed: effectiveScenario,
+            });
+            continue;
+          }
+
+          // Send 3 rapid accesses within 10 seconds to different locations
+          const selectedPoints = accessiblePoints.slice(0, 3);
+          for (let rapid = 0; rapid < selectedPoints.length; rapid += 1) {
+            const rapidResult = await apiClient.requestAccess({
+              badge_id: rapidUser.badge_id,
+              access_point_id: selectedPoints[rapid].id,
+              method: 'badge',
+              timestamp: new Date(eventBase.getTime() + rapid * 3 * 1000).toISOString(), // 3 sec apart
+            });
+            generatedResults.push({
+              ...rapidResult,
               expected: expectedForEvent,
               scenarioUsed: effectiveScenario,
             });

@@ -135,7 +135,7 @@ class AccessDecisionEngine:
                 "features_scaled_len": len(features) if features is not None else None,
                 "features_raw_len": len(raw_features) if raw_features is not None else None,
                 "features_scaled_sha256": self._hash_features(features),
-                "features_raw_sha256": self._hash_features(raw_features),
+                "features_raw_sha256": self._hash_features(list(raw_features.values()) if raw_features is not None else None),
                 "context": audit_context or {},
             }
             self.audit_logger.info(json.dumps(entry, ensure_ascii=False))
@@ -179,72 +179,59 @@ class AccessDecisionEngine:
             print("No models loaded - rule-based decisions")
 
     def _load_thresholds(self) -> None:
-        """Load optimized thresholds from saved model files with env var override."""
+        """Load thresholds with priority: env vars > model files > defaults."""
         default_grant = 0.30
         default_deny = 0.70
         
-        # Try to load from ensemble config first
-        try:
-            ensemble_path = resolve_model_artifact_path("ensemble_config.pkl", "ensemble", self.models_dir)
-            if os.path.exists(ensemble_path):
-                ensemble = joblib.load(ensemble_path)
-                loaded_grant = ensemble.get("best_threshold") or ensemble.get("grant_threshold")
-                loaded_deny = ensemble.get("deny_threshold")
-                
-                if loaded_grant is not None:
-                    self.grant_threshold = float(loaded_grant)
-                    print(f"Loaded grant threshold from ensemble_config: {self.grant_threshold:.2f}")
-                
-                if loaded_deny is not None:
-                    self.deny_threshold = float(loaded_deny)
-                    print(f"Loaded deny threshold from ensemble_config: {self.deny_threshold:.2f}")
-                
-                if loaded_grant is not None or loaded_deny is not None:
-                    # Validate that grant < deny
-                    if self.grant_threshold >= self.deny_threshold:
-                        print(f"⚠ Warning: grant_threshold ({self.grant_threshold}) >= deny_threshold ({self.deny_threshold})")
-                        self.deny_threshold = min(0.99, self.grant_threshold + 0.25)
-                        print(f"  Adjusted deny_threshold to: {self.deny_threshold:.2f}")
-                    return
-        except Exception as e:
-            print(f"Could not load ensemble thresholds: {e}")
-        
-        # Fall back to isolation forest
-        if self.if_data:
-            loaded_grant = self.if_data.get("best_threshold")
-            loaded_deny = self.if_data.get("deny_threshold")
-            
-            if loaded_grant is not None:
-                self.grant_threshold = float(loaded_grant)
-                print(f"Loaded grant threshold from isolation_forest: {self.grant_threshold:.2f}")
-            
-            if loaded_deny is not None:
-                self.deny_threshold = float(loaded_deny)
-                print(f"Loaded deny threshold from isolation_forest: {self.deny_threshold:.2f}")
-            
-            if loaded_grant is not None or loaded_deny is not None:
-                # Validate that grant < deny
-                if self.grant_threshold >= self.deny_threshold:
-                    print(f"⚠ Warning: grant_threshold ({self.grant_threshold}) >= deny_threshold ({self.deny_threshold})")
-                    self.deny_threshold = min(0.99, self.grant_threshold + 0.25)
-                    print(f"  Adjusted deny_threshold to: {self.deny_threshold:.2f}")
-                return
-        
-        # Allow env var override for both thresholds
+        # PRIORITY 1: Check environment variables first (always takes precedence)
         env_grant = os.getenv("DECISION_THRESHOLD_GRANT") or os.getenv("GRANT_THRESHOLD")
         env_deny = os.getenv("DECISION_THRESHOLD_DENY") or os.getenv("DENY_THRESHOLD")
         
         if env_grant:
             self.grant_threshold = float(env_grant)
-            print(f"Override grant threshold from env var: {self.grant_threshold:.2f}")
+            print(f"[PRIORITY 1] Loaded grant threshold from .env: {self.grant_threshold:.2f}")
         
         if env_deny:
             self.deny_threshold = float(env_deny)
-            print(f"Override deny threshold from env var: {self.deny_threshold:.2f}")
+            print(f"[PRIORITY 1] Loaded deny threshold from .env: {self.deny_threshold:.2f}")
         
-        # Final validation
+        # PRIORITY 2: If not in env vars, try model files
+        if not env_grant or not env_deny:
+            # Try ensemble config first
+            try:
+                ensemble_path = resolve_model_artifact_path("ensemble_config.pkl", "ensemble", self.models_dir)
+                if os.path.exists(ensemble_path):
+                    ensemble = joblib.load(ensemble_path)
+                    loaded_grant = ensemble.get("best_threshold") or ensemble.get("grant_threshold")
+                    loaded_deny = ensemble.get("deny_threshold")
+                    
+                    if not env_grant and loaded_grant is not None:
+                        self.grant_threshold = float(loaded_grant)
+                        print(f"[PRIORITY 2] Loaded grant threshold from ensemble_config: {self.grant_threshold:.2f}")
+                    
+                    if not env_deny and loaded_deny is not None:
+                        self.deny_threshold = float(loaded_deny)
+                        print(f"[PRIORITY 2] Loaded deny threshold from ensemble_config: {self.deny_threshold:.2f}")
+            except Exception as e:
+                print(f"Could not load ensemble thresholds: {e}")
+            
+            # Fall back to isolation forest if needed
+            if not env_grant or not env_deny:
+                if self.if_data:
+                    loaded_grant = self.if_data.get("best_threshold")
+                    loaded_deny = self.if_data.get("deny_threshold")
+                    
+                    if not env_grant and loaded_grant is not None:
+                        self.grant_threshold = float(loaded_grant)
+                        print(f"[PRIORITY 2] Loaded grant threshold from isolation_forest: {self.grant_threshold:.2f}")
+                    
+                    if not env_deny and loaded_deny is not None:
+                        self.deny_threshold = float(loaded_deny)
+                        print(f"[PRIORITY 2] Loaded deny threshold from isolation_forest: {self.deny_threshold:.2f}")
+        
+        # Final validation: ensure grant < deny
         if self.grant_threshold >= self.deny_threshold:
-            print(f"⚠ Warning: grant_threshold ({self.grant_threshold}) >= deny_threshold ({self.deny_threshold})")
+            print(f"⚠ Warning: grant_threshold ({self.grant_threshold:.2f}) >= deny_threshold ({self.deny_threshold:.2f})")
             self.deny_threshold = min(0.99, self.grant_threshold + 0.25)
             print(f"  Adjusted deny_threshold to: {self.deny_threshold:.2f}")
         
@@ -413,7 +400,7 @@ class AccessDecisionEngine:
 
         clone_bump = 0.0
         if raw_features is not None:
-            clone_bump = self._clone_risk_bump(raw_features)
+            clone_bump = self._clone_risk_bump(features)
             if clone_bump:
                 risk_score = float(np.clip(risk_score + clone_bump, 0.0, 1.0))
 

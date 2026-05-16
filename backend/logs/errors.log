@@ -173,3 +173,25 @@
 2026-04-24 14:06:07 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/list failed after 4060.25ms
 2026-04-24 14:06:07 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/admin/profile failed after 4065.73ms
 2026-04-24 14:06:08 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: GET /api/alerts failed after 4085.33ms
+2026-05-16 01:39:42 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 41.64ms
+2026-05-16 01:39:45 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.74ms
+2026-05-16 01:53:53 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 9.15ms
+2026-05-16 02:00:59 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 3.01ms
+2026-05-16 02:05:19 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 5.65ms
+2026-05-16 02:06:01 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.77ms
+2026-05-16 02:14:51 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:14:56 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:00 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:01 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:04 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:05 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:07 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:08 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:10 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:14 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:15 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:17 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:18 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:23 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:26 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 02:15:34 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'

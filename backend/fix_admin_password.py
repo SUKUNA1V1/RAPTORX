@@ -8,22 +8,22 @@ from app.utils.password import hash_password
 db = SessionLocal()
 try:
     # Update admin@system.local with new password
-    admin = db.query(User).filter(User.email == "admin@system.local").first()
+    admin = db.query(User).filter(User.email == "user0999@university.edu").first()
     if admin:
         admin.pin_hash = hash_password("admin")
         db.commit()
-        print(f"✓ Updated admin@system.local password")
+        print(f"✓ Updated user0999@university.edu password")
     else:
-        print("✗ admin@system.local not found")
+        print("✗ user0999@university.edu not found")
     
     # Also update omar.admin@raptorx.com
-    omar = db.query(User).filter(User.email == "omar.admin@raptorx.com").first()
+    omar = db.query(User).filter(User.email == "user0998@university.edu").first()
     if omar:
         omar.pin_hash = hash_password("admin")
         db.commit()
-        print(f"✓ Updated omar.admin@raptorx.com password")
+        print(f"✓ Updated user0998@university.edu password")
     else:
-        print("✗ omar.admin@raptorx.com not found")
+        print("✗ user0998@university.edu not found")
         
 except Exception as e:
     print(f"Error: {e}")

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 import joblib
 import os
 
@@ -146,22 +147,47 @@ print("\n" + "=" * 50)
 print("STEP 5 — Normalizing features with MinMaxScaler")
 print("=" * 50)
 
+# Split training data into train (60%) / val (20%) / remaining (20%)
+# Then use the test_df as the actual test set
+from sklearn.model_selection import train_test_split
+
+print("\n" + "=" * 50)
+print("Splitting training data into train/val")
+print("=" * 50)
+
+# First split: 80% train, 20% temp (which becomes val)
+train_temp, val_temp = train_test_split(
+    train_df,
+    test_size=0.25,  # 25% of 80% = 20% of original
+    random_state=42,
+    stratify=train_df["label"]
+)
+
+print(f"Train set size: {train_temp.shape[0]} ({train_temp.shape[0]/len(train_df)*100:.1f}%)")
+print(f"Val set size  : {val_temp.shape[0]} ({val_temp.shape[0]/len(train_df)*100:.1f}%)")
+print(f"Test set size : {test_df.shape[0]} ({test_df.shape[0]/len(train_df)*100:.1f}%)")
+print(f"Total        : {train_temp.shape[0] + val_temp.shape[0] + test_df.shape[0]}")
+
 # Separate features and labels
-X_train = train_df[FEATURE_COLS].copy()
-y_train = train_df["label"].copy()
+X_train = train_temp[FEATURE_COLS].copy()
+y_train = train_temp["label"].copy()
+
+X_val = val_temp[FEATURE_COLS].copy()
+y_val = val_temp["label"].copy()
 
 X_test  = test_df[FEATURE_COLS].copy()
 y_test  = test_df["label"].copy()
 
-# Fit ONLY on training set — never on test set (prevents data leakage)
+# Fit scaler ONLY on training set — never on val/test (prevents data leakage)
 # 19-feature scaler (full schema for analytics / 19-feature workflows)
 scaler_19 = MinMaxScaler()
-X_train_scaled = scaler_19.fit_transform(X_train)   # fit + transform
-X_test_scaled  = scaler_19.transform(X_test)        # transform only
+X_train_scaled = scaler_19.fit_transform(X_train)   # fit + transform on train only
+X_val_scaled = scaler_19.transform(X_val)           # transform val
+X_test_scaled  = scaler_19.transform(X_test)        # transform test only
 
 # 13-feature scaler (model runtime schema)
 scaler_13 = MinMaxScaler()
-scaler_13.fit(train_df[FEATURE_COLS_13].copy())
+scaler_13.fit(train_temp[FEATURE_COLS_13].copy())
 
 print(f"Feature min after scaling: {X_train_scaled.min():.4f} (should be 0.0)")
 print(f"Feature max after scaling: {X_train_scaled.max():.4f} (should be 1.0)")
@@ -169,6 +195,9 @@ print(f"Feature max after scaling: {X_train_scaled.max():.4f} (should be 1.0)")
 # Convert back to DataFrames
 train_scaled_df = pd.DataFrame(X_train_scaled, columns=FEATURE_COLS)
 train_scaled_df["label"] = y_train.values
+
+val_scaled_df = pd.DataFrame(X_val_scaled, columns=FEATURE_COLS)
+val_scaled_df["label"] = y_val.values
 
 test_scaled_df  = pd.DataFrame(X_test_scaled,  columns=FEATURE_COLS)
 test_scaled_df["label"]  = y_test.values
@@ -182,18 +211,21 @@ print("STEP 6 — Saving preprocessed files")
 print("=" * 50)
 
 train_out = os.path.join(PROCESSED_DIR, "train_scaled.csv")
+val_out   = os.path.join(PROCESSED_DIR, "val_scaled.csv")
 test_out  = os.path.join(PROCESSED_DIR, "test_scaled.csv")
 scaler_out_19 = os.path.join(MODELS_DIR, "scaler_19.pkl")
 scaler_out_13 = os.path.join(MODELS_DIR, "scaler_13.pkl")
 scaler_out_legacy = os.path.join(MODELS_DIR, "scaler.pkl")
 
 train_scaled_df.to_csv(train_out,  index=False)
+val_scaled_df.to_csv(val_out,      index=False)
 test_scaled_df.to_csv(test_out,    index=False)
 joblib.dump(scaler_19, scaler_out_19)
 joblib.dump(scaler_13, scaler_out_13)
 joblib.dump(scaler_13, scaler_out_legacy)
 
 print(f" Scaled train set saved : {train_out}")
+print(f" Scaled val set saved   : {val_out}")
 print(f" Scaled test set saved  : {test_out}")
 print(f" Scaler (19f) saved     : {scaler_out_19}")
 print(f" Scaler (13f) saved     : {scaler_out_13}")
@@ -202,6 +234,7 @@ print(f" Scaler legacy saved    : {scaler_out_legacy}")
 print(f"\nPhase 4.2 DONE!")
 print(f"\nFiles ready for ML training:")
 print(f"  Training : {train_out}")
+print(f"  Validation: {val_out}")
 print(f"  Testing  : {test_out}")
 print(f"  Scaler13 : {scaler_out_13}")
 print(f"  Scaler19 : {scaler_out_19}")

@@ -46,7 +46,7 @@ class PipelineRunner:
         self.step_times = {}
         self.failed_steps = []
         self.passed_steps = []
-        self.total_steps = 9
+        self.total_steps = 11  # Updated: added clean_database and load_data_to_db steps
 
     def print_banner(self, text: str) -> None:
         """Print formatted banner section."""
@@ -180,6 +180,8 @@ class PipelineRunner:
         self.print_substep("Checking prerequisite files")
 
         required_files = [
+            ("scripts/clean_database.py", ["scripts/clean_database.py"]),
+            ("scripts/load_data_to_db.py", ["scripts/load_data_to_db.py"]),
             ("scripts/generate_data_fixed.py", ["scripts/generate_data_fixed.py"]),
             ("scripts/explore_and_prepare.py", ["scripts/explore_and_prepare.py"]),
             ("scripts/train_isolation_forest.py", ["scripts/train_isolation_forest.py"]),
@@ -254,7 +256,9 @@ class PipelineRunner:
 
         # Run pipeline steps
         steps = [
+            (0, "Clean Database", "scripts/clean_database.py", None),
             (1, "Generate Synthetic Data", "scripts/generate_data_fixed.py", None),
+            (1.5, "Load Data to Database", "scripts/load_data_to_db.py", None),
             (2, "Explore & Prepare Data", "scripts/explore_and_prepare.py", None),
             (3, "Train Isolation Forest", "scripts/train_isolation_forest.py", None),
             (4, "Train Autoencoder", "scripts/train_autoencoder.py", None),

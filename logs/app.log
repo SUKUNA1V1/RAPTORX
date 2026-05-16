@@ -570,3 +570,20 @@
 2026-04-20 16:26:33 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/access/logs took 22046.50ms (status: 200)
 2026-04-20 16:26:54 - app.services.cache_service - WARNING - [cache_service.py:67] - Failed to connect to Redis: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.. Caching disabled.
 2026-04-20 16:26:54 - app.api_metrics - WARNING - [api_metrics.py:35] - Slow API: GET /api/alerts took 45151.39ms (status: 200)
+2026-05-16 02:10:13 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:10:45 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:11:18 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:12:18 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:12:37 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:13:16 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:13:17 - root - WARNING - [decision_engine.py:108] - Failed to hash features: float() argument must be a string or a real number, not 'dict'
+2026-05-16 02:13:35 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:13:36 - root - WARNING - [decision_engine.py:108] - Failed to hash features: float() argument must be a string or a real number, not 'dict'
+2026-05-16 02:13:36 - root - WARNING - [decision_engine.py:108] - Failed to hash features: float() argument must be a string or a real number, not 'dict'
+2026-05-16 02:13:36 - root - WARNING - [decision_engine.py:108] - Failed to hash features: float() argument must be a string or a real number, not 'dict'
+2026-05-16 02:13:36 - root - WARNING - [decision_engine.py:108] - Failed to hash features: float() argument must be a string or a real number, not 'dict'
+2026-05-16 02:13:36 - root - WARNING - [decision_engine.py:108] - Failed to hash features: float() argument must be a string or a real number, not 'dict'
+2026-05-16 02:14:11 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:17:19 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:17:39 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler
+2026-05-16 02:17:52 - app.services.ml_service - DEBUG - [ml_service.py:165] - Loaded 13-feature scaler

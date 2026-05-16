@@ -2,6 +2,12 @@ import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"]  = "2"
 
+# Load .env file to get thresholds before class definition
+from pathlib import Path
+from dotenv import load_dotenv
+_root_dir = Path(__file__).parent.parent
+load_dotenv(_root_dir / ".env")
+
 import hashlib
 import json
 import logging
@@ -36,8 +42,8 @@ class AccessDecisionEngine:
     """
 
     # Default thresholds — can be overridden via env vars or DB
-    GRANT_THRESHOLD = float(os.getenv("GRANT_THRESHOLD", "0.30"))
-    DENY_THRESHOLD  = float(os.getenv("DENY_THRESHOLD",  "0.60"))
+    GRANT_THRESHOLD = float(os.getenv("DECISION_THRESHOLD_GRANT", "0.22"))
+    DENY_THRESHOLD  = float(os.getenv("DECISION_THRESHOLD_DENY",  "0.47"))
 
     # Ensemble weights (from Phase 4.5 best result)
     IF_WEIGHT = 0.3
