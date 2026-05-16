@@ -304,7 +304,6 @@ class AccessDecisionEngine:
 
     def rule_based_score(self, features: list) -> float:
         # Extract only first 13 features (same as ML models)
-        # Features 13-18 are hard rules and handled separately
         (
             hour,
             day_of_week,
@@ -323,6 +322,7 @@ class AccessDecisionEngine:
 
         score = 0.0
 
+        # Core behavioral rules
         if hour < 6 or hour > 22:
             score += 0.35
         if is_weekend and role_level == 1:
@@ -339,6 +339,25 @@ class AccessDecisionEngine:
             score += 0.20
         if access_attempt_count > 2:
             score += 0.15
+
+        # Hard rule features (if present) - add to score
+        if len(features) >= 19:
+            geographic_impossibility = features[13]
+            velocity_km_per_min = features[15]
+            zone_clearance_mismatch = features[16]
+            department_zone_mismatch = features[17]
+            concurrent_session_detected = features[18]
+            
+            if velocity_km_per_min > 1.0:
+                score += 0.80  # Impossible travel speed
+            if geographic_impossibility:
+                score += 0.70
+            if concurrent_session_detected:
+                score += 0.90  # Badge cloning
+            if zone_clearance_mismatch:
+                score += 0.25
+            if department_zone_mismatch:
+                score += 0.15
 
         return float(np.clip(score, 0.0, 1.0))
 
@@ -381,6 +400,8 @@ class AccessDecisionEngine:
         
         Args:
             features: 13 or 19-element feature vector
+                     [0-12] = 13 scaled ML features
+                     [13-18] = 6 hard rule features (if present)
             raw_features: Unscaled features for contextual decisions
             audit_context: Optional dict with request context for audit trail
             
@@ -390,6 +411,50 @@ class AccessDecisionEngine:
         Note: ML model predictions are protected by re-entrant lock to ensure
         thread-safe access to model instances for concurrent FastAPI requests.
         """
+        # CHECK HARD RULES FIRST (immediate denials override everything)
+        # Hard rules are at indices 13-18 if 19 features provided
+        if len(features) >= 19:
+            # Hard rules: features[13-18]
+            geographic_impossibility = features[13]      # velocity > 1.0 km/min
+            distance_between_scans_km = features[14]
+            velocity_km_per_min = features[15]
+            zone_clearance_mismatch = features[16]
+            department_zone_mismatch = features[17]
+            concurrent_session_detected = features[18]
+            
+            # Concurrent session = badge cloning (used at 2+ zones <2 min apart)
+            if concurrent_session_detected:
+                return {
+                    "decision": "denied",
+                    "risk_score": 1.0,
+                    "if_score": None,
+                    "ae_score": None,
+                    "reasoning": "HARD RULE: Badge used simultaneously at multiple locations (cloning detected)",
+                    "mode": "hard_rule",
+                }
+            
+            # Velocity impossible (>1 km/min = 60 km/h between access points)
+            if velocity_km_per_min > 1.0:
+                return {
+                    "decision": "denied",
+                    "risk_score": 1.0,
+                    "if_score": None,
+                    "ae_score": None,
+                    "reasoning": f"HARD RULE: Physically impossible travel speed ({velocity_km_per_min:.2f} km/min)",
+                    "mode": "hard_rule",
+                }
+            
+            # Geographic impossibility detected
+            if geographic_impossibility:
+                return {
+                    "decision": "denied",
+                    "risk_score": 1.0,
+                    "if_score": None,
+                    "ae_score": None,
+                    "reasoning": "HARD RULE: Physically impossible location transition",
+                    "mode": "hard_rule",
+                }
+        
         # CRITICAL SECTION: Model prediction (protected by re-entrant lock)
         with self._predict_lock:
             scores = self.compute_risk_score(features)
@@ -401,6 +466,21 @@ class AccessDecisionEngine:
         else:
             risk_score = scores["combined_score"]
             mode = scores["mode"]
+
+        # Add boost for hard rule features even if ML models already scored
+        # This ensures anomalies detected by hard rules are properly reflected in final score
+        hard_rule_boost = 0.0
+        if len(features) >= 19:
+            velocity_km_per_min = features[15]
+            concurrent_session_detected = features[18]
+            
+            if concurrent_session_detected:
+                hard_rule_boost += 0.50
+            if velocity_km_per_min > 1.0:
+                hard_rule_boost += 0.40
+        
+        if hard_rule_boost > 0:
+            risk_score = float(np.clip(risk_score + hard_rule_boost, 0.0, 1.0))
 
         clone_bump = 0.0
         if raw_features is not None:
@@ -424,6 +504,9 @@ class AccessDecisionEngine:
 
         if clone_bump:
             reasoning = f"{reasoning} (clone risk +{clone_bump:.2f})"
+        
+        if hard_rule_boost:
+            reasoning = f"{reasoning} (hard rule boost +{hard_rule_boost:.2f})"
 
         result = {
             "decision": decision,
