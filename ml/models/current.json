@@ -1,27 +1,27 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-16T14:31:21.319666+00:00",
+  "updated_at": "2026-05-16T21:26:44.593008+00:00",
   "current": {
     "isolation_forest": {
-      "version": "20260516T143121Z",
-      "updated_at": "2026-05-16T14:31:21.292314+00:00",
+      "version": "20260516T212644Z",
+      "updated_at": "2026-05-16T21:26:44.578523+00:00",
       "artifacts": {
-        "isolation_forest.pkl": "versions/isolation_forest/20260516T143121Z/isolation_forest.pkl"
+        "isolation_forest.pkl": "versions/isolation_forest/20260516T212644Z/isolation_forest.pkl"
       }
     },
     "autoencoder": {
-      "version": "20260515T204658Z",
-      "updated_at": "2026-05-15T20:46:58.406868+00:00",
+      "version": "20260516T212603Z",
+      "updated_at": "2026-05-16T21:26:03.810868+00:00",
       "artifacts": {
-        "autoencoder.keras": "versions/autoencoder/20260515T204658Z/autoencoder.keras",
-        "autoencoder_config.pkl": "versions/autoencoder/20260515T204658Z/autoencoder_config.pkl"
+        "autoencoder.keras": "versions/autoencoder/20260516T212603Z/autoencoder.keras",
+        "autoencoder_config.pkl": "versions/autoencoder/20260516T212603Z/autoencoder_config.pkl"
       }
     },
     "ensemble": {
-      "version": "20260516T143121Z",
-      "updated_at": "2026-05-16T14:31:21.319652+00:00",
+      "version": "20260516T212644Z",
+      "updated_at": "2026-05-16T21:26:44.592995+00:00",
       "artifacts": {
-        "ensemble_config.pkl": "versions/ensemble/20260516T143121Z/ensemble_config.pkl"
+        "ensemble_config.pkl": "versions/ensemble/20260516T212644Z/ensemble_config.pkl"
       }
     }
   }

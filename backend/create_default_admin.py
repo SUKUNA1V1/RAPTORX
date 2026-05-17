@@ -47,7 +47,7 @@ try:
             email="admin@system.local",
             phone=None,
             role="admin",
-            department="Administration",
+            department="computer_science",
             clearance_level=3,
             is_active=True,
             pin_hash=hash_password(default_password),

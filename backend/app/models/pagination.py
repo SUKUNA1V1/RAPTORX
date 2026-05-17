@@ -29,8 +29,8 @@ class PaginationParams(BaseModel):
     page_size: int = Field(
         50,
         ge=10,
-        le=500,
-        description="Items per page (10-500)"
+        le=5000,
+        description="Items per page (10-5000)"
     )
     sort_by: Optional[str] = Field(
         "timestamp",

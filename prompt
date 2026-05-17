@@ -2,7 +2,7 @@ UNIVERSITY STRUCTURE - EDITABLE FORMAT
 ==========================================
 
 DEPARTMENTS:
-  computer_science:
+  admin@system.local:
     zones:
       - cs_lab
       - cs_office

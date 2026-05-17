@@ -4,7 +4,6 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -15,180 +14,18 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Autocomplete from '@mui/material/Autocomplete';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { apiClient, AccessDecision, AccessPointItem, UserItem } from 'lib/api';
 
-type ScenarioType =
-  | 'normal'
-  | 'unusual_hours'
-  | 'badge_cloning'
-  | 'restricted_access'
-  | 'high_frequency'
-  | 'anomalous'
-  | 'repeat_normal'
-  | 'weekend_normal'
-  | 'cross_dept'
-  | 'sequential_restricted'
-  | 'early_morning'
-  | 'business_hours_normal'
-  | 'cross_department'
-  | 'repeat_established'
-  | 'late_night_access'
-  | 'rapid_zone_succession'
-  | 'custom';
-
-const scenarioConfig: Record<
-  ScenarioType,
-  {
-    label: string;
-    description: string;
-    severity: 'success' | 'warning' | 'error' | 'info';
-  }
-> = {
-  normal: {
-    label: 'Normal Traffic',
-    description: 'Expected work-hour entry patterns with low-risk behavior.',
-    severity: 'success',
-  },
-  business_hours_normal: {
-    label: 'Business Hours - Normal',
-    description: 'Regular employees accessing non-restricted areas during typical work hours (9-5). Should GRANT with low risk.',
-    severity: 'success',
-  },
-  cross_department: {
-    label: 'Cross-Department Access',
-    description: 'Employee accessing different department areas during business hours. Normal cross-dept collaboration pattern.',
-    severity: 'success',
-  },
-  repeat_established: {
-    label: 'Repeat Established Pattern',
-    description: 'Same user accessing same location repeatedly. Well-established access pattern with history. Should GRANT.',
-    severity: 'success',
-  },
-  unusual_hours: {
-    label: 'Unusual Hours',
-    description: 'Requests generated late night and early morning.',
-    severity: 'warning',
-  },
-  late_night_access: {
-    label: 'Late Night Access',
-    description: 'Employee accessing location outside standard hours (10 PM+). Anomalous timing. Should DELAY for review.',
-    severity: 'warning',
-  },
-  early_morning: {
-    label: 'Early Morning Access',
-    description: 'Access at 5-7 AM (early shift/transitional hours - should be low risk for morning teams).',
-    severity: 'warning',
-  },
-  weekend_normal: {
-    label: 'Weekend Regular Employee',
-    description: 'Regular employee accessing during weekend (may trigger false positive).',
-    severity: 'warning',
-  },
-  badge_cloning: {
-    label: 'Badge Cloning',
-    description: 'Same badge used in multiple points within short intervals.',
-    severity: 'error',
-  },
-  high_frequency: {
-    label: 'High Frequency',
-    description: 'Burst traffic to stress anomaly and rate behavior.',
-    severity: 'warning',
-  },
-  rapid_zone_succession: {
-    label: 'Rapid Zone Succession',
-    description: 'Same user accessing 3+ different zones within seconds. Physically impossible travel = DENIED.',
-    severity: 'error',
-  },
-  restricted_access: {
-    label: 'Restricted Access',
-    description: 'Low-clearance users request high-security doors.',
-    severity: 'error',
-  },
-  sequential_restricted: {
-    label: 'Sequential Restricted Access',
-    description: 'User attempts multiple restricted areas in succession (should be DENIED).',
-    severity: 'error',
-  },
-  anomalous: {
-    label: 'Random Anomalous',
-    description: 'Mixes multiple anomaly patterns in one simulation run.',
-    severity: 'info',
-  },
-  repeat_normal: {
-    label: 'Repeated Normal Access',
-    description: 'Same user accessing same location multiple times (should be GRANTED every time).',
-    severity: 'success',
-  },
-  cross_dept: {
-    label: 'Cross-Department Manager',
-    description: 'Manager accessing different department areas (legitimate but may be flagged).',
-    severity: 'info',
-  },
-  custom: {
-    label: 'Custom Execution',
-    description: 'Manually specify the user and access point to formulate a precise request pattern.',
-    severity: 'info',
-  },
-};
-
-const anomalyScenarios: Array<Exclude<ScenarioType, 'normal' | 'anomalous' | 'custom'>> = [
-  'unusual_hours',
-  'badge_cloning',
-  'restricted_access',
-  'high_frequency',
-  'repeat_normal',
-  'weekend_normal',
-  'cross_dept',
-  'sequential_restricted',
-  'early_morning',
-  'business_hours_normal',
-  'cross_department',
-  'repeat_established',
-  'late_night_access',
-  'rapid_zone_succession',
-];
-
-type ExpectedResult = {
-  decision: 'granted' | 'denied' | 'delayed';
-  allowedDecisions: Array<'granted' | 'denied' | 'delayed'>;
-  minRisk: number;
-  maxRisk: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  successRate: number; // Expected percentage of passes (0-100)
-};
-
 type SimulationResult = AccessDecision & {
-  expected: ExpectedResult;
-  scenarioUsed: ScenarioType;
+  timestampUsed: string;
 };
 
 type SimulatorSeedData = {
   usersData: UserItem[];
   accessPointsData: AccessPointItem[];
-};
-
-const getExpectedResults = (scenario: ScenarioType): ExpectedResult => {
-  const expectations: Record<ScenarioType, ExpectedResult> = {
-    normal: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.35, riskLevel: 'low', successRate: 95 },
-    business_hours_normal: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.25, riskLevel: 'low', successRate: 98 },
-    cross_department: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.30, riskLevel: 'low', successRate: 95 },
-    repeat_established: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.25, riskLevel: 'low', successRate: 100 },
-    unusual_hours: { decision: 'delayed', allowedDecisions: ['delayed', 'denied'], minRisk: 0.30, maxRisk: 1.0, riskLevel: 'high', successRate: 85 },
-    late_night_access: { decision: 'delayed', allowedDecisions: ['delayed'], minRisk: 0.35, maxRisk: 0.55, riskLevel: 'medium', successRate: 85 },
-    badge_cloning: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.60, maxRisk: 1.0, riskLevel: 'critical', successRate: 90 },
-    high_frequency: { decision: 'delayed', allowedDecisions: ['delayed', 'denied'], minRisk: 0.35, maxRisk: 1.0, riskLevel: 'high', successRate: 80 },
-    rapid_zone_succession: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.80, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
-    restricted_access: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.85, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
-    sequential_restricted: { decision: 'denied', allowedDecisions: ['denied'], minRisk: 0.85, maxRisk: 1.0, riskLevel: 'critical', successRate: 95 },
-    repeat_normal: { decision: 'granted', allowedDecisions: ['granted'], minRisk: 0.0, maxRisk: 0.35, riskLevel: 'low', successRate: 100 },
-    weekend_normal: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.55, riskLevel: 'medium', successRate: 90 },
-    cross_dept: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.50, riskLevel: 'medium', successRate: 95 },
-    early_morning: { decision: 'granted', allowedDecisions: ['granted', 'delayed'], minRisk: 0.0, maxRisk: 0.45, riskLevel: 'low', successRate: 90 },
-    anomalous: { decision: 'delayed', allowedDecisions: ['delayed', 'denied'], minRisk: 0.35, maxRisk: 1.0, riskLevel: 'high', successRate: 75 },
-    custom: { decision: 'granted', allowedDecisions: ['granted', 'denied', 'delayed'], minRisk: 0.0, maxRisk: 1.0, riskLevel: 'medium', successRate: 100 },
-  };
-  return expectations[scenario];
 };
 
 const getRiskLevel = (score: number): 'low' | 'medium' | 'high' | 'critical' => {
@@ -198,123 +35,9 @@ const getRiskLevel = (score: number): 'low' | 'medium' | 'high' | 'critical' => 
   return 'critical';
 };
 
-const randomItem = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
-
-const pickNormalTarget = (users: UserItem[], accessPoints: AccessPointItem[]) => {
-  const activeUsers = users.filter((u) => u.is_active);
-  if (!activeUsers.length || !accessPoints.length) {
-    return null;
-  }
-
-  // For normal traffic, ensure user can actually access the point
-  let user = randomItem(activeUsers);
-  let userClearance = user.clearance_level ?? 1;
-  
-  // Filter to points the user has clearance for (no buffer for normal traffic)
-  let accessible = accessPoints.filter(
-    (ap) => ap.status === 'active' && !ap.is_restricted && (ap.required_clearance ?? 1) <= userClearance
-  );
-
-  // If no accessible points, pick a less restricted user
-  if (!accessible.length) {
-    const highClearanceUsers = activeUsers.filter((u) => (u.clearance_level ?? 1) >= 2);
-    if (highClearanceUsers.length) {
-      user = randomItem(highClearanceUsers);
-      userClearance = user.clearance_level ?? 1;
-      accessible = accessPoints.filter(
-        (ap) => ap.status === 'active' && !ap.is_restricted && (ap.required_clearance ?? 1) <= userClearance
-      );
-    }
-  }
-
-  if (!accessible.length) {
-    return null;
-  }
-
-  return {
-    user,
-    accessPoint: randomItem(accessible),
-  };
-};
-
-const pickRestrictedTarget = (users: UserItem[], accessPoints: AccessPointItem[]) => {
-  const activeUsers = users.filter((u) => u.is_active && (u.clearance_level ?? 1) <= 2);
-  const restrictedPoints = accessPoints.filter(
-    (ap) => ap.status === 'active' && ((ap.is_restricted ?? false) || (ap.required_clearance ?? 1) >= 3)
-  );
-
-  if (!activeUsers.length || !restrictedPoints.length) {
-    return null;
-  }
-
-  return {
-    user: randomItem(activeUsers),
-    accessPoint: randomItem(restrictedPoints),
-  };
-};
-
-const pickAnomalousTarget = (users: UserItem[], accessPoints: AccessPointItem[]) => {
-  const activeUsers = users.filter(
-    (u) => u.is_active && (u.clearance_level ?? 1) <= 2 && u.role !== 'admin' && u.role !== 'security'
-  );
-  const activePoints = accessPoints.filter((ap) => ap.status === 'active');
-  const suspiciousPoints = activePoints.filter(
-    (ap) => (ap.is_restricted ?? false) || (ap.required_clearance ?? 1) >= 3
-  );
-
-  if (!activeUsers.length || !activePoints.length) {
-    return null;
-  }
-
-  return {
-    user: randomItem(activeUsers),
-    accessPoint: randomItem(suspiciousPoints.length ? suspiciousPoints : activePoints),
-  };
-};
-
-const pickUnusualHourTimestamp = (baseDate?: Date) => {
-  const unusualHours = [2, 3, 4, 23];
-  const now = baseDate ? new Date(baseDate) : new Date();
-  const targetHour = randomItem(unusualHours);
-  now.setHours(targetHour, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
-  
-  // If the resulting time is in the future, use yesterday instead
-  if (now > new Date()) {
-    now.setDate(now.getDate() - 1);
-  }
-  return now.toISOString();
-};
-
-const pickEarlyMorningTimestamp = (baseDate?: Date) => {
-  const earlyHours = [6, 7];
-  const now = baseDate ? new Date(baseDate) : new Date();
-  const targetHour = randomItem(earlyHours);
-  now.setHours(targetHour, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
-  
-  // If the resulting time is in the future, use yesterday instead
-  if (now > new Date()) {
-    now.setDate(now.getDate() - 1);
-  }
-  return now.toISOString();
-};
-
-const pickWeekendTimestamp = (baseDate?: Date) => {
-  const now = baseDate ? new Date(baseDate) : new Date();
-  // Shift to previous Saturday or Sunday to avoid future timestamps rejected by backend.
-  const dayOfWeek = now.getDay();
-  const subtractDays = dayOfWeek === 0 ? 0 : dayOfWeek === 6 ? 0 : (dayOfWeek + 1);
-  now.setDate(now.getDate() - subtractDays);
-  now.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
-  return now.toISOString();
-};
-
-const pickHighClearanceUser = (users: UserItem[]) => {
-  return users.find((u) => u.is_active && (u.clearance_level ?? 1) >= 3) || randomItem(users.filter((u) => u.is_active));
-};
-
 const loadSimulatorSeedData = async (): Promise<SimulatorSeedData> => {
   const [usersResponse, accessPointsResponse] = await Promise.all([
-    apiClient.getUsers(1, 500),
+    apiClient.getUsers(1, 5000), 
     apiClient.getAccessPoints(1, 500),
   ]);
 
@@ -324,140 +47,37 @@ const loadSimulatorSeedData = async (): Promise<SimulatorSeedData> => {
   };
 };
 
-const bootstrapSimulatorSeedData = async (): Promise<void> => {
-  const uniqueSuffix = Date.now();
-
-  const demoUsers = [
-    {
-      first_name: 'Alex',
-      last_name: 'Morgan',
-      badge_id: `SIM-${uniqueSuffix}-U1`,
-      email: `sim.employee1.${uniqueSuffix}@raptorx.local`,
-      role: 'employee',
-      department: 'Engineering',
-      clearance_level: 1,
-      is_active: true,
-    },
-    {
-      first_name: 'Priya',
-      last_name: 'Chen',
-      badge_id: `SIM-${uniqueSuffix}-U2`,
-      email: `sim.manager1.${uniqueSuffix}@raptorx.local`,
-      role: 'manager',
-      department: 'IT',
-      clearance_level: 2,
-      is_active: true,
-    },
-    {
-      first_name: 'Jordan',
-      last_name: 'Reed',
-      badge_id: `SIM-${uniqueSuffix}-U3`,
-      email: `sim.security1.${uniqueSuffix}@raptorx.local`,
-      role: 'security',
-      department: 'Security',
-      clearance_level: 3,
-      is_active: true,
-    },
-  ];
-
-  const demoAccessPoints = [
-    {
-      name: 'Engineering Main Door',
-      type: 'door',
-      status: 'active',
-      building: 'HQ',
-      floor: '1',
-      zone: 'Engineering',
-      required_clearance: 1,
-      is_restricted: false,
-    },
-    {
-      name: 'IT Office Reader',
-      type: 'reader',
-      status: 'active',
-      building: 'HQ',
-      floor: '2',
-      zone: 'IT',
-      required_clearance: 2,
-      is_restricted: false,
-    },
-    {
-      name: 'Server Room Gate',
-      type: 'gate',
-      status: 'active',
-      building: 'HQ',
-      floor: '2',
-      zone: 'Server Room',
-      required_clearance: 3,
-      is_restricted: true,
-    },
-    {
-      name: 'HR Office Door',
-      type: 'door',
-      status: 'active',
-      building: 'HQ',
-      floor: '3',
-      zone: 'HR',
-      required_clearance: 1,
-      is_restricted: false,
-    },
-    {
-      name: 'Finance Department Reader',
-      type: 'reader',
-      status: 'active',
-      building: 'HQ',
-      floor: '4',
-      zone: 'Finance',
-      required_clearance: 2,
-      is_restricted: false,
-    },
-    {
-      name: 'Marketing Suite Door',
-      type: 'door',
-      status: 'active',
-      building: 'HQ',
-      floor: '5',
-      zone: 'Marketing',
-      required_clearance: 1,
-      is_restricted: false,
-    },
-  ];
-
-  await Promise.all([
-    ...demoUsers.map((payload) => apiClient.createUser(payload)),
-    ...demoAccessPoints.map((payload) => apiClient.createAccessPoint(payload)),
-  ]);
-};
-
 const SimulatorPage = () => {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [accessPoints, setAccessPoints] = useState<AccessPointItem[]>([]);
-  const [scenario, setScenario] = useState<ScenarioType>('normal');
-  const [iterations, setIterations] = useState(10);
-  const [customUserId, setCustomUserId] = useState<string>('random');
-  const [customApId, setCustomApId] = useState<string>('random');
+  
+  const [customUserId, setCustomUserId] = useState<string>('');
+  const [customApId, setCustomApId] = useState<string>('');
   const [customTime, setCustomTime] = useState<string>(() => {
     const tzOffset = (new Date()).getTimezoneOffset() * 60000;
     return new Date(Date.now() - tzOffset).toISOString().slice(0, 16);
   });
+  
   const [loading, setLoading] = useState(false);
   const [bootstrapping, setBootstrapping] = useState(false);
   const [error, setError] = useState('');
   const [results, setResults] = useState<SimulationResult[]>([]);
 
+  const selectedUser = useMemo(() => users.find(u => String(u.id) === customUserId), [users, customUserId]);
+  const selectedAp = useMemo(() => accessPoints.find(ap => String(ap.id) === customApId), [accessPoints, customApId]);
+
   const summary = useMemo(() => {
     const total = results.length;
     const granted = results.filter((r) => r.decision === 'granted').length;
     const denied = results.filter((r) => r.decision === 'denied').length;
-    const delayed = results.filter((r) => r.decision === 'delayed').length;
     const avgRisk = total
       ? (results.reduce((acc, item) => acc + Number(item.risk_score || 0), 0) / total).toFixed(3)
       : '0.000';
 
-    return { total, granted, denied, delayed, avgRisk };
+    return { total, granted, denied, avgRisk };
   }, [results]);
 
-  const ensureSeedDataLoaded = async (autoBootstrap: boolean = false): Promise<SimulatorSeedData> => {
+  const ensureSeedDataLoaded = async (): Promise<SimulatorSeedData> => {
     if (users.length && accessPoints.length) {
       return { usersData: users, accessPointsData: accessPoints };
     }
@@ -465,13 +85,7 @@ const SimulatorPage = () => {
     setBootstrapping(true);
     setError('');
     try {
-      let { usersData, accessPointsData } = await loadSimulatorSeedData();
-
-      if (autoBootstrap && (!usersData.length || !accessPointsData.length)) {
-        await bootstrapSimulatorSeedData();
-        ({ usersData, accessPointsData } = await loadSimulatorSeedData());
-      }
-
+      const { usersData, accessPointsData } = await loadSimulatorSeedData();
       setUsers(usersData);
       setAccessPoints(accessPointsData);
       return { usersData, accessPointsData };
@@ -485,323 +99,85 @@ const SimulatorPage = () => {
   };
 
   useEffect(() => {
-    // Pre-load data on mount so select fields show options immediately
     void ensureSeedDataLoaded();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleBootstrapDemoData = async () => {
-    const { usersData, accessPointsData } = await ensureSeedDataLoaded(true);
-    if (!usersData.length || !accessPointsData.length) {
-      setError('Unable to bootstrap simulator demo data. Please verify backend API authentication and try again.');
-    }
-  };
-
-  const runScenario = async () => {
-    const { usersData, accessPointsData } = await ensureSeedDataLoaded();
-
-    if (!usersData.length || !accessPointsData.length) {
-      setError('Simulator cannot run because users or access points are missing. Use "Bootstrap Demo Data" to create baseline records.');
+  const handleRunSimulation = async () => {
+    if (!customUserId || !customApId) {
+      setError('Please select both a user and an access point.');
       return;
     }
 
     setLoading(true);
     setError('');
-
     try {
-      const generatedResults: SimulationResult[] = [];
-      const safeIterations = Math.max(1, Math.min(100, iterations));
-      // Keep generated events in the recent past so backend timestamp validation passes.
-      const runBaseMs = Date.now() - 15 * 60 * 1000;
+      const result = await apiClient.requestAccess({
+        badge_id: selectedUser?.badge_id || '',
+        access_point_id: Number(customApId),
+        timestamp: customTime,
+        method: 'badge',
+      });
 
-      for (let i = 0; i < safeIterations; i += 1) {
-        const effectiveScenario = scenario === 'anomalous' ? randomItem(anomalyScenarios) : scenario;
-        const expectedForEvent = { ...getExpectedResults(effectiveScenario) };
-        let target: { user: UserItem; accessPoint: AccessPointItem } | null = null;
-        const eventBase = new Date(runBaseMs + i * 5 * 1000);
-        let timestamp: string | undefined = eventBase.toISOString();
-
-        if (effectiveScenario === 'custom') {
-          let cUser: UserItem | undefined;
-          if (customUserId === 'random') {
-            cUser = randomItem(usersData.filter((u) => u.is_active));
-          } else {
-            cUser = usersData.find((u) => u.id === Number(customUserId));
-          }
-
-          let cAp: AccessPointItem | undefined;
-          if (customApId === 'random') {
-            cAp = randomItem(accessPointsData.filter((ap) => ap.status === 'active'));
-          } else {
-            cAp = accessPointsData.find((ap) => ap.id === Number(customApId));
-          }
-
-          target = (cUser && cAp) ? { user: cUser, accessPoint: cAp } : null;
-          const parsedDate = new Date(customTime);
-          if (!isNaN(parsedDate.getTime())) {
-            timestamp = parsedDate.getTime() > Date.now() ? new Date().toISOString() : parsedDate.toISOString();
-          }
-        } else if (effectiveScenario === 'business_hours_normal') {
-          // Normal business hours access - typical 9-5 pattern
-          target = pickNormalTarget(usersData, accessPointsData);
-          const now = new Date(eventBase);
-          now.setHours(9 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60), 0, 0);
-          if (now > new Date()) {
-            now.setDate(now.getDate() - 1);
-          }
-          timestamp = now.toISOString();
-        } else if (effectiveScenario === 'cross_department') {
-          // Cross-department access from a regular employee
-          const activeUsers = usersData.filter((u) => u.is_active && (u.clearance_level ?? 1) >= 1);
-          const user = randomItem(activeUsers);
-          const deptPoints = accessPointsData.filter((ap) => ap.status === 'active' && !ap.is_restricted && (ap.required_clearance ?? 1) <= (user?.clearance_level ?? 1));
-          target = user && deptPoints.length ? { user, accessPoint: randomItem(deptPoints) } : null;
-          const now = new Date(eventBase);
-          now.setHours(9 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60), 0, 0);
-          if (now > new Date()) {
-            now.setDate(now.getDate() - 1);
-          }
-          timestamp = now.toISOString();
-        } else if (effectiveScenario === 'restricted_access') {
-          target = pickRestrictedTarget(usersData, accessPointsData);
-        } else if (
-          effectiveScenario === 'unusual_hours' ||
-          effectiveScenario === 'high_frequency' ||
-          effectiveScenario === 'badge_cloning'
-        ) {
-          target = pickAnomalousTarget(usersData, accessPointsData);
-        } else if (effectiveScenario === 'cross_dept') {
-          const manager = pickHighClearanceUser(usersData);
-          // Cross-dept: manager accessing different departments (not restricted areas)
-          const deptPoints = accessPointsData.filter((ap) => ap.status === 'active' && !ap.is_restricted && (ap.required_clearance ?? 1) <= (manager?.clearance_level ?? 1));
-          target = manager && deptPoints.length ? { user: manager, accessPoint: randomItem(deptPoints) } : null;
+      setResults((prev) => [{ ...result, timestampUsed: customTime }, ...prev]);
+    } catch (err: unknown) {
+      let errorMessage = 'Simulation failed';
+      
+      if (err && typeof err === 'object' && 'response' in err) {
+        // Safe type narrowing for Axios-like error objects
+        const axiosError = err as { response: { data?: { detail?: unknown } } };
+        const detail = axiosError.response?.data?.detail;
+        
+        if (Array.isArray(detail)) {
+          errorMessage = `Validation Error: ${detail.map((d: { loc: (string | number)[]; msg: string }) => 
+            `${d.loc.join('.')}: ${d.msg}`).join(', ')}`;
+        } else if (typeof detail === 'string') {
+          errorMessage = `Error: ${detail}`;
+        } else if (err instanceof Error) {
+          errorMessage = `Error: ${err.message}`;
         } else {
-          target = pickNormalTarget(usersData, accessPointsData);
+          errorMessage = 'Error: Connection failed or server error';
         }
-
-        if (!target) {
-          throw new Error('No eligible users/access points found for selected scenario.');
-        }
-
-        if (effectiveScenario === 'unusual_hours') {
-          timestamp = pickUnusualHourTimestamp(eventBase);
-        } else if (effectiveScenario === 'late_night_access') {
-          const now = new Date(eventBase);
-          now.setHours(22, 30 + Math.random() * 30, Math.floor(Math.random() * 60), 0);
-          if (now > new Date()) {
-            now.setDate(now.getDate() - 1);
-          }
-          timestamp = now.toISOString();
-        } else if (effectiveScenario === 'weekend_normal') {
-          timestamp = pickWeekendTimestamp(eventBase);
-        } else if (effectiveScenario === 'early_morning') {
-          timestamp = pickEarlyMorningTimestamp(eventBase);
-        }
-
-        if (effectiveScenario === 'badge_cloning') {
-          // Badge cloning: same badge in 2 different zones within <2 min
-          // Time: 4 seconds apart = 0.067 min (triggers concurrent_session AND velocity check)
-          // With 0.15 km distance: velocity = 0.15/0.067 = 2.2 km/min > 1.0 (triggers velocity hard rule)
-          const altPoints = accessPointsData.filter((ap) => ap.id !== target.accessPoint.id && ap.status === 'active' && ap.zone !== target.accessPoint.zone);
-          const firstResult = await apiClient.requestAccess({
-            badge_id: target.user.badge_id,
-            access_point_id: target.accessPoint.id,
-            method: 'badge',
-            timestamp: eventBase.toISOString(),
-          });
-          generatedResults.push({
-            ...firstResult,
-            expected: expectedForEvent,
-            scenarioUsed: effectiveScenario,
-          });
-
-          if (altPoints.length) {
-            const secondResult = await apiClient.requestAccess({
-              badge_id: target.user.badge_id,
-              access_point_id: randomItem(altPoints).id,
-              method: 'badge',
-              timestamp: new Date(eventBase.getTime() + 4 * 1000).toISOString(), // 4 seconds = triggers velocity > 1.0 AND concurrent session
-            });
-            generatedResults.push({
-              ...secondResult,
-              expected: expectedForEvent,
-              scenarioUsed: effectiveScenario,
-            });
-          }
-          continue;
-        }
-
-        if (effectiveScenario === 'high_frequency') {
-          for (let burst = 0; burst < 12; burst += 1) {
-            const burstResult = await apiClient.requestAccess({
-              badge_id: target.user.badge_id,
-              access_point_id: target.accessPoint.id,
-              method: 'badge',
-              timestamp: new Date(eventBase.getTime() + burst * 2000).toISOString(),
-            });
-            generatedResults.push({
-              ...burstResult,
-              expected: expectedForEvent,
-              scenarioUsed: effectiveScenario,
-            });
-          }
-          continue;
-        }
-
-        if (effectiveScenario === 'repeat_normal') {
-          // Same user, same location, 5 times over 2 hours
-          for (let repeat = 0; repeat < 5; repeat += 1) {
-            const repeatResult = await apiClient.requestAccess({
-              badge_id: target.user.badge_id,
-              access_point_id: target.accessPoint.id,
-              method: 'badge',
-              timestamp: new Date(eventBase.getTime() + repeat * 24 * 60 * 1000).toISOString(), // Every 24 min
-            });
-            generatedResults.push({
-              ...repeatResult,
-              expected: expectedForEvent,
-              scenarioUsed: effectiveScenario,
-            });
-          }
-          continue;
-        }
-
-        if (effectiveScenario === 'sequential_restricted') {
-          // Sequential restricted: LOW-clearance user attempting multiple restricted areas
-          const lowClearanceTarget = pickRestrictedTarget(usersData, accessPointsData);
-          if (!lowClearanceTarget) {
-            throw new Error('Cannot find low-clearance user for sequential restricted scenario');
-          }
-          const restrictedPoints = accessPointsData.filter(
-            (ap) => ap.status === 'active' && ((ap.is_restricted ?? false) || (ap.required_clearance ?? 1) >= 3)
-          );
-          for (let seq = 0; seq < Math.min(3, restrictedPoints.length); seq += 1) {
-            const seqResult = await apiClient.requestAccess({
-              badge_id: lowClearanceTarget.user.badge_id,
-              access_point_id: restrictedPoints[seq].id,
-              method: 'badge',
-              timestamp: new Date(eventBase.getTime() + seq * 5 * 60 * 1000).toISOString(), // 5 min apart
-            });
-            generatedResults.push({
-              ...seqResult,
-              expected: expectedForEvent,
-              scenarioUsed: effectiveScenario,
-            });
-          }
-          continue;
-        }
-
-        if (effectiveScenario === 'repeat_established') {
-          // Same user, same location, 3 times over time - well-established pattern
-          const activeUsers = usersData.filter((u) => u.is_active);
-          const repeatUser = randomItem(activeUsers);
-          const validPoints = accessPointsData.filter(
-            (ap) => ap.status === 'active' && !ap.is_restricted && (ap.required_clearance ?? 1) <= (repeatUser.clearance_level ?? 1)
-          );
-          const repeatPoint = validPoints.length ? randomItem(validPoints) : null;
-          
-          if (!repeatPoint) {
-            throw new Error('Cannot find suitable access point for repeat established scenario');
-          }
-
-          for (let repeat = 0; repeat < 3; repeat += 1) {
-            const repeatResult = await apiClient.requestAccess({
-              badge_id: repeatUser.badge_id,
-              access_point_id: repeatPoint.id,
-              method: 'badge',
-              timestamp: new Date(eventBase.getTime() + repeat * 24 * 60 * 60 * 1000).toISOString(), // 24 hours apart
-            });
-            generatedResults.push({
-              ...repeatResult,
-              expected: expectedForEvent,
-              scenarioUsed: effectiveScenario,
-            });
-          }
-          continue;
-        }
-
-        if (effectiveScenario === 'rapid_zone_succession') {
-          // Same user accessing 3+ different zones within seconds (physically impossible)
-          const activeUsers = usersData.filter((u) => u.is_active);
-          const rapidUser = randomItem(activeUsers);
-          const userClearance = rapidUser.clearance_level ?? 1;
-          const accessiblePoints = accessPointsData.filter(
-            (ap) => ap.status === 'active' && (ap.required_clearance ?? 1) <= userClearance
-          );
-
-          if (accessiblePoints.length < 3) {
-            // Fall back to normal scenario if not enough points
-            const singleResult = await apiClient.requestAccess({
-              badge_id: target.user.badge_id,
-              access_point_id: target.accessPoint.id,
-              method: 'badge',
-              timestamp,
-            });
-            generatedResults.push({
-              ...singleResult,
-              expected: expectedForEvent,
-              scenarioUsed: effectiveScenario,
-            });
-            continue;
-          }
-
-          // Send 3 rapid accesses to different zones within 4 seconds
-          // Time: 2 seconds apart = 0.033 min
-          // With 0.15-0.40 km distance: velocity = 0.15/0.033 = 4.5 km/min >> 1.0 (HARD RULE DENIED)
-          // Select points from different zones to maximize distance and trigger hard rule
-          const pointsByZone: Record<string, AccessPointItem[]> = {};
-          for (const pt of accessiblePoints) {
-            const z = pt.zone || 'default';
-            if (!pointsByZone[z]) pointsByZone[z] = [];
-            pointsByZone[z].push(pt);
-          }
-          const uniqueZones = Object.keys(pointsByZone).slice(0, 3);
-          const selectedPoints = uniqueZones.map(z => randomItem(pointsByZone[z]));
-          
-          for (let rapid = 0; rapid < selectedPoints.length; rapid += 1) {
-            const rapidResult = await apiClient.requestAccess({
-              badge_id: rapidUser.badge_id,
-              access_point_id: selectedPoints[rapid].id,
-              method: 'badge',
-              timestamp: new Date(eventBase.getTime() + rapid * 2 * 1000).toISOString(), // 2 sec apart = triggers velocity > 1.0
-            });
-            generatedResults.push({
-              ...rapidResult,
-              expected: expectedForEvent,
-              scenarioUsed: effectiveScenario,
-            });
-          }
-          continue;
-        }
-
-        const result = await apiClient.requestAccess({
-          badge_id: target.user.badge_id,
-          access_point_id: target.accessPoint.id,
-          method: 'badge',
-          timestamp,
-        });
-        generatedResults.push({
-          ...result,
-          expected: expectedForEvent,
-          scenarioUsed: effectiveScenario,
-        });
+      } else if (err instanceof Error) {
+        errorMessage = `Error: ${err.message}`;
       }
-
-      setResults((prev) => [...generatedResults, ...prev].slice(0, 200));
-    } catch (err) {
-      const detail = err instanceof Error ? err.message : '';
-      setError(detail ? `Simulation failed: ${detail}` : 'Simulation failed.');
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const getDecisionColor = (decision: string) => {
-    if (decision === 'granted') return '#4caf50';
-    if (decision === 'denied') return '#f44336';
-    if (decision === 'delayed') return '#ff9800';
-    return '#e2e8f0';
+  const handleClearResults = () => {
+    setResults([]);
   };
+
+  const getPreflightWarnings = () => {
+    if (!selectedUser || !selectedAp) return [];
+    const warnings: string[] = [];
+    const uClr = selectedUser.clearance_level ?? 1;
+    const apClr = selectedAp.required_clearance ?? 1;
+
+    if (uClr < apClr) {
+      warnings.push(`Clearance Mismatch: User clearance (Level ${uClr}) is lower than the AP requirement (Level ${apClr}).`);
+    }
+    if (selectedAp.is_restricted && uClr < 3) {
+      warnings.push(`Restricted Area: The user does not have sufficient clearance to access restricted zones.`);
+    }
+    
+    const eventDate = new Date(customTime);
+    const hour = eventDate.getHours();
+    const day = eventDate.getDay();
+    if (hour < 7 || hour > 19) {
+      warnings.push(`After Hours: Access attempt is occurring outside business hours.`);
+    }
+    if (day === 0 || day === 6) {
+      warnings.push(`Weekend Access: Attempt is occurring on a weekend.`);
+    }
+
+    return warnings;
+  };
+
+  const preflightWarnings = getPreflightWarnings();
 
   return (
     <Box sx={{ p: { xs: 2.5, md: 4 } }}>
@@ -809,344 +185,245 @@ const SimulatorPage = () => {
         {/* Page Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box sx={{ p: 1.5, borderRadius: 3, bgcolor: 'rgba(255, 255, 255, 0.05)', display: 'flex' }}>
-            <IconifyIcon icon="mdi:play-circle-outline" sx={{ fontSize: '2rem', color: '#fff' }} />
+            <IconifyIcon icon="mdi:target-variant" sx={{ fontSize: '2rem', color: '#fff' }} />
           </Box>
           <Box>
             <Typography variant="h3" fontWeight={800} sx={{ color: '#fff', letterSpacing: 0.5 }}>
-              Traffic Simulator
+              Manual Event Sandbox
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, mt: 0.5 }}>
-              Structured workspace for generating access traffic and testing threat scenarios.
+              Craft targeted access events and test your ML models dynamically.
             </Typography>
           </Box>
         </Box>
 
-        {/* Global Configuration & Status Grid */}
+        {/* Global Configuration Grid */}
         <Grid container spacing={3}>
-          <Grid item xs={12} md={3}>
-            <Box sx={{ p: 3, borderRadius: 4, background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
-                Live Seed Data
-              </Typography>
-              <Stack spacing={2} sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ color: '#e2e8f0', display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <IconifyIcon icon="mdi:account-group" sx={{ color: '#689f38' }} /> Active Users
-                  </Typography>
-                  <Typography variant="h6" fontWeight={800} color="#fff">{users.length}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ color: '#e2e8f0', display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <IconifyIcon icon="mdi:door-closed" sx={{ color: '#fbbf24' }} /> Access Points
-                  </Typography>
-                  <Typography variant="h6" fontWeight={800} color="#fff">{accessPoints.length}</Typography>
-                </Box>
-              </Stack>
-              <Box sx={{ mt: 'auto', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Button 
-                  variant="outlined" 
-                  fullWidth 
-                  onClick={() => void ensureSeedDataLoaded()} 
-                  disabled={loading || bootstrapping}
-                  startIcon={bootstrapping ? <CircularProgress size={16} /> : <IconifyIcon icon="mdi:refresh" />}
-                  sx={{ borderColor: 'rgba(255,255,255,0.1)', color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.2)' } }}
-                >
-                  Refresh Data
-                </Button>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={() => void handleBootstrapDemoData()}
-                  disabled={loading || bootstrapping}
-                  startIcon={bootstrapping ? <CircularProgress size={16} color="inherit" /> : <IconifyIcon icon="mdi:database-plus" />}
-                  sx={{ bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
-                >
-                  Bootstrap Demo Data
-                </Button>
-              </Box>
-            </Box>
-          </Grid>
-          
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={9}>
             <Box sx={{ p: 3, borderRadius: 4, background: 'linear-gradient(135deg, rgba(8, 145, 178, 0.08) 0%, rgba(8, 145, 178, 0.01) 100%)', backdropFilter: 'blur(10px)', border: '1px solid rgba(8, 145, 178, 0.2)', display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Typography variant="subtitle2" sx={{ color: '#0ea5e9', mb: 2, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-                <IconifyIcon icon="mdi:cogs" /> Engine Configurator
-              </Typography>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ color: '#0ea5e9', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <IconifyIcon icon="mdi:cogs" /> Injection Parameters
+                </Typography>
+              </Box>
               
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={8}>
-                  <TextField
-                    select
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Autocomplete
                     fullWidth
                     size="small"
-                    label="Threat Scenario"
-                    value={scenario}
-                    onChange={(e) => setScenario(e.target.value as ScenarioType)}
-                    disabled={loading || bootstrapping}
-                    sx={{
-                      '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 },
-                      '& .MuiInputLabel-root': { color: 'text.secondary' }
-                    }}
-                  >
-                    {(Object.keys(scenarioConfig) as ScenarioType[]).map((key) => (
-                      <MenuItem key={key} value={key}>
-                        {scenarioConfig[key].label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    type="number"
-                    fullWidth
-                    size="small"
-                    label="Iterations"
-                    inputProps={{ min: 1, max: 100 }}
-                    value={iterations}
-                    onChange={(e) => setIterations(Number(e.target.value || 1))}
-                    disabled={loading || bootstrapping}
-                    sx={{
-                      '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 },
-                      '& .MuiInputLabel-root': { color: 'text.secondary' }
-                    }}
+                    options={users.filter(u => u.is_active)}
+                    getOptionLabel={(u) => `${u.first_name} ${u.last_name} (${u.role})`}
+                    value={selectedUser || null}
+                    onChange={(_, value) => setCustomUserId(value ? String(value.id) : '')}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        label="Target User" 
+                        placeholder="Search users..."
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, 
+                          '& .MuiInputLabel-root': { color: 'text.secondary' } 
+                        }} 
+                      />
+                    )}
                   />
+
+                  {/* USER HELPER CARD */}
+                  {selectedUser && (
+                    <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>User Profile</Typography>
+                      <Stack spacing={1} sx={{ mt: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" sx={{ color: '#e2e8f0' }}>Clearance Level</Typography>
+                          <Typography variant="body2" sx={{ color: '#0ea5e9', fontWeight: 700 }}>Level {selectedUser.clearance_level}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" sx={{ color: '#e2e8f0' }}>Department</Typography>
+                          <Typography variant="body2" sx={{ color: '#fff' }}>{selectedUser.department?.replace('_', ' ').toUpperCase()}</Typography>
+                        </Box>
+                      </Stack>
+                    </Box>
+                  )}
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Autocomplete
+                    fullWidth
+                    size="small"
+                    options={accessPoints.filter(ap => ap.status === 'active')}
+                    getOptionLabel={(ap) => ap.name}
+                    value={selectedAp || null}
+                    onChange={(_, value) => setCustomApId(value ? String(value.id) : '')}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        label="Target Access Point" 
+                        placeholder="Search points..."
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, 
+                          '& .MuiInputLabel-root': { color: 'text.secondary' } 
+                        }} 
+                      />
+                    )}
+                  />
+
+                  {/* AP HELPER CARD */}
+                  {selectedAp && (
+                    <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase' }}>Access Point Data</Typography>
+                      <Stack spacing={1} sx={{ mt: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" sx={{ color: '#e2e8f0' }}>Min Clearance</Typography>
+                          <Typography variant="body2" sx={{ color: '#f43f5e', fontWeight: 700 }}>Level {selectedAp.required_clearance}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" sx={{ color: '#e2e8f0' }}>Restricted Area?</Typography>
+                          <Typography variant="body2" sx={{ color: selectedAp.is_restricted ? '#f43f5e' : '#4caf50', fontWeight: 700 }}>{selectedAp.is_restricted ? 'YES' : 'NO'}</Typography>
+                        </Box>
+                      </Stack>
+                    </Box>
+                  )}
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    type="datetime-local"
+                    fullWidth
+                    size="small"
+                    label="Event Timestamp"
+                    InputLabelProps={{ shrink: true }}
+                    value={customTime}
+                    onChange={(e) => setCustomTime(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, '& .MuiInputLabel-root': { color: 'text.secondary' } }}
+                  />
+                  
+                  {/* WARNINGS PANEL */}
+                  {preflightWarnings.length > 0 && (
+                    <Box sx={{ mt: 2, p: 2, borderRadius: 2, border: '1px solid rgba(245, 158, 11, 0.2)', bgcolor: 'rgba(245, 158, 11, 0.05)' }}>
+                       <Stack spacing={1}>
+                        {preflightWarnings.map((w, idx) => (
+                           <Typography key={idx} variant="caption" sx={{ color: '#f59e0b', display: 'flex', gap: 1, alignItems: 'center' }}>
+                             <IconifyIcon icon="mdi:alert-outline" /> {w}
+                           </Typography>
+                        ))}
+                       </Stack>
+                    </Box>
+                  )}
                 </Grid>
               </Grid>
 
-              {scenario === 'custom' && (
-                <Grid container spacing={2} sx={{ mt: 0 }}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      select
-                      fullWidth
-                      size="small"
-                      label="Target User"
-                      value={customUserId}
-                      onChange={(e) => setCustomUserId(e.target.value)}
-                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, '& .MuiInputLabel-root': { color: 'text.secondary' } }}
-                    >
-                      <MenuItem value="random">Auto-Select</MenuItem>
-                      {users.filter((u) => u.is_active).map((u) => (
-                        <MenuItem key={u.id} value={String(u.id)}>{u.email} (CLR: {u.clearance_level})</MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      select
-                      fullWidth
-                      size="small"
-                      label="Target Access Point"
-                      value={customApId}
-                      onChange={(e) => setCustomApId(e.target.value)}
-                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, '& .MuiInputLabel-root': { color: 'text.secondary' } }}
-                    >
-                      <MenuItem value="random">Auto-Select</MenuItem>
-                      {accessPoints.filter((ap) => ap.status === 'active').map((ap) => (
-                        <MenuItem key={ap.id} value={String(ap.id)}>{ap.name} (REQ: {ap.required_clearance})</MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      type="datetime-local"
-                      fullWidth
-                      size="small"
-                      label="Event Time"
-                      InputLabelProps={{ shrink: true }}
-                      value={customTime}
-                      onChange={(e) => setCustomTime(e.target.value)}
-                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }, '& .MuiInputLabel-root': { color: 'text.secondary' } }}
-                    />
-                  </Grid>
-                </Grid>
-              )}
-
-              <Alert 
-                severity={scenarioConfig[scenario].severity} 
-                icon={<IconifyIcon icon="mdi:information-outline" />}
-                sx={{ mt: 2, borderRadius: 2, bgcolor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', '& .MuiAlert-message': { color: '#e2e8f0' } }}
-              >
-                {scenarioConfig[scenario].description}
-              </Alert>
-
-              <Box sx={{ mt: 'auto', pt: 3 }}>
+              <Box sx={{ mt: 'auto', pt: 3, display: 'flex', gap: 2 }}>
                 <Button 
                   variant="contained" 
-                  fullWidth
-                  onClick={() => void runScenario()} 
+                  fullWidth 
+                  size="large"
+                  onClick={() => void handleRunSimulation()}
                   disabled={loading || bootstrapping}
-                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconifyIcon icon="mdi:play" />}
-                  sx={{ 
-                    py: 1.5, 
-                    fontWeight: 800, 
-                    fontSize: '1.05rem', 
-                    letterSpacing: 1,
-                    bgcolor: loading ? 'rgba(255,255,255,0.1)' : '#0ea5e9',
-                    boxShadow: loading ? 'none' : '0 4px 14px 0 rgba(14, 165, 233, 0.39)',
-                    '&:hover': { bgcolor: '#0284c7' }
-                  }}
+                  startIcon={loading ? <CircularProgress size={20} /> : <IconifyIcon icon="mdi:play" />}
+                  sx={{ borderRadius: 3, py: 1.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, boxShadow: '0 8px 16px rgba(0,0,0,0.4)', background: 'linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)' }}
                 >
-                  {loading ? 'EXECUTING SIMULATION...' : 'EXECUTE RUN'}
+                  {loading ? 'Processing...' : 'Inject Access Request'}
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  onClick={handleClearResults}
+                  disabled={results.length === 0}
+                  sx={{ borderRadius: 3, px: 3, borderColor: 'rgba(255,255,255,0.2)', color: 'text.secondary', '&:hover': { borderColor: '#fff', color: '#fff' } }}
+                >
+                  Clear Results
                 </Button>
               </Box>
             </Box>
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <Box sx={{ p: 3, borderRadius: 4, background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-                <IconifyIcon icon="mdi:poll" /> Run Summary
+            <Box sx={{ p: 3, borderRadius: 4, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 3 }}>
+                Session Metrics
               </Typography>
-
-              <Box sx={{ mb: 2, pb: 2, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                <Typography variant="caption" sx={{ color: '#0ea5e9', fontWeight: 700, mb: 1, display: 'block' }}>📊 ACTUAL RESULTS</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                   <Box>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>Total Events</Typography>
-                      <Typography variant="h5" sx={{ color: '#fff', fontWeight: 800 }}>{summary.total}</Typography>
-                   </Box>
-                   <Box>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>Avg Risk</Typography>
-                      <Typography variant="h5" sx={{ color: '#a78bfa', fontWeight: 800 }}>{summary.avgRisk}</Typography>
-                   </Box>
-                   <Box>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>Granted</Typography>
-                      <Typography variant="h5" sx={{ color: '#4caf50', fontWeight: 800 }}>{summary.granted}</Typography>
-                   </Box>
-                   <Box>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>Denied</Typography>
-                      <Typography variant="h5" sx={{ color: '#f44336', fontWeight: 800 }}>{summary.denied}</Typography>
-                   </Box>
+              
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="h4" fontWeight={900}>{summary.total}</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>Total Injections</Typography>
                 </Box>
-              </Box>
-
-
-
-              <Box sx={{ mt: 'auto', pt: 3 }}>
-                <Button 
-                  variant="outlined" 
-                  color="error"
-                  fullWidth 
-                  onClick={() => setResults([])} 
-                  disabled={loading || !results.length}
-                  startIcon={<IconifyIcon icon="mdi:delete-outline" />}
-                  sx={{ borderRadius: 2, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
-                >
-                  Clear Log
-                </Button>
-              </Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="h6" fontWeight={800} sx={{ color: '#4caf50' }}>{summary.granted}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>Granted</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="h6" fontWeight={800} sx={{ color: '#f43f5e' }}>{summary.denied}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>Denied</Typography>
+                  </Grid>
+                </Grid>
+                <Box>
+                  <Typography variant="h6" fontWeight={800} sx={{ color: '#a78bfa' }}>{summary.avgRisk}</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>Avg Risk Score</Typography>
+                </Box>
+              </Stack>
             </Box>
           </Grid>
         </Grid>
 
-        {error && (
-          <Alert severity="error" sx={{ borderRadius: 3, bgcolor: 'rgba(244, 67, 54, 0.1)', color: '#ff8a80', '& .MuiAlert-icon': { color: '#ff8a80' } }}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Live Results Feed */}
-        <Box sx={{ p: 4, borderRadius: 4, background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box sx={{ p: 1, bgcolor: 'rgba(167, 139, 250, 0.1)', borderRadius: 2 }}>
-                <IconifyIcon icon="mdi:table-eye" sx={{ fontSize: '1.5rem', color: '#a78bfa' }} />
-              </Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff' }}>
-                Live Stream Results
-              </Typography>
-            </Box>
-            {loading && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#0ea5e9' }}>
-                <CircularProgress size={16} color="inherit" />
-                <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>Receiving Data...</Typography>
-              </Box>
-            )}
-          </Box>
-
-          {results.length === 0 ? (
-             <Box sx={{ py: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 3, border: '1px dashed rgba(255,255,255,0.1)' }}>
-               <IconifyIcon icon="mdi:chart-timeline" sx={{ fontSize: '4rem', color: 'rgba(255,255,255,0.1)', mb: 2 }} />
-               <Typography variant="h6" color="text.secondary" fontWeight={600}>Awaiting Simulation Run</Typography>
-               <Typography variant="body2" color="text.disabled">Select a scenario above and execute to populate the live feed.</Typography>
-             </Box>
-          ) : (
-            <TableContainer sx={{ 
-              borderRadius: 2, 
-              maxHeight: 500, 
-              '&::-webkit-scrollbar': { width: 8, height: 8 },
-              '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4 }
-            }}>
-              <Table size="medium" stickyHeader>
-                <TableHead>
+        {/* Results History */}
+        {error && <Alert severity="error" variant="filled" sx={{ borderRadius: 3 }}>{error}</Alert>}
+        
+        {results.length > 0 && (
+          <Box sx={{ animation: 'fadeIn 0.5s ease-out' }}>
+            <Typography variant="h5" fontWeight={800} sx={{ mb: 2, color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <IconifyIcon icon="mdi:history" sx={{ color: '#0ea5e9' }} /> Result Timeline
+            </Typography>
+            <TableContainer component={Paper} sx={{ borderRadius: 4, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+              <Table>
+                <TableHead sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
                   <TableRow>
-                    {['Subject / User', 'Target Access Point', 'Expected', 'Actual Decision', 'Risk Score', 'Match?', 'Reasoning'].map((header) => (
-                      <TableCell key={header} align={header === 'Match?' ? 'center' : 'left'} sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid rgba(255,255,255,0.05)', py: 2 }}>
-                        {header}
-                      </TableCell>
-                    ))}
+                    <TableCell sx={{ color: 'text.secondary', fontWeight: 800 }}>Timestamp</TableCell>
+                    <TableCell sx={{ color: 'text.secondary', fontWeight: 800 }}>Decision</TableCell>
+                    <TableCell sx={{ color: 'text.secondary', fontWeight: 800 }}>Risk Score</TableCell>
+                    <TableCell sx={{ color: 'text.secondary', fontWeight: 800 }}>Risk Level</TableCell>
+                    <TableCell sx={{ color: 'text.secondary', fontWeight: 800 }}>Explanation</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {results.slice(0, 100).map((result, idx) => {
-                    const expected = result.expected;
-                    const riskScore = Number(result.risk_score || 0);
-                    const isMatch = expected.allowedDecisions.includes(
-                      result.decision as 'granted' | 'denied' | 'delayed'
-                    );
-                    const riskLevelMatch = riskScore >= expected.minRisk && riskScore <= expected.maxRisk;
-                    const overallMatch = isMatch && riskLevelMatch;
+                  {results.map((res, idx) => {
+                    const riskLevel = getRiskLevel(res.risk_score || 0);
                     return (
-                      <TableRow 
-                        key={`${result.log_id || idx}-${idx}`} 
-                        sx={{ 
-                          '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
-                          transition: 'background-color 0.2s',
-                          '& td': { borderBottom: '1px solid rgba(255,255,255,0.02)', py: 2 },
-                          bgcolor: overallMatch ? 'rgba(76, 175, 80, 0.05)' : 'rgba(244, 67, 54, 0.05)',
-                        }}
-                      >
-                        <TableCell sx={{ color: '#fff', fontWeight: 600 }}>{result.user_name || 'Unknown'}</TableCell>
-                        <TableCell sx={{ color: '#e2e8f0' }}>{result.access_point_name || 'Invalid'}</TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Chip label={expected.decision.toUpperCase()} size="small" variant="outlined" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: '#e2e8f0', width: 'fit-content', fontSize: '0.65rem', fontWeight: 700 }} />
-                            <Chip label={expected.riskLevel.toUpperCase()} size="small" variant="outlined" sx={{ borderColor: 'rgba(167,139,250,0.4)', color: '#a78bfa', width: 'fit-content', fontSize: '0.65rem', fontWeight: 700 }} />
-                          </Box>
+                      <TableRow key={idx} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                        <TableCell sx={{ color: '#fff', fontWeight: 500 }}>
+                          {new Date(res.timestampUsed).toLocaleString()}
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            label={result.decision.toUpperCase()}
-                            size="small"
-                            sx={{
-                              fontWeight: 800,
-                              fontSize: '0.7rem',
-                              letterSpacing: 0.5,
-                              bgcolor: `${getDecisionColor(result.decision)}22`,
-                              color: getDecisionColor(result.decision),
-                              border: `1px solid ${getDecisionColor(result.decision)}55`,
-                              borderRadius: 1.5,
-                            }}
+                          <Chip 
+                            label={res.decision?.toUpperCase()} 
+                            size="small" 
+                            sx={{ 
+                              fontWeight: 900, 
+                              bgcolor: res.decision === 'granted' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                              color: res.decision === 'granted' ? '#4caf50' : '#f43f5e',
+                              border: `1px solid ${res.decision === 'granted' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`
+                            }} 
                           />
                         </TableCell>
-                        <TableCell sx={{ color: '#fbbf24', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                          {Number(result.risk_score || 0).toFixed(3)}
-                          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 600, mt: 0.5 }}>
-                            {getRiskLevel(Number(result.risk_score || 0)).toUpperCase()}
-                          </Typography>
+                        <TableCell sx={{ color: '#fff', fontFamily: 'monospace', fontSize: '1.1rem' }}>
+                          {(res.risk_score || 0).toFixed(4)}
                         </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {overallMatch ? (
-                              <IconifyIcon icon="mdi:check-circle" sx={{ fontSize: '1.5rem', color: '#4caf50' }} />
-                            ) : (
-                              <IconifyIcon icon="mdi:close-circle" sx={{ fontSize: '1.5rem', color: '#f44336' }} />
-                            )}
-                          </Box>
+                        <TableCell>
+                          <Chip 
+                            label={riskLevel.toUpperCase()} 
+                            size="small" 
+                            color={
+                              riskLevel === 'low' ? 'success' : 
+                              riskLevel === 'medium' ? 'warning' : 
+                              riskLevel === 'high' ? 'error' : 'error'
+                            }
+                            variant={riskLevel === 'critical' ? 'filled' : 'outlined'}
+                            sx={{ fontWeight: 800 }}
+                          />
                         </TableCell>
-                        <TableCell sx={{ color: 'text.secondary', maxWidth: 200, whiteSpace: 'normal', fontSize: '0.8rem', lineHeight: 1.4 }}>
-                          {result.reasoning || 'Standard flow'}
+                        <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem', maxWidth: 300 }}>
+                          {res.reasoning || 'No details available'}
                         </TableCell>
                       </TableRow>
                     );
@@ -1154,8 +431,8 @@ const SimulatorPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-          )}
-        </Box>
+          </Box>
+        )}
       </Stack>
     </Box>
   );

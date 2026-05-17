@@ -222,6 +222,7 @@ export interface AccessPointItem {
   floor?: string | null;
   room?: string | null;
   zone?: string | null;
+  ip_address?: string | null;
   required_clearance?: number;
   is_restricted?: boolean;
 }
@@ -234,6 +235,7 @@ export interface CreateAccessPointPayload {
   floor?: string;
   room?: string;
   zone?: string;
+  ip_address?: string;
   required_clearance?: number;
   is_restricted?: boolean;
 }
@@ -311,16 +313,34 @@ export const apiClient = {
   /**
    * Load access logs with pagination support
    */
-  getAccessLogs: async (page: number = 1, pageSize: number = 50): Promise<{ items: AccessLogItem[]; total: number; pagination: PaginationMetadata }> => {
-    const response = await api.get<AccessLogsResponse>('/access/logs', { params: { page, page_size: pageSize } });
+  getAccessLogs: async (
+    page: number = 1, 
+    pageSize: number = 50,
+    filters: { decision?: string; min_risk?: number; max_risk?: number; search?: string; date_from?: string; date_to?: string } = {}
+  ): Promise<{ items: AccessLogItem[]; total: number; pagination: PaginationMetadata }> => {
+    const params = {
+      page,
+      page_size: pageSize,
+      ...filters
+    };
+    const response = await api.get<AccessLogsResponse>('/access/logs', { params });
     return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
 
   /**
    * Load alerts with pagination support
    */
-  getAlerts: async (page: number = 1, pageSize: number = 50): Promise<{ items: AlertItem[]; total: number; pagination: PaginationMetadata }> => {
-    const response = await api.get<PaginatedResponse<AlertItem>>('/alerts', { params: { page, page_size: pageSize } });
+  getAlerts: async (
+    page: number = 1, 
+    pageSize: number = 50,
+    filters: { status?: string } = {}
+  ): Promise<{ items: AlertItem[]; total: number; pagination: PaginationMetadata }> => {
+    const params = {
+      page,
+      page_size: pageSize,
+      ...filters
+    };
+    const response = await api.get<PaginatedResponse<AlertItem>>('/alerts', { params });
     return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
 
@@ -332,16 +352,34 @@ export const apiClient = {
     (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/resolve`, {})).data,
   markAlertFalsePositive: async (alertId: number) =>
     (await api.put<{ id: number; status: string; is_resolved: boolean; resolved_at: string }>(`/alerts/${alertId}/false-positive`, {})).data,
-  getUsers: async (page: number = 1, pageSize: number = 50): Promise<{ items: UserItem[]; total: number; pagination: PaginationMetadata }> => {
-    const response = await api.get<PaginatedResponse<UserItem>>('/users', { params: { page, page_size: pageSize } });
+  getUsers: async (
+    page: number = 1, 
+    pageSize: number = 50, 
+    filters: { role?: string; department?: string; is_active?: boolean; search?: string } = {}
+  ): Promise<{ items: UserItem[]; total: number; pagination: PaginationMetadata }> => {
+    const params = {
+      page,
+      page_size: pageSize,
+      ...filters
+    };
+    const response = await api.get<PaginatedResponse<UserItem>>('/users', { params });
     return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
   createUser: async (payload: CreateUserPayload) =>
     (await api.post<UserItem>('/users', payload)).data,
   updateUser: async (userId: number, payload: CreateUserPayload) =>
     (await api.put<UserItem>(`/users/${userId}`, payload)).data,
-  getAccessPoints: async (page: number = 1, pageSize: number = 50): Promise<{ items: AccessPointItem[]; total: number; pagination: PaginationMetadata }> => {
-    const response = await api.get<PaginatedResponse<AccessPointItem>>('/access-points', { params: { page, page_size: pageSize } });
+  getAccessPoints: async (
+    page: number = 1, 
+    pageSize: number = 50,
+    filters: { status?: string; building?: string } = {}
+  ): Promise<{ items: AccessPointItem[]; total: number; pagination: PaginationMetadata }> => {
+    const params = {
+      page,
+      page_size: pageSize,
+      ...filters
+    };
+    const response = await api.get<PaginatedResponse<AccessPointItem>>('/access-points', { params });
     return { items: response.data.data, total: response.data.pagination.total, pagination: response.data.pagination };
   },
   createAccessPoint: async (payload: CreateAccessPointPayload) =>

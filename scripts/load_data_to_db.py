@@ -44,12 +44,12 @@ DEPARTMENTS = {
 SHARED_ZONES = ["main_entrance", "admin_building", "security_office", "restaurant", "parking_lot_student", "parking_lot_staff"]
 
 ROLES = {
-    "students": "employee",
-    "teachers": "manager",
-    "researchers": "manager",
-    "admin_low": "admin",
-    "admin_high": "admin",
-    "security": "security",
+    "students": ("Student", 1),
+    "teachers": ("Teacher", 2),
+    "researchers": ("Researcher", 3),
+    "admin_low": ("Administrator", 2),
+    "admin_high": ("Senior Admin", 3),
+    "security": ("Security Guard", 3),
 }
 
 
@@ -75,12 +75,12 @@ def load_data():
         print("STEP 1: Creating Users & Access Points")
         print("="*60 + "\n")
         
-        # Create 1000 users (based on generation script)
+        # Create 5000 users (based on generation script)
         users_created = 0
-        for user_id in range(1000):
+        for user_id in range(5000):
             role_idx = user_id % 6
             role_name = list(ROLES.keys())[role_idx]
-            role_label = ROLES[role_name]
+            role_label, clearance = ROLES[role_name]
             
             # Assign departments
             if role_name == "researchers":
@@ -97,6 +97,7 @@ def load_data():
                 badge_id=f"BADGE_{user_id:06d}",
                 role=role_label,
                 department=dept,
+                clearance_level=clearance,
                 is_active=True,
             )
             session.add(user)
@@ -197,7 +198,7 @@ def load_data():
             risk_score = float(row.get('access_frequency_24h', 0) / 10.0) if is_anomaly else 0.1
             
             log = AccessLog(
-                user_id=int(row.get('hour', 0)) % 1000,  # Distribute users
+                user_id=int(row.get('user_id', int(row.get('hour', 0)) % 5000)),
                 access_point_id=access_point_id,
                 timestamp=timestamp,
                 decision=decision,
@@ -216,7 +217,7 @@ def load_data():
                 access_attempt_count=int(row.get('access_attempt_count', 0)),
                 time_of_week=int(row.get('time_of_week', 0)),
                 hour_deviation_from_norm=float(row.get('hour_deviation_from_norm', 0.0)),
-                badge_id_used=f"BADGE_{int(row.get('hour', 0)) % 1000:06d}",
+                badge_id_used=f"BADGE_{int(row.get('user_id', int(row.get('hour', 0)) % 5000)):06d}",
             )
             session.add(log)
             

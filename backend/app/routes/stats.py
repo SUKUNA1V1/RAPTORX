@@ -112,6 +112,8 @@ def get_access_timeline(date: str | None = None, db: Session = Depends(get_db)):
                 continue
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
+            else:
+                ts = ts.astimezone(timezone.utc)
             minute_key = ts.replace(second=0, microsecond=0).isoformat()
             if minute_key in minute_map and decision in minute_map[minute_key]:
                 minute_map[minute_key][decision] += 1

@@ -52,12 +52,14 @@ class AccessRequest(BaseModel):
     
     @validator("timestamp")
     def validate_timestamp(cls, v):
-        """Validate timestamp is not in the future."""
-        if v is None:
+        # Handle naive datetime comparison by assuming UTC
+        v_aware = v if v is None or v.tzinfo is not None else v.replace(tzinfo=timezone.utc)
+        if v_aware is None:
             return datetime.now(timezone.utc)
-        if v > datetime.now(timezone.utc):
+        
+        if v_aware > datetime.now(timezone.utc):
             raise ValueError("timestamp cannot be in the future")
-        return v
+        return v_aware
 
 
 class AccessDecisionResponse(BaseModel):
@@ -585,6 +587,20 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
             )
             alert_created = True
 
+        # Construct dynamic reasoning if ML result is generic
+        final_reasoning = ml_result.get("reasoning")
+        if not final_reasoning or "Risk score" in final_reasoning or final_reasoning == "Access processed by ML engine":
+            if user.clearance_level < access_point.required_clearance:
+                final_reasoning = f"Security Violation: User Clearance Level {user.clearance_level} is below point requirement Level {access_point.required_clearance}"
+            elif access_point.is_restricted and user.clearance_level < 3:
+                final_reasoning = "Security Alert: Access to restricted zone denied for non-executive staff"
+            elif ml_result["decision"] == "granted" and ml_result["risk_score"] < 0.2:
+                final_reasoning = "Normal pattern: Authorized personnel within expected parameters"
+            elif ml_result["decision"] == "denied":
+                final_reasoning = f"Anomaly detected: Behavior deviates significantly from baseline (Risk: {ml_result['risk_score']})"
+            else:
+                final_reasoning = final_reasoning or "Behavioral analysis completed successfully"
+
         return AccessDecisionResponse(
             decision=ml_result["decision"],
             risk_score=ml_result["risk_score"],
@@ -594,7 +610,7 @@ def request_access(payload: AccessRequest, db: Session = Depends(get_db)):
             user_name=f"{user.first_name} {user.last_name}",
             access_point_name=access_point.name,
             mode=ml_result.get("mode"),
-            reasoning=ml_result.get("reasoning"),
+            reasoning=final_reasoning,
             alert_created=alert_created,
         )
     except Exception as exc:
@@ -609,6 +625,9 @@ def list_access_logs(
     decision: Optional[str] = Query(None, description="Filter by decision (grant/deny/delayed)"),
     date_from: Optional[datetime] = Query(None, description="Filter from date"),
     date_to: Optional[datetime] = Query(None, description="Filter to date"),
+    search: Optional[str] = Query(None, description="Search in user name or point name"),
+    min_risk: Optional[float] = Query(None, description="Minimum risk score"),
+    max_risk: Optional[float] = Query(None, description="Maximum risk score"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -622,6 +641,8 @@ def list_access_logs(
     - access_point_id
     - decision
     - date range (date_from, date_to)
+    - search (user name or point name)
+    - min_risk / max_risk
     
     Pagination parameters:
     - page: Page number (1-indexed, default 1)
@@ -646,6 +667,21 @@ def list_access_logs(
             query = query.filter(AccessLog.timestamp >= date_from)
         if date_to:
             query = query.filter(AccessLog.timestamp <= date_to)
+            
+        # New filters
+        if search:
+            from sqlalchemy import or_
+            query = query.join(AccessLog.user).join(AccessLog.access_point).filter(
+                or_(
+                    User.first_name.ilike(f"%{search}%"),
+                    User.last_name.ilike(f"%{search}%"),
+                    AccessPoint.name.ilike(f"%{search}%")
+                )
+            )
+        if min_risk is not None:
+            query = query.filter(AccessLog.risk_score >= min_risk)
+        if max_risk is not None:
+            query = query.filter(AccessLog.risk_score <= max_risk)
         
         # Get total count
         total = query.count()

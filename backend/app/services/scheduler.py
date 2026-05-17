@@ -62,7 +62,7 @@ class AutoRetrainScheduler:
             try:
                 await self._check_and_trigger_retrain()
             except Exception as e:
-                logger.error(f"❌ Error in retrain scheduler: {e}")
+                logger.error(f"[ERROR] Error in retrain scheduler: {e}")
             
             # Wait for the specified interval
             try:
@@ -86,20 +86,20 @@ class AutoRetrainScheduler:
             ).all()
             
             if eligible_orgs:
-                logger.info(f"🔄 Found {len(eligible_orgs)} organization(s) needing retrain")
+                logger.info(f"[INFO] Found {len(eligible_orgs)} organization(s) needing retrain")
                 
                 for org in eligible_orgs:
                     try:
                         await self._trigger_retrain_for_org(org, db)
                     except Exception as e:
-                        logger.error(f"❌ Failed to trigger retrain for org {org.id} ({org.name}): {e}")
+                        logger.error(f"[ERROR] Failed to trigger retrain for org {org.id} ({org.name}): {e}")
             else:
-                logger.debug("ℹ️  No organizations need retrain at this time")
+                logger.debug("[INFO] No organizations need retrain at this time")
             
             db.close()
         
         except Exception as e:
-            logger.error(f"❌ Error checking retrain status: {e}")
+            logger.error(f"[ERROR] Error checking retrain status: {e}")
     
     async def _trigger_retrain_for_org(self, org: Organization, db: Session):
         """
@@ -121,7 +121,7 @@ class AutoRetrainScheduler:
         from retrain_pipeline import run_retrain_pipeline
         
         try:
-            logger.info(f"🚀 Auto-triggering RETRAIN for org {org.id} ({org.name})")
+            logger.info(f"[START] Auto-triggering RETRAIN for org {org.id} ({org.name})")
             logger.info(f"   Mode: REAL DATA (production access logs only, no synthetic data)")
             
             # Run RETRAINING pipeline (loads real data from database)
@@ -160,12 +160,12 @@ class AutoRetrainScheduler:
             db.add(audit)
             db.commit()
             
-            logger.info(f"✅ Auto-retrain COMPLETED for org {org.id} ({org.name})")
+            logger.info(f"[SUCCESS] Auto-retrain COMPLETED for org {org.id} ({org.name})")
             logger.info(f"   Data source: Real production access logs")
             logger.info(f"   Next retrain scheduled for: {org.next_retrain_date.isoformat()}")
         
         except Exception as e:
-            logger.error(f"❌ Auto-retrain FAILED for org {org.id}: {e}")
+            logger.error(f"[ERROR] Auto-retrain FAILED for org {org.id}: {e}")
             logger.error(f"   Cause: {str(e)}")
             
             # Log the failure

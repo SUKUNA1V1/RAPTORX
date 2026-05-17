@@ -73,11 +73,6 @@ const sitemap: MenuItem[] = [
         path: paths.mlStatus,
       },
       {
-        name: 'Explainability',
-        pathName: 'explainability',
-        path: paths.explainability,
-      },
-      {
         name: 'Simulator',
         pathName: 'simulator',
         path: paths.simulator,

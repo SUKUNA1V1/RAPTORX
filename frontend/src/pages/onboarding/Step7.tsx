@@ -161,7 +161,7 @@ const Step7 = () => {
   return (
     <OnboardingLayout
       currentStep={8}
-      onNext={async () => setShowConfirm(true)}
+      onNext={async () => {}}
       onPrevious={() => navigate(paths.onboardingStep.replace(':step', '7'))}
       loading={loading}
       nextButtonLabel="🚀 Go Live"

@@ -195,3 +195,11 @@
 2026-05-16 02:15:23 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
 2026-05-16 02:15:26 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
 2026-05-16 02:15:34 - root - ERROR - [decision_engine.py:144] - Audit logging failed: 'list' object has no attribute 'values'
+2026-05-16 22:46:26 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 597.33ms
+2026-05-16 22:46:28 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.84ms
+2026-05-16 22:46:29 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.83ms
+2026-05-16 22:46:30 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.66ms
+2026-05-16 22:46:31 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.72ms
+2026-05-16 22:46:33 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.70ms
+2026-05-16 22:46:38 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 1.73ms
+2026-05-16 22:46:51 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/access/request failed after 2.42ms

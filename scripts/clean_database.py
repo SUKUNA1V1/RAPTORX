@@ -19,7 +19,7 @@ from sqlalchemy import create_engine, text
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
-    print("❌ DATABASE_URL not found in .env")
+    print("ERROR: DATABASE_URL not found in .env")
     sys.exit(1)
 
 print(f"Database: {DATABASE_URL}\n")
@@ -50,10 +50,10 @@ try:
         conn.execute(text("DELETE FROM users"))
         # Don't delete organizations - might have configs
         conn.commit()
-        print("  ✓ Deleted all access_logs")
-        print("  ✓ Deleted all access_points")
-        print("  ✓ Deleted all users")
-        print("  ✓ Kept organizations table\n")
+        print("  - Deleted all access_logs")
+        print("  - Deleted all access_points")
+        print("  - Deleted all users")
+        print("  - Kept organizations table\n")
         
         # Verify
         print("Verification - new counts:")
@@ -66,12 +66,12 @@ try:
                 pass
         
         print("\n" + "="*60)
-        print("✅ Database cleared successfully!")
+        print("SUCCESS: Database cleared successfully!")
         print("="*60)
         print("\nReady to generate fresh university data!")
 
 except Exception as e:
-    print(f"\n❌ Error: {e}")
+    print(f"\nERROR: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)

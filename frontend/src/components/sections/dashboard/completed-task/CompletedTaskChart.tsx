@@ -118,19 +118,15 @@ const CompletedTaskChart = ({ timeline, ...rest }: CompletedTaskChartProps) => {
         {
           data: seriesData,
           type: 'line',
-          showSymbol: true,
-          symbolSize: 4,
-          lineStyle: { color: theme.palette.secondary.main, width: 1.5 },
-          itemStyle: { color: theme.palette.secondary.main },
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: theme.palette.primary.main, width: 2 },
+          itemStyle: { color: theme.palette.primary.main },
           areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0, y: 0, x2: 0, y2: 1,
-              colorStops: [
-                { offset: 0, color: 'rgba(0, 194, 255, 0.25)' },
-                { offset: 1, color: 'rgba(0, 194, 255, 0)' },
-              ],
-            },
+            color: `${theme.palette.primary.main}40`,
+          },
+          emphasis: {
+            focus: 'series',
           },
         },
       ],

@@ -59,6 +59,7 @@ const AlertsPage = () => {
   // Pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   /* ------------------------------------------------------------------ fetch */
   const load = useCallback(async () => {
@@ -66,40 +67,24 @@ const AlertsPage = () => {
       setLoading(true);
       setError('');
       setSelected(new Set());
-      const data = await apiClient.getAlerts();
-      setAlerts(data.items);
+      
+      const filters: { status?: string } = {};
+      if (tab !== 'all') filters.status = tab;
+
+      const response = await apiClient.getAlerts(page + 1, rowsPerPage, filters);
+      setAlerts(response.items);
+      setTotalRecords(response.total);
     } catch {
       setError('Failed to load alerts from the backend API.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, rowsPerPage, tab]);
 
   useEffect(() => { void load(); }, [load]);
 
-  /* ---------------------------------------------------------------- derived */
-  const filtered = useMemo(() =>
-    tab === 'all' ? alerts : alerts.filter((a) => a.status === tab),
-    [alerts, tab],
-  );
-
-
-
-  const counts = useMemo(() => ({
-    all:           alerts.length,
-    open:          alerts.filter((a) => a.status === 'open').length,
-    resolved:      alerts.filter((a) => a.status === 'resolved').length,
-    false_positive: alerts.filter((a) => a.status === 'false_positive').length,
-  }), [alerts]);
-
-  /* When tab changes, clear selection and reset page */
-  useEffect(() => { 
-    setSelected(new Set()); 
-    setPage(0);
-  }, [tab]);
-
   /* -------------------------------------------------------- selection logic */
-  const selectableIds = useMemo(() => filtered.map((a) => a.id), [filtered]);
+  const selectableIds = useMemo(() => alerts.map((a) => a.id), [alerts]);
   const allSelected   = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
   const someSelected  = selectableIds.some((id) => selected.has(id)) && !allSelected;
 
@@ -242,7 +227,7 @@ const AlertsPage = () => {
       }}>
         <Tabs
           value={tab}
-          onChange={(_, v: TabValue) => setTab(v)}
+          onChange={(_, v: TabValue) => { setTab(v); setPage(0); }}
           TabIndicatorProps={{ style: { display: 'none' } }}
           sx={{ minHeight: 52 }}
         >
@@ -253,18 +238,6 @@ const AlertsPage = () => {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <span>{opt.label}</span>
-                  <Chip
-                    label={counts[opt.value]}
-                    size="small"
-                    sx={{
-                      height: 20, fontSize: '0.7rem', fontWeight: 700,
-                      bgcolor: tab === opt.value ? `${opt.color}22` : 'rgba(255,255,255,0.06)',
-                      color:   tab === opt.value ? opt.color : 'text.disabled',
-                      border: `1px solid ${tab === opt.value ? `${opt.color}44` : 'transparent'}`,
-                      transition: 'all 0.2s',
-                      '& .MuiChip-label': { px: 1 },
-                    }}
-                  />
                 </Box>
               }
               sx={{
@@ -411,7 +384,7 @@ const AlertsPage = () => {
       )}
 
       {/* ── Empty ── */}
-      {!loading && !error && filtered.length === 0 && (
+      {!loading && !error && alerts.length === 0 && (
         <Fade in>
           <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 4, bgcolor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
             <IconifyIcon icon="mdi:shield-check-outline" sx={{ fontSize: '3rem', color: '#4ade80', mb: 2, display: 'block', mx: 'auto' }} />
@@ -426,7 +399,7 @@ const AlertsPage = () => {
       )}
 
       {/* ── Table ── */}
-      {!loading && !error && filtered.length > 0 && (
+      {!loading && !error && alerts.length > 0 && (
         <Fade in>
           <Paper sx={{
             borderRadius: 4, overflow: 'hidden',
@@ -438,20 +411,18 @@ const AlertsPage = () => {
               <TableHead>
                 <TableRow sx={{ bgcolor: 'rgba(255,255,255,0.03)' }}>
                   <TableCell padding="checkbox" sx={{ pl: 2 }}>
-                    {selectableIds.length > 0 && (
-                      <Checkbox
-                        id="select-all-alerts"
-                        size="small"
-                        checked={allSelected}
-                        indeterminate={someSelected}
-                        onChange={toggleSelectAll}
-                        disabled={bulkInProgress}
-                        sx={{
-                          color: 'rgba(255,255,255,0.2)',
-                          '&.Mui-checked, &.MuiCheckbox-indeterminate': { color: '#818cf8' },
-                        }}
-                      />
-                    )}
+                    <Checkbox
+                      id="select-all-alerts"
+                      size="small"
+                      checked={allSelected}
+                      indeterminate={someSelected}
+                      onChange={toggleSelectAll}
+                      disabled={bulkInProgress}
+                      sx={{
+                        color: 'rgba(255,255,255,0.2)',
+                        '&.Mui-checked, &.MuiCheckbox-indeterminate': { color: '#818cf8' },
+                      }}
+                    />
                   </TableCell>
                   {['Time Generated', 'Alert Type', 'Severity', 'Status', 'Related User', 'Actions'].map((h) => (
                     <TableCell key={h} sx={{
@@ -465,7 +436,7 @@ const AlertsPage = () => {
               </TableHead>
 
               <TableBody>
-                {filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item) => {
+                {alerts.map((item) => {
                   const sev        = SEVERITY_STYLE[item.severity] ?? SEVERITY_STYLE.medium;
                   const statusInfo = STATUS_STYLE[item.status]     ?? STATUS_STYLE.open;
                   const isOpen     = item.status === 'open';
@@ -488,7 +459,6 @@ const AlertsPage = () => {
                         outline: isSelected ? '1px solid rgba(99,102,241,0.2)' : 'none',
                       }}
                     >
-                      {/* Checkbox */}
                       <TableCell padding="checkbox" sx={{ pl: 2 }}>
                         <Checkbox
                           id={`select-alert-${item.id}`}
@@ -503,21 +473,15 @@ const AlertsPage = () => {
                           }}
                         />
                       </TableCell>
-
-                      {/* Time */}
                       <TableCell sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
                         {new Date(item.created_at).toLocaleString()}
                       </TableCell>
-
-                      {/* Alert Type */}
                       <TableCell sx={{ fontWeight: 600, color: '#e2e8f0', maxWidth: 220 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <IconifyIcon icon="mdi:alert-decagram-outline" sx={{ color: sev.color, fontSize: '1rem', flexShrink: 0 }} />
                           <span style={{ fontSize: '0.85rem' }}>{item.alert_type}</span>
                         </Box>
                       </TableCell>
-
-                      {/* Severity */}
                       <TableCell>
                         <Chip
                           label={item.severity.toUpperCase()}
@@ -529,8 +493,6 @@ const AlertsPage = () => {
                           }}
                         />
                       </TableCell>
-
-                      {/* Status */}
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                           <IconifyIcon icon={statusInfo.icon} sx={{ fontSize: '1rem', color: statusInfo.color }} />
@@ -539,8 +501,6 @@ const AlertsPage = () => {
                           </Typography>
                         </Box>
                       </TableCell>
-
-                      {/* User */}
                       <TableCell sx={{ color: 'text.secondary', fontSize: '0.83rem' }}>
                         {item.user ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -563,8 +523,6 @@ const AlertsPage = () => {
                           </Box>
                         ) : '—'}
                       </TableCell>
-
-                      {/* Per-row Actions */}
                       <TableCell>
                         {isOpen ? (
                           <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -621,7 +579,7 @@ const AlertsPage = () => {
             </Table>
             <TablePagination
               component="div"
-              count={filtered.length}
+              count={totalRecords}
               page={page}
               onPageChange={(_, newPage) => setPage(newPage)}
               rowsPerPage={rowsPerPage}
@@ -639,7 +597,6 @@ const AlertsPage = () => {
         </Fade>
       )}
 
-      {/* ── Snackbar ── */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3500}

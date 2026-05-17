@@ -62,7 +62,7 @@ const CompletedTask = () => {
   const isUp = total > 0 && stats!.granted_today >= stats!.denied_today;
 
   return (
-    <Paper sx={{ height: 300, display: 'flex', flexDirection: 'column' }}>
+    <Paper sx={{ height: { xs: 300, md: 400 }, display: 'flex', flexDirection: 'column' }}>
       {/* header */}
       <Stack alignItems="center" spacing={0.6}>
         <IconifyIcon icon="ph:clock-fill" color="text.secondary" fontSize="h6.fontSize" />

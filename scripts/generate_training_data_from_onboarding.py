@@ -41,6 +41,7 @@ def extract_access_points_from_config(config: Dict) -> List[Dict]:
             "id": ap.get("id", "ap_unknown"),
             "name": ap.get("name", "unknown"),
             "type": ap.get("type", "door"),
+            "zone": ap.get("zone", "unknown"),
             "zone_id": ap.get("zone_id", 1),
             "building_id": ap.get("building_id", 1),
             "is_restricted": ap.get("is_restricted", False),
@@ -101,7 +102,8 @@ def build_user_profiles(
     zones: List[str],
     policies: List[Dict],
     num_users: int = 100,
-    admins: List[Dict] = None
+    admins: List[Dict] = None,
+    org_id: int = 1
 ) -> List[Dict]:
     """Build user profiles based on configuration."""
     if admins is None:
@@ -145,7 +147,7 @@ def build_user_profiles(
             usual_hour_std = round(float(np.random.uniform(1.5, 3.0)), 2)
         
         profiles.append({
-            "user_id": f"USER_{org_id}_{user_id:05d}" if 'org_id' in globals() else f"USER_{user_id:05d}",
+            "user_id": f"USER_{org_id}_{user_id:05d}",
             "role_level": role_level,
             "clearance": clearance,
             "department": department,
@@ -173,6 +175,23 @@ def generate_records(
     
     np.random.seed(42)
     
+    # Map zones to properties based on access points
+    zone_clearance = {}
+    zone_restricted = {}
+    for ap in access_points:
+        z = ap.get("zone", "unknown")
+        # Keep the highest clearance required for the zone
+        zone_clearance[z] = max(zone_clearance.get(z, 1), ap.get("required_clearance", 1))
+        # If any point in the zone is restricted, mark the zone as restricted
+        zone_restricted[z] = zone_restricted.get(z, False) or ap.get("is_restricted", False)
+    
+    # Fallbacks for default zones if not in config
+    for z in zones:
+        if z not in zone_clearance:
+            zone_clearance[z] = 3 if z in ["server_room", "executive"] else 1
+        if z not in zone_restricted:
+            zone_restricted[z] = True if z in ["server_room", "executive"] else False
+    
     FEATURE_COLS = [
         "hour", "day_of_week", "is_weekend", "access_frequency_24h",
         "time_since_last_access_min", "location_match", "role_level",
@@ -184,8 +203,6 @@ def generate_records(
     ]
     
     records = []
-    num_users = len(user_profiles)
-    num_zones = len(zones)
     num_anomalies = int(total_records * anomaly_ratio)
     num_normal = total_records - num_anomalies
     
@@ -227,7 +244,7 @@ def generate_records(
             "time_since_last_access_min": time_since_last,
             "location_match": location_match,
             "role_level": user["role_level"],
-            "is_restricted_area": 1 if zone in ["server_room", "executive"] else 0,
+            "is_restricted_area": 1 if zone_restricted.get(zone, False) else 0,
             "is_first_access_today": 1 if np.random.random() < 0.1 else 0,
             "sequential_zone_violation": 0,
             "access_attempt_count": int(np.random.exponential(2)) + 1,
@@ -236,7 +253,7 @@ def generate_records(
             "geographic_impossibility": 0,
             "distance_between_scans_km": distance,
             "velocity_km_per_min": velocity,
-            "zone_clearance_mismatch": 1 if user["clearance"] < 2 and zone == "server_room" else 0,
+            "zone_clearance_mismatch": 1 if user["clearance"] < zone_clearance.get(zone, 1) else 0,
             "department_zone_mismatch": 0 if zone == user["department"] else 1,
             "concurrent_session_detected": 0,
             "anomaly": 0
@@ -268,10 +285,15 @@ def generate_records(
             time_since_last = int(np.random.exponential(120))
             velocity = 0.0
         elif anomaly_type == "restricted_area":
-            if user["clearance"] < 2:
-                zone = "server_room"
+            # Pick a zone where the user doesn't have clearance
+            mismatch_zones = [z for z in zones if user["clearance"] < zone_clearance.get(z, 1)]
+            if mismatch_zones:
+                zone = np.random.choice(mismatch_zones)
             else:
-                zone = np.random.choice(zones)
+                # Fallback to any zone or a known restricted one
+                restricted_zones = [z for z in zones if zone_restricted.get(z, False)]
+                zone = np.random.choice(restricted_zones) if restricted_zones else np.random.choice(zones)
+            
             hour = int(np.random.randint(0, 24))
             distance = 0.0
             time_since_last = int(np.random.exponential(60))
@@ -302,7 +324,7 @@ def generate_records(
             "time_since_last_access_min": time_since_last,
             "location_match": 0.1 if anomaly_type == "off_hours" else 0.3,
             "role_level": user["role_level"],
-            "is_restricted_area": 1 if anomaly_type == "restricted_area" else 0,
+            "is_restricted_area": 1 if zone_restricted.get(zone, False) else 0,
             "is_first_access_today": 1 if np.random.random() < 0.3 else 0,
             "sequential_zone_violation": 1 if anomaly_type == "sequential_violation" else 0,
             "access_attempt_count": int(np.random.exponential(3)) + 1,
@@ -311,7 +333,7 @@ def generate_records(
             "geographic_impossibility": 1 if anomaly_type == "impossible_travel" else 0,
             "distance_between_scans_km": distance,
             "velocity_km_per_min": velocity if anomaly_type != "impossible_travel" else 5.0 + np.random.random() * 5,
-            "zone_clearance_mismatch": 1 if user["clearance"] < 2 and zone == "server_room" else 0,
+            "zone_clearance_mismatch": 1 if user["clearance"] < zone_clearance.get(zone, 1) else 0,
             "department_zone_mismatch": 1 if zone != user["department"] else 0,
             "concurrent_session_detected": 1 if anomaly_type == "concurrent_session" else 0,
             "anomaly": 1
@@ -348,7 +370,7 @@ def generate_data_from_config(
     zone_distances = build_zone_distances(zones)
     
     print(f"[Training Data Generation] Building user profiles...")
-    user_profiles = build_user_profiles(zones, policies, num_users=100, admins=admins)
+    user_profiles = build_user_profiles(zones, policies, num_users=100, admins=admins, org_id=org_id)
     
     print(f"[Training Data Generation] Generating {total_records} training records...")
     df = generate_records(

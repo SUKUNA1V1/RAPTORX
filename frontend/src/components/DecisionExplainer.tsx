@@ -3,23 +3,29 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import LinearProgress from '@mui/material/LinearProgress';
-
+import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
 import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableBody from '@mui/material/TableBody';
-import Chip from '@mui/material/Chip';
-import Container from '@mui/material/Container';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { apiClient } from 'lib/api';
 
-interface DecisionExplainerProps {
-  logId?: number;
+interface FeatureContribution {
+  name: string;
+  value: number;
+  contribution: number;
+  importance?: number;
+  percentile?: number;
 }
 
 interface DecisionExplanation {
@@ -36,29 +42,55 @@ interface DecisionExplanation {
       combined: number;
       threshold: number;
     };
-    top_features: Array<{ name: string; value: number; contribution: number }>;
+    top_features: FeatureContribution[];
     feature_warnings: string[];
-    contributing_factors: Record<string, unknown>;
+    contributing_factors: Record<string, string>;
   };
 }
 
-const getDecisionColor = (decision: string) => {
-  if (decision === 'granted') return '#4caf50';
-  if (decision === 'denied') return '#d32f2f';
-  return '#ff9800';
+const getDecisionTheme = (decision: string) => {
+  if (decision === 'granted') {
+    return { 
+      color: '#10b981', 
+      gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%)',
+      glow: 'rgba(16, 185, 129, 0.3)',
+      icon: 'mdi:shield-check', 
+      label: 'Access Granted' 
+    };
+  }
+  if (decision === 'denied') {
+    return { 
+      color: '#ef4444', 
+      gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.05) 100%)',
+      glow: 'rgba(239, 68, 68, 0.3)',
+      icon: 'mdi:shield-remove', 
+      label: 'Access Denied' 
+    };
+  }
+  return { 
+    color: '#f59e0b', 
+    gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%)',
+    glow: 'rgba(245, 158, 11, 0.3)',
+    icon: 'mdi:shield-alert', 
+    label: 'Flagged for Review' 
+  };
 };
 
-const getRiskColor = (riskLevel: string) => {
-  if (riskLevel === 'low') return '#4caf50';
-  if (riskLevel === 'medium') return '#ff9800';
-  if (riskLevel === 'high') return '#ff6f00';
-  return '#d32f2f';
+const getFeatureIcon = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('hour') || n.includes('time')) return 'mdi:clock-outline';
+  if (n.includes('location') || n.includes('zone')) return 'mdi:map-marker-radius';
+  if (n.includes('frequency') || n.includes('count')) return 'mdi:trending-up';
+  if (n.includes('role') || n.includes('level') || n.includes('clearance')) return 'mdi:account-shield';
+  if (n.includes('restricted')) return 'mdi:lock-alert';
+  if (n.includes('weekend')) return 'mdi:calendar-weekend';
+  return 'mdi:chart-bubble';
 };
 
-const DecisionExplainer = ({ logId: propLogId }: DecisionExplainerProps) => {
+const DecisionExplainer = () => {
   const navigate = useNavigate();
   const { logId: paramLogId } = useParams<{ logId: string }>();
-  const logId = propLogId || (paramLogId ? parseInt(paramLogId, 10) : null);
+  const logId = paramLogId ? parseInt(paramLogId, 10) : null;
 
   const [explanation, setExplanation] = useState<DecisionExplanation | null>(null);
   const [loading, setLoading] = useState(false);
@@ -66,225 +98,290 @@ const DecisionExplainer = ({ logId: propLogId }: DecisionExplainerProps) => {
 
   useEffect(() => {
     if (!logId) return;
-
-    const loadExplanation = async () => {
+    const load = async () => {
       try {
         setLoading(true);
-        setError('');
-        console.log(`Fetching explanation for log ID: ${logId}`);
         const data = await apiClient.getDecisionExplanation(logId);
         setExplanation(data as unknown as DecisionExplanation);
       } catch (err) {
-        console.error('Error loading explanation:', err);
-        const errorMsg = err instanceof Error ? err.message : 'Failed to load explanation';
-        setError(`Error: ${errorMsg}`);
+        setError(err instanceof Error ? err.message : 'Failed to load explanation');
       } finally {
         setLoading(false);
       }
     };
-
-    void loadExplanation();
+    void load();
   }, [logId]);
 
   if (!logId) return null;
+  if (loading) return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', gap: 3 }}>
+      <CircularProgress size={64} thickness={4} sx={{ color: '#6366f1' }} />
+      <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 500 }}>Deconstructing AI Decision Logic...</Typography>
+    </Box>
+  );
+
+  if (error) return (
+    <Container maxWidth="sm" sx={{ py: 10 }}>
+      <Alert severity="error" variant="filled" sx={{ borderRadius: 4 }}>{error}</Alert>
+      <Button fullWidth onClick={() => navigate(-1)} sx={{ mt: 2 }} variant="outlined">Back to Logs</Button>
+    </Container>
+  );
+
+  if (!explanation) return null;
+
+  const theme = getDecisionTheme(explanation.explanation.decision);
+  const { top_features, feature_warnings, contributing_factors, scores } = explanation.explanation;
 
   return (
-    <Box sx={{ minHeight: '100vh', py: 3 }}>
-      <Container maxWidth="lg">
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-          <Button
-            startIcon={<IconifyIcon icon="mdi:arrow-left" />}
-            onClick={() => navigate(-1)}
-            variant="outlined"
-            sx={{ 
-              textTransform: 'none', 
-              borderRadius: 3, 
-              color: 'text.secondary', 
-              borderColor: 'rgba(255,255,255,0.1)',
-              '&:hover': {
-                bgcolor: 'rgba(255,255,255,0.05)',
-                borderColor: 'rgba(255,255,255,0.2)'
-              }
-            }}
-          >
-            Back
-          </Button>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(167, 139, 250, 0.1)' }}>
-              <IconifyIcon icon="mdi:lightbulb" sx={{ fontSize: '1.75rem', color: '#a78bfa' }} />
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: 0.5 }}>
-              Decision Explanation
-            </Typography>
-          </Box>
-        </Box>
+    <Box sx={{ py: 4, minHeight: '100vh', bgcolor: '#0B0F19', color: '#fff' }}>
+      <Container maxWidth="xl">
+        {/* Navigation */}
+        <Button
+          startIcon={<IconifyIcon icon="mdi:chevron-left" />}
+          onClick={() => navigate(-1)}
+          sx={{ mb: 4, color: '#94A3B8', '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }, borderRadius: 2, px: 2 }}
+        >
+          Back to Access Logs
+        </Button>
 
-        {/* Content */}
-        <Box sx={{ maxWidth: '900px' }}>
-          {loading && (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <CircularProgress />
-              <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
-                Loading decision explanation...
-              </Typography>
-            </Box>
-          )}
+        {/* One Big Card Wrapping Everything */}
+        <Paper sx={{ 
+          p: { xs: 3, md: 5 }, 
+          borderRadius: 4, 
+          background: 'rgba(30, 41, 59, 0.4)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.05)',
+          boxShadow: `0 0 50px -10px ${theme.glow}`,
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Background Glow */}
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '-20%', 
+            right: '-10%', 
+            width: '500px', 
+            height: '500px', 
+            background: `radial-gradient(circle, ${theme.glow} 0%, transparent 70%)`,
+            zIndex: 0,
+            opacity: 0.3
+          }} />
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-          {explanation && !loading && (
-            <>
-              {/* Decision Header - Large and Prominent */}
-              <Box sx={{ mb: 4 }}>
-                <Box sx={{ 
-                  p: 4, 
-                  borderRadius: 4, 
-                  background: 'rgba(255, 255, 255, 0.02)', 
-                  backdropFilter: 'blur(10px)', 
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    height: '100%',
-                    width: '6px',
-                    background: getDecisionColor(explanation.explanation.decision),
-                    boxShadow: `0 0 16px ${getDecisionColor(explanation.explanation.decision)}`
-                  }
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 4 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRadius: '16px',
-                          background: `linear-gradient(135deg, ${getDecisionColor(explanation.explanation.decision)}20 0%, ${getDecisionColor(explanation.explanation.decision)}05 100%)`,
-                          border: `1px solid ${getDecisionColor(explanation.explanation.decision)}40`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <IconifyIcon icon={explanation.explanation.decision === 'granted' ? 'mdi:check-circle' : explanation.explanation.decision === 'denied' ? 'mdi:close-circle' : 'mdi:clock'} sx={{ fontSize: '3rem', color: getDecisionColor(explanation.explanation.decision) }} />
-                      </Box>
-                      <Box>
-                        <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5, letterSpacing: 1, color: '#fff' }}>
-                          {explanation.explanation.decision.toUpperCase()}
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
-                          Access Decision Outcome
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Chip
-                      label={`RISK: ${explanation.explanation.risk_level.toUpperCase()}`}
-                      sx={{
-                        bgcolor: `${getRiskColor(explanation.explanation.risk_level)}15`,
-                        color: getRiskColor(explanation.explanation.risk_level),
-                        fontWeight: 800,
-                        fontSize: '0.9rem',
-                        height: 36,
-                        px: 1,
-                        border: `1px solid ${getRiskColor(explanation.explanation.risk_level)}40`
-                      }}
-                    />
-                  </Box>
-
-                  {/* Reason */}
-                  <Box sx={{ mb: 4, p: 3, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
-                      AI Generated Reasoning
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontStyle: 'italic', lineHeight: 1.6, color: '#e2e8f0', fontWeight: 500 }}>
-                      "{explanation.explanation.reason}"
-                    </Typography>
-                  </Box>
-
-                  {/* Confidence Bar */}
-                  <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        Prediction Confidence
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 800, color: getDecisionColor(explanation.explanation.decision) }}>
-                        {(explanation.explanation.confidence * 100).toFixed(1)}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={explanation.explanation.confidence * 100}
-                      sx={{
-                        height: 10,
-                        borderRadius: 5,
-                        bgcolor: 'rgba(0, 0, 0, 0.3)',
-                        '& .MuiLinearProgress-bar': {
-                          bgcolor: getDecisionColor(explanation.explanation.decision),
-                          borderRadius: 5,
-                          boxShadow: `0 0 12px ${getDecisionColor(explanation.explanation.decision)}`
-                        },
-                      }}
-                    />
-                  </Box>
-                </Box>
-              </Box>
-
-
-
-              {/* Features Section */}
-              {explanation.explanation.top_features && explanation.explanation.top_features.length > 0 && (
-                <Box sx={{ mb: 4 }}>
+          {/* Hero Section (Inside the Big Card) */}
+          <Box sx={{ position: 'relative', zIndex: 1, mb: 5 }}>
+            <Grid container spacing={4} alignItems="center">
+              <Grid item xs={12} md={8}>
+                <Stack direction="row" alignItems="center" spacing={3} sx={{ mb: 2 }}>
                   <Box sx={{ 
-                    p: 4, 
-                    borderRadius: 4, 
-                    background: 'rgba(255, 255, 255, 0.02)', 
-                    backdropFilter: 'blur(10px)', 
-                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                    width: 64, 
+                    height: 64, 
+                    borderRadius: '20px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    background: theme.gradient,
+                    border: `1px solid ${theme.color}`,
+                    boxShadow: `0 0 20px ${theme.glow}`
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-                      <Box sx={{ p: 1, bgcolor: 'rgba(251, 191, 36, 0.1)', borderRadius: 2 }}>
-                        <IconifyIcon icon="mdi:trending-up" sx={{ fontSize: '1.5rem', color: '#fbbf24' }} />
-                      </Box>
-                      <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff' }}>
-                        Top Contributing Features
-                      </Typography>
-                    </Box>
-                    <Table size="small" sx={{ 
-                      '& td, & th': { borderBottom: '1px solid rgba(255,255,255,0.05)', py: 2 },
-                      '& th': { color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }
-                    }}>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Feature Vector</TableCell>
-                          <TableCell align="right">Snapshot Value</TableCell>
-                          <TableCell align="right">SHAP Impact</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {explanation.explanation.top_features.map((f, idx) => (
-                          <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }, transition: 'all 0.2s' }}>
-                            <TableCell sx={{ fontSize: '1rem', fontWeight: 600, color: '#e2e8f0' }}>{f.name}</TableCell>
-                            <TableCell align="right" sx={{ fontSize: '1rem', fontFamily: 'monospace', color: 'text.secondary' }}>
-                              {Number(f.value).toFixed(3)}
-                            </TableCell>
-                            <TableCell align="right" sx={{ fontSize: '1rem', fontWeight: 800, color: '#fbbf24' }}>
-                              +{Number(f.contribution).toFixed(3)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <IconifyIcon icon={theme.icon} sx={{ fontSize: '2.5rem', color: theme.color }} />
                   </Box>
+                  <Box>
+                    <Typography variant="h3" sx={{ fontWeight: 800, color: '#fff' }}>
+                      {theme.label}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#94A3B8', fontWeight: 500 }}>
+                      Access Request Assessment
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Typography variant="h5" sx={{ mt: 3, fontWeight: 500, color: '#E2E8F0', lineHeight: 1.6, fontStyle: 'italic' }}>
+                  "{explanation.explanation.reason}"
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <Box sx={{ p: 3, bgcolor: 'rgba(15, 23, 42, 0.6)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#94A3B8' }}>
+                      Confidence Score
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: theme.color }}>
+                      {(explanation.explanation.confidence * 100).toFixed(1)}%
+                    </Typography>
+                  </Stack>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={explanation.explanation.confidence * 100} 
+                    sx={{ 
+                      height: 8, 
+                      borderRadius: 4, 
+                      bgcolor: 'rgba(255,255,255,0.05)',
+                      '& .MuiLinearProgress-bar': { 
+                        bgcolor: theme.color,
+                        borderRadius: 4,
+                        boxShadow: `0 0 10px ${theme.glow}`
+                      }
+                    }}
+                  />
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1, textAlign: 'right', fontWeight: 600 }}>
+                    Threshold: {(scores.threshold * 100).toFixed(0)}%
+                  </Typography>
                 </Box>
-              )}
+              </Grid>
+            </Grid>
+          </Box>
 
+          <Divider sx={{ my: 4, borderColor: 'rgba(255,255,255,0.05)' }} />
 
-            </>
-          )}
-        </Box>
+          {/* The Big Table Section */}
+          <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5, position: 'relative', zIndex: 1 }}>
+            <IconifyIcon icon="mdi:clipboard-text-search-outline" sx={{ color: '#6366f1' }} />
+            AI Forensic Audit Table
+          </Typography>
+
+          <TableContainer component={Box} sx={{ position: 'relative', zIndex: 1, bgcolor: 'rgba(15, 23, 42, 0.4)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+            <Table sx={{ minWidth: 650 }} aria-label="forensic audit table">
+              <TableHead sx={{ bgcolor: 'rgba(30, 41, 59, 0.8)' }}>
+                <TableRow>
+                  <TableCell sx={{ color: '#94A3B8', fontWeight: 700, py: 2 }}>Component / Factor</TableCell>
+                  <TableCell sx={{ color: '#94A3B8', fontWeight: 700, py: 2 }}>Details & Analysis</TableCell>
+                  <TableCell align="right" sx={{ color: '#94A3B8', fontWeight: 700, py: 2 }}>Impact / Score</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {/* SECTION 1: RATIONALE */}
+                <TableRow sx={{ bgcolor: 'rgba(99, 102, 241, 0.05)' }}>
+                  <TableCell colSpan={3} sx={{ py: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ color: '#6366f1', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                      Decision Rationale
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+                {Object.entries(contributing_factors).map(([key, val], idx) => (
+                  <TableRow key={`factor-${idx}`} sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                    <TableCell sx={{ color: '#E2E8F0', fontWeight: 700, textTransform: 'capitalize' }}>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <IconifyIcon icon="mdi:brain" sx={{ color: '#6366f1' }} />
+                        <Box>{key.replace(/_/g, ' ')}</Box>
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ color: '#94A3B8', fontWeight: 500 }}>{val}</TableCell>
+                    <TableCell align="right" sx={{ color: '#64748B', fontWeight: 600 }}>—</TableCell>
+                  </TableRow>
+                ))}
+
+                {/* SECTION 2: ANOMALIES */}
+                {feature_warnings.length > 0 && (
+                  <>
+                    <TableRow sx={{ bgcolor: 'rgba(239, 68, 68, 0.05)' }}>
+                      <TableCell colSpan={3} sx={{ py: 1.5 }}>
+                        <Typography variant="subtitle2" sx={{ color: '#EF4444', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                          Anomalies Detected
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                    {feature_warnings.map((w, idx) => (
+                      <TableRow key={`warning-${idx}`} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                        <TableCell sx={{ color: '#EF4444', fontWeight: 700 }}>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <IconifyIcon icon="mdi:alert-circle" />
+                            <Box>Alert</Box>
+                          </Stack>
+                        </TableCell>
+                        <TableCell sx={{ color: '#FCA5A5', fontWeight: 500 }}>{w}</TableCell>
+                        <TableCell align="right" sx={{ color: '#EF4444', fontWeight: 700 }}>HIGH</TableCell>
+                      </TableRow>
+                    ))}
+                  </>
+                )}
+
+                {/* SECTION 3: FEATURE IMPACT */}
+                <TableRow sx={{ bgcolor: 'rgba(20, 184, 166, 0.05)' }}>
+                  <TableCell colSpan={3} sx={{ py: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ color: '#14b8a6', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                      Feature Impact Analysis
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+                {top_features.map((f, idx) => {
+                  const impactColor = f.contribution > 0.1 ? '#EF4444' : f.contribution > 0.05 ? '#F59E0B' : '#10B981';
+                  return (
+                    <TableRow key={`feature-${idx}`} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                      <TableCell sx={{ color: '#E2E8F0', fontWeight: 700, textTransform: 'capitalize' }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <IconifyIcon icon={getFeatureIcon(f.name)} sx={{ color: '#94A3B8' }} />
+                          <Box>{f.name.replace(/_/g, ' ')}</Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell sx={{ color: '#94A3B8', fontWeight: 500 }}>
+                        Raw Value: <Box component="span" sx={{ color: '#F1F5F9', fontFamily: 'monospace' }}>{Number(f.value).toFixed(3)}</Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: impactColor }}>
+                            {(f.contribution * 100).toFixed(1)}%
+                          </Typography>
+                          <Box sx={{ width: 50 }}>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={Math.min(f.contribution * 100 * 5, 100)}
+                              sx={{ 
+                                height: 4, 
+                                borderRadius: 2, 
+                                bgcolor: 'rgba(255,255,255,0.05)',
+                                '& .MuiLinearProgress-bar': { bgcolor: impactColor }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+
+                {/* SECTION 4: MODEL SCORES */}
+                <TableRow sx={{ bgcolor: 'rgba(6, 182, 212, 0.05)' }}>
+                  <TableCell colSpan={3} sx={{ py: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ color: '#06b6d4', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                      Model Scores
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+                <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                  <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>Main Risk Score</TableCell>
+                  <TableCell sx={{ color: '#94A3B8', fontWeight: 500 }}>Final aggregated risk score used for decision.</TableCell>
+                  <TableCell align="right" sx={{ color: theme.color, fontWeight: 800 }}>{(scores.combined * 100).toFixed(1)}</TableCell>
+                </TableRow>
+
+                {/* SECTION 5: CONTEXT */}
+                <TableRow sx={{ bgcolor: 'rgba(100, 116, 139, 0.05)' }}>
+                  <TableCell colSpan={3} sx={{ py: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ color: '#64748B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                      Session Context
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+                <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                  <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>Log Identifier</TableCell>
+                  <TableCell sx={{ color: '#94A3B8', fontWeight: 500 }}>Internal database record reference.</TableCell>
+                  <TableCell align="right" sx={{ color: '#F1F5F9', fontWeight: 700, fontFamily: 'monospace' }}>#{explanation.access_log_id}</TableCell>
+                </TableRow>
+                <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                  <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>Subject Badge</TableCell>
+                  <TableCell sx={{ color: '#94A3B8', fontWeight: 500 }}>Identifier of the user requesting access.</TableCell>
+                  <TableCell align="right" sx={{ color: '#F1F5F9', fontWeight: 700 }}>{explanation.user?.badge_id || 'N/A'}</TableCell>
+                </TableRow>
+                <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
+                  <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>Timestamp</TableCell>
+                  <TableCell sx={{ color: '#94A3B8', fontWeight: 500 }}>Exact time the event was observed.</TableCell>
+                  <TableCell align="right" sx={{ color: '#F1F5F9', fontWeight: 700 }}>
+                    {explanation.user?.timestamp ? new Date(explanation.user.timestamp).toLocaleString() : 'N/A'}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       </Container>
     </Box>
   );

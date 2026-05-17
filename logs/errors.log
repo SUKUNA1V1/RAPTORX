@@ -1,5 +1,0 @@
-2026-05-16 15:40:46 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 87.14ms
-2026-05-16 15:40:54 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 9.53ms
-2026-05-16 15:40:56 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 5.71ms
-2026-05-16 15:41:03 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 5.07ms
-2026-05-16 15:41:04 - app.api_metrics - ERROR - [api_metrics.py:44] - API Error: POST /api/auth/login failed after 4.51ms

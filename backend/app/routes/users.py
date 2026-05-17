@@ -58,11 +58,11 @@ def list_users(
         try:
             sort_field = getattr(User, params.sort_by, User.created_at)
             if params.sort_order == "asc":
-                query = query.order_by(sort_field.asc())
+                query = query.order_by(sort_field.asc(), User.id.asc())
             else:
-                query = query.order_by(sort_field.desc())
+                query = query.order_by(sort_field.desc(), User.id.desc())
         except AttributeError:
-            query = query.order_by(User.created_at.desc())
+            query = query.order_by(User.created_at.desc(), User.id.desc())
         
         # Apply pagination
         offset = get_pagination_offset(params.page, params.page_size)

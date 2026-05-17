@@ -195,50 +195,7 @@ def get_model_insights():
         )
     
     try:
-        return {
-            "isolation_forest": {
-                "description": "Tree-based ensemble anomaly detection using isolation algorithm. Constructs random forests where anomalies are isolated in fewer splits than normal observations.",
-                "architecture": "100 trees, max_samples='auto', max_features=1.0, contamination=0.1",
-                "features": [
-                    "hour",
-                    "day_of_week",
-                    "access_frequency_24h",
-                    "time_since_last_access_min",
-                    "location_match",
-                    "role_level",
-                    "is_restricted_area",
-                    "access_attempt_count",
-                    "is_weekend",
-                    "is_first_access_today",
-                    "sequential_zone_violation",
-                    "time_of_week",
-                    "hour_deviation_from_norm"
-                ]
-            },
-            "autoencoder": {
-                "description": "Deep neural network for unsupervised anomaly detection. Learns compressed representation of normal access patterns; reconstruction error indicates anomalies.",
-                "architecture": "Input(13) → Dense(26,relu) → Dense(13,relu) → Dense(6,relu) → Dense(13,relu) → Dense(26,relu) → Output(13)",
-                "features": [
-                    "hour",
-                    "day_of_week",
-                    "access_frequency_24h",
-                    "time_since_last_access_min",
-                    "location_match",
-                    "role_level",
-                    "is_restricted_area",
-                    "access_attempt_count",
-                    "is_weekend",
-                    "is_first_access_today",
-                    "sequential_zone_violation",
-                    "time_of_week",
-                    "hour_deviation_from_norm"
-                ]
-            },
-            "ensemble": {
-                "description": "Combines Isolation Forest (50%) and Autoencoder (50%) anomaly scores. Weighted averaging provides robust detection by leveraging diverse algorithmic strengths.",
-                "method": "Weighted Average (IF: 50%, AE: 50%)"
-            }
-        }
+        return explainer.get_model_insights()
     except Exception as exc:
         raise HTTPException(
             status_code=500,

@@ -1,2 +1,2 @@
 model,epochs,batch_size,learning_rate,threshold_strategy,threshold_value,precision,recall,f1_score,auc_roc,false_positive_rate,training_time_sec,inference_ms,true_negatives,false_positives,false_negatives,true_positives
-Autoencoder,100,32,0.001,mean + 2*std,0.005479,0.8189,0.9232,0.8679,0.9959,0.0107,920.84,59.762,93979,1021,384,4616
+Autoencoder,100,32,0.0001,mean + 2*std,0.019457,0.7333,0.7068,0.7198,0.9636,0.0135,1172.523,62.348,93715,1285,1466,3534
