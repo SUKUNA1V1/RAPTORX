@@ -606,33 +606,33 @@ HTTP RESPONSE
 │  CLIENT LAYER                                                │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │ Web Browsers / Mobile Apps                             │  │
-│  │ HTTPS (TLS 1.2+, Certificate Pinning)                 │   │
+│  │ HTTPS (TLS 1.2+, Certificate Pinning)                  │  │
 │  └───────────────────┬────────────────────────────────────┘  │
 │                      │                                       │
 │                      ▼                                       │
 │  REVERSE PROXY LAYER (Optional - Nginx)                      │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │ • Load balancing                                       │  │
-│  │ • SSL/TLS termination                                 │   │
-│  │ • Rate limiting (per IP)                              │   │
+│  │ • SSL/TLS termination                                  │  │
+│  │ • Rate limiting (per IP)                               │  │
 │  │ • Request logging                                      │  │
-│  │ • Caching (static assets)                             │   │
+│  │ • Caching (static assets)                              │  │
 │  └───────────────────┬────────────────────────────────────┘  │
 │                      │                                       │
 │         ┌────────────┼────────────┐                          │
 │         │            │            │                          │
 │         ▼            ▼            ▼                          │
 │  BACKEND SERVERS (3+ instances for HA)                       │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ FastAPI Application                                   │   │
-│  │ ├─ Gunicorn (4 workers per instance)                 │    │
-│  │ ├─ Uvicorn (async event loop)                        │    │
+│  ┌─────────────────────────────────────────────────────┐     │
+│  │ FastAPI Application                                 │     │
+│  │ ├─ Gunicorn (4 workers per instance)                │     │
+│  │ ├─ Uvicorn (async event loop)                       │     │
 │  │ ├─ Thread-safe singletons (Engine, Scaler)          │     │
-│  │ ├─ Connection pooling (DB + Redis)                   │    │
+│  │ ├─ Connection pooling (DB + Redis)                  │     │
 │  │ └─ Health checks (/health, /health/cache)           │     │
-│  │                                                       │   │
-│  │ Request Processing: 50-100ms avg                     │    │
-│  │ Throughput: 250+ req/sec per instance                │    │
+│  │                                                     │     │
+│  │ Request Processing: 50-100ms avg                    │     │
+│  │ Throughput: 250+ req/sec per instance               │     │
 │  └──────────────┬──────────────────────────────────────┘     │
 │                 │                                            │
 │     ┌───────────┼────────────┐                               │
@@ -641,35 +641,35 @@ HTTP RESPONSE
 │  DATABASE & CACHE LAYER                                      │
 │  ┌────────────────────────┐  ┌──────────────────────────┐    │
 │  │ PostgreSQL 14+         │  │ Redis 7+                 │    │
-│  │ ├─ Primary instance    │  │ ├─ Cache layer          │     │
-│  │ ├─ Replication (opt.)  │  │ ├─ Session storage      │     │
-│  │ ├─ Automated backups   │  │ ├─ Real-time metrics    │     │
-│  │ ├─ Connection pooling  │  │ ├─ Pub/Sub (optional)   │     │
-│  │ │  (min=5, max=20)     │  │ └─ TTL management       │     │
+│  │ ├─ Primary instance    │  │ ├─ Cache layer           │    │
+│  │ ├─ Replication (opt.)  │  │ ├─ Session storage       │    │
+│  │ ├─ Automated backups   │  │ ├─ Real-time metrics     │    │
+│  │ ├─ Connection pooling  │  │ ├─ Pub/Sub (optional)    │    │
+│  │ │  (min=5, max=20)     │  │ └─ TTL management        │    │
 │  │ ├─ 18 tables optimized │  │                          │    │
-│  │ ├─ 5 strategic indexes │  │ Hit Rate: 75%+          │     │
-│  │ └─ Query latency: 50ms │  │ Memory: <500MB          │     │
+│  │ ├─ 5 strategic indexes │  │ Hit Rate: 75%+           │    │
+│  │ └─ Query latency: 50ms │  │ Memory: <500MB           │    │
 │  └────────────────────────┘  └──────────────────────────┘    │
 │                                                              │
 │  MONITORING & LOGGING                                        │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │ • Application logs (ELK stack or CloudWatch)          │   │
-│  │ • Database slow query logs                            │   │
-│  │ • Redis performance metrics                           │   │
-│  │ • API latency monitoring                              │   │
-│  │ • Error rate tracking                                 │   │
-│  │ • Health check dashboards                             │   │
+│  │ • Application logs (ELK stack or CloudWatch)           │  │
+│  │ • Database slow query logs                             │  │
+│  │ • Redis performance metrics                            │  │
+│  │ • API latency monitoring                               │  │
+│  │ • Error rate tracking                                  │  │
+│  │ • Health check dashboards                              │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
 │  SECURITY LAYER                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │ • JWT token validation                                │   │
-│  │ • TOTP MFA enforcement                                │   │
-│  │ • CSRF token middleware                               │   │
-│  │ • Input sanitization (Pydantic v2)                   │    │
-│  │ • Rate limiting (5 req/IP per second)                │    │
-│  │ • SQL injection prevention (ORM)                      │   │
-│  │ • Brute force protection (30min lockout)             │    │
+│  │ • JWT token validation                                 │  │
+│  │ • TOTP MFA enforcement                                 │  │
+│  │ • CSRF token middleware                                │  │
+│  │ • Input sanitization (Pydantic v2)                     │  │
+│  │ • Rate limiting (5 req/IP per second)                  │  │
+│  │ • SQL injection prevention (ORM)                       │  │
+│  │ • Brute force protection (30min lockout)               │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
 └──────────────────────────────────────────────────────────────┘
