@@ -175,39 +175,9 @@ def upgrade() -> None:
     op.create_index(op.f('ix_mfa_secrets_id'), 'mfa_secrets', ['id'], unique=False)
     op.create_index(op.f('ix_mfa_secrets_user_id'), 'mfa_secrets', ['user_id'], unique=False)
 
-    # Onboarding Drafts table
-    op.create_table(
-        'onboarding_drafts',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=True),
-        sa.Column('step', sa.Integer(), nullable=False),
-        sa.Column('data', sa.String(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id'),
-    )
-    op.create_index(op.f('ix_onboarding_drafts_id'), 'onboarding_drafts', ['id'], unique=False)
-    op.create_index(op.f('ix_onboarding_drafts_user_id'), 'onboarding_drafts', ['user_id'], unique=False)
-
-    # Org Data Settings table
-    op.create_table(
-        'org_data_settings',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('org_id', sa.Integer(), nullable=False),
-        sa.Column('setting_key', sa.String(), nullable=False),
-        sa.Column('setting_value', sa.String(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-    )
-    op.create_index(op.f('ix_org_data_settings_id'), 'org_data_settings', ['id'], unique=False)
-
 
 def downgrade() -> None:
     """Downgrade schema - drop all base application tables."""
-    op.drop_table('org_data_settings')
-    op.drop_table('onboarding_drafts')
     op.drop_table('mfa_secrets')
     op.drop_table('refresh_tokens')
     op.drop_table('device_certificates')
