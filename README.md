@@ -119,6 +119,57 @@ npm run dev
 
 ---
 
+## 🐳 Docker Setup (Recommended for Easy Deployment)
+
+**Get everything running with ONE command!** No need for manual installation.
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- 10GB disk space (for containers)
+
+### Quick Start with Docker
+
+```bash
+# Navigate to project
+cd raptorx
+
+# Start all services (PostgreSQL + Redis + Backend + Frontend)
+docker-compose up
+
+# First time? Docker will build everything (~3-5 minutes)
+# Subsequent runs start instantly!
+```
+
+### Access Everything
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:8000
+- **API Docs:** http://localhost:8000/docs
+- **Database:** localhost:5432
+- **Cache:** localhost:6379
+
+### Useful Docker Commands
+
+```bash
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Rebuild (after code changes)
+docker-compose up --build
+
+# Create admin account
+docker-compose exec backend python create_default_admin.py
+
+# Run database migrations
+docker-compose exec backend alembic upgrade head
+```
+
+📖 **Full Docker Guide:** See [DOCKER_SETUP.md](DOCKER_SETUP.md)
+
+---
+
 ## 🏗️ Architecture
 
 ### System Architecture Diagram

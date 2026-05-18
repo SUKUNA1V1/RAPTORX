@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: raptorx-db
+    environment:
+      POSTGRES_USER: raptorx_user
+      POSTGRES_PASSWORD: secure_password_123
+      POSTGRES_DB: raptorx
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raptorx_user -d raptorx"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - raptorx-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: raptorx-cache
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - raptorx-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: raptorx-backend
+    environment:
+      DATABASE_URL: postgresql://raptorx_user:secure_password_123@postgres:5432/raptorx
+      REDIS_CACHE_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      SECRET_KEY: your-super-secret-key-change-me-in-production
+      DEBUG: "false"
+      ENVIRONMENT: production
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    networks:
+      - raptorx-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: raptorx-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/frontend/src
+    environment:
+      VITE_API_URL: http://localhost:8000
+    networks:
+      - raptorx-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  raptorx-network:
+    driver: bridge
