@@ -136,8 +136,8 @@ npm run dev
 │     ┌─────────────────────────────────────┼──────────────────────┐│
 │     │             FastAPI Backend (Python 3.10+)                 ││
 │     │  ┌────────────────────────────────────────────────────┐   ││
-│     │  │         API Routes (13 Routers, 79+ Endpoints)      │   ││
-│     │  │  • Access Control • Users • Auth • Alerts • Stats  │   ││
+│     │  │         API Routes (12 Routers, 75+ Endpoints)      │   ││
+│     │  │  • Access • Auth • Users • Alerts • Stats • ML      │   ││
 │     │  └─────────────────┬──────────────────────────────────┘   ││
 │     │                    │                                        ││
 │     │  ┌─────────────────┼──────────────────────────────────┐   ││
@@ -192,15 +192,15 @@ npm run dev
 
 | Layer | Technology | Purpose | Status |
 |-------|-----------|---------|--------|
-| **Frontend** | React 18.2 + TypeScript | Dashboard & UI | ✅ Production |
-| **API Gateway** | FastAPI 0.100+ | REST Endpoints | ✅ Production |
+| **Frontend** | React 18.2 + TypeScript + Vite | Dashboard & UI | ✅ Production |
+| **API Gateway** | FastAPI 0.100+ | REST Endpoints (12 routers) | ✅ Production |
 | **Decision Engine** | Python + Threading | ML Scoring | ✅ Optimized |
-| **ML Models** | Scikit-learn + Joblib | Ensemble Classifier | ✅ Auto-Retrain |
+| **ML Models** | Scikit-learn + Keras + Joblib | Ensemble Classifier | ✅ Auto-Retrain |
 | **Cache Layer** | Redis 7+ | Query Caching | ✅ Integrated |
-| **Database** | PostgreSQL 14+ | Data Persistence | ✅ Optimized |
+| **Database** | PostgreSQL 14+ | 18 Tables + 5 Indexes | ✅ Optimized |
 | **ORM** | SQLAlchemy 2.0 | Database Abstraction | ✅ Eager Loading |
 | **Auth** | JWT + TOTP | Security | ✅ MFA Ready |
-| **Async** | asyncio + Uvicorn | Concurrency | ✅ 250+ req/sec |
+| **Real-time** | WebSocket + asyncio | Live Events | ✅ Live Notifications |
 
 ### Authentication & Security Flow
 
@@ -675,9 +675,79 @@ HTTP RESPONSE
 └──────────────────────────────────────────────────────────────┘
 ```
 
+---
+
+## 📊 System Diagrams & Visualizations
+
+### Use Case Diagram
+
+This diagram illustrates the primary actors and interactions within the RaptorX system:
+
+```mermaid
+graph TB
+    subgraph Users["👥 Users"]
+        Employee["Employee<br/>(Badge Holder)"]
+        SecurityOfficer["🛡️ Security Officer<br/>(Access Reviewer)"]
+        Admin["⚙️ System Admin<br/>(Configuration)"]
+    end
+    
+    subgraph System["🎯 RaptorX System"]
+        AccessControl["Access Control<br/>Decision Engine"]
+        AuthSystem["Authentication &<br/>MFA System"]
+        MonitoringDash["📊 Monitoring<br/>Dashboard"]
+        ReportingSystem["📈 Reporting &<br/>Analytics"]
+        ConfigManager["⚙️ Configuration<br/>Manager"]
+        MLEngine["🤖 ML Anomaly<br/>Detection"]
+    end
+    
+    subgraph ExternalSystems["🔗 External Systems"]
+        BadgeReader["Badge Reader<br/>Access Points"]
+        Database[(Database<br/>PostgreSQL)]
+        Cache[(Cache<br/>Redis)]
+    end
+    
+    %% Employee flows
+    Employee -->|Request Access| BadgeReader
+    BadgeReader -->|Submit Access Request| AccessControl
+    AccessControl -->|Query & Store| Database
+    AccessControl -->|Query Cache| Cache
+    AccessControl -->|Analyze Patterns| MLEngine
+    
+    %% Security Officer flows
+    SecurityOfficer -->|Review Alerts| MonitoringDash
+    MonitoringDash -->|Display Anomalies| MLEngine
+    SecurityOfficer -->|Resolve Incidents| ReportingSystem
+    
+    %% Admin flows
+    Admin -->|Manage Users| AuthSystem
+    Admin -->|Configure Rules| ConfigManager
+    Admin -->|Update Settings| AccessControl
+    
+    %% System internal flows
+    AccessControl -->|Log Decision| Database
+    AuthSystem -->|Store Credentials| Database
+    MLEngine -->|Retrain Models| Cache
+    MonitoringDash -->|Fetch Stats| Database
+    ReportingSystem -->|Generate Reports| Database
+    
+    style Users fill:#e1f5ff
+    style System fill:#fff3e0
+    style ExternalSystems fill:#f3e5f5
+```
+
+---
+
 ### Database Entity Relationship Diagram (Mermaid ERD)
 
-**Note:** The actual RaptorX database contains 18 tables optimized for access control, anomaly detection, and organizational management.
+**Overview:** The actual RaptorX database contains **18 application tables** + **1 system table** (alembic_version) = **19 total tables** in PostgreSQL:
+- ✅ Access control & decision tracking
+- ✅ User authentication & MFA
+- ✅ Anomaly detection & alerts
+- ✅ Organizational management
+- ✅ Audit compliance logging
+- ℹ️ Plus `alembic_version` for migration tracking
+
+
 
 ```mermaid
 erDiagram
@@ -893,9 +963,19 @@ erDiagram
     }
 ```
 
-### Class Sequence Diagrams
+---
 
-#### Access Decision Flow (Sequence Diagram)
+## 🔄 Workflow & Process Flows
+
+### 1️⃣ Access Decision Flow (Real-Time Processing)
+
+**Timeline:** ~50-100ms per request
+
+**Key Steps:**
+- User badge scanned → Validation layer checks user & access point → Feature extraction from 24h history
+- ML ensemble scoring (30% IF + 70% Autoencoder) → Decision mapping → Anomaly alerts if needed
+
+**Cache Strategy:** User data cached 15min, decisions cached 5min for repeat requests
 
 ```mermaid
 sequenceDiagram
@@ -940,7 +1020,19 @@ sequenceDiagram
     API-->>Client: Response (decision + scores + log_id)
 ```
 
-#### Authentication & MFA Flow (Sequence Diagram)
+---
+
+### 2️⃣ Authentication & Multi-Factor Authentication (MFA) Flow
+
+**Timeline:** ~200-500ms per login
+
+**Security Layers:**
+- Rate limiting (5 failed attempts = 30min lockout)
+- Bcrypt password verification (12 rounds)
+- TOTP MFA with 30-second time window (if enabled)
+- JWT tokens: 15min access + 7-day refresh
+
+**Session Management:** Sessions cached in Redis with automatic expiration
 
 ```mermaid
 sequenceDiagram
@@ -995,7 +1087,20 @@ sequenceDiagram
     end
 ```
 
-#### ML Model Retraining Flow (Sequence Diagram)
+---
+
+### 3️⃣ ML Model Retraining & Optimization Flow
+
+**Schedule:** Every 40 days or manual trigger
+
+**Automated Optimization:**
+- Load validation data from access logs
+- Compute ensemble scores (30% IF + 70% Autoencoder)
+- Search optimal threshold range (0.20 - 0.90)
+- Maximize F1-score while maintaining precision ≥72%, recall ≥80%
+- Version models and enable rollback capability
+
+**Model Artifacts Updated:** `isolation_forest.pkl`, `autoencoder.keras`, `ensemble_config.pkl`, `current.json`
 
 ```mermaid
 sequenceDiagram
@@ -1101,48 +1206,120 @@ sequenceDiagram
 raptorx/
 ├── backend/
 │   ├── app/
-│   │   ├── routes/          # API endpoints
+│   │   ├── routes/          # 12 API routers
+│   │   │   ├── access.py
+│   │   │   ├── admin.py
+│   │   │   ├── alerts.py
+│   │   │   ├── auth.py
+│   │   │   ├── devices.py
+│   │   │   ├── explainability.py
+│   │   │   ├── ml.py
+│   │   │   ├── onboarding.py
+│   │   │   ├── scheduler_admin.py
+│   │   │   ├── stats.py
+│   │   │   ├── users.py
+│   │   │   └── websocket.py
 │   │   ├── services/        # Business logic
+│   │   │   ├── access_service.py
+│   │   │   ├── alert_service.py
+│   │   │   ├── auth.py
 │   │   │   ├── cache_service.py
 │   │   │   ├── decision_engine.py
-│   │   │   └── ml_service.py
-│   │   ├── middleware/      # Auth, CSRF, logging
-│   │   ├── models/          # Pydantic + SQLAlchemy
+│   │   │   ├── mfa.py
+│   │   │   ├── ml_service.py
+│   │   │   ├── onboarding_service.py
+│   │   │   └── scheduler.py
+│   │   ├── models/          # 18 SQLAlchemy models
+│   │   │   ├── user.py, mfa_secret.py, login_attempt.py
+│   │   │   ├── access_log.py, access_rule.py, access_policy.py
+│   │   │   ├── access_point.py, device_certificate.py
+│   │   │   ├── building.py, floor.py, room.py, zone.py
+│   │   │   ├── organization.py, org_data_setting.py
+│   │   │   ├── anomaly_alert.py, audit_log.py
+│   │   │   ├── onboarding_draft.py, refresh_token.py
 │   │   │   └── pagination.py
-│   │   ├── schemas/         # API response models
-│   │   ├── database.py      # DB connection
-│   │   └── main.py          # App initialization
+│   │   ├── schemas/         # API request/response DTOs
+│   │   │   ├── auth.py, user.py, access_log.py
+│   │   │   ├── access_point.py, access_rule.py
+│   │   │   ├── anomaly_alert.py, onboarding.py
+│   │   ├── middleware/      # Auth, CSRF, logging
+│   │   ├── database.py      # DB connection & config
+│   │   ├── main.py          # FastAPI app initialization
+│   │   └── config.py        # Application settings
 │   ├── alembic/             # Database migrations
 │   ├── tests/               # Test files
 │   ├── requirements.txt     # Python dependencies
+│   ├── startup_backend.py   # Backend startup script
 │   └── .env                 # Configuration
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── pages/           # Page components
+│   │   ├── pages/           # 13+ feature pages
+│   │   │   ├── AccessLogsPage.tsx
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── authentication/
+│   │   │   ├── dashboard/
+│   │   │   ├── modules/     # Feature modules
+│   │   │   └── onboarding/  # 7-step onboarding wizard
 │   │   ├── components/      # Reusable components
+│   │   │   ├── auth/
+│   │   │   ├── base/
+│   │   │   ├── sections/
+│   │   │   ├── real-time/
+│   │   │   ├── onboarding/
+│   │   │   ├── filtering/
+│   │   │   ├── icons/
+│   │   │   ├── DecisionExplainer.tsx
+│   │   │   └── ModelArchitectureCard.tsx
 │   │   ├── lib/
 │   │   │   └── api.ts       # API client
-│   │   └── services/        # Frontend services
+│   │   ├── services/        # Frontend services
+│   │   ├── data/            # Configuration data
+│   │   ├── functions/       # Utilities
+│   │   ├── routes/          # Route configuration
+│   │   ├── theme/           # Theme configuration
+│   │   ├── types/           # TypeScript types
+│   │   ├── layouts/         # Layout components
+│   │   ├── App.tsx          # Root component
+│   │   ├── main.tsx         # Entry point
+│   │   └── index.css        # Global styles
 │   ├── package.json
-│   └── vite.config.ts
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── index.html
 │
 ├── ml/
 │   ├── models/              # Trained ML models
-│   └── results/             # Model performance
+│   │   ├── autoencoder.keras         # Neural network
+│   │   ├── isolation_forest.pkl      # Isolation Forest
+│   │   ├── ensemble_config.pkl       # Ensemble config
+│   │   ├── scaler.pkl, scaler_13.pkl, scaler_19.pkl
+│   │   ├── current.json              # Model metadata
+│   │   └── versions/                 # Versioned models
+│   └── results/             # Model performance results
 │
 ├── scripts/
 │   ├── generate_data.py
 │   ├── run_full_pipeline.py
-│   └── ... (various utilities)
+│   ├── decision_engine.py
+│   ├── model_registry.py
+│   └── ... (25+ utilities)
 │
 ├── data/
-│   ├── raw/                 # Raw data
+│   ├── raw/                 # Raw input data
 │   └── processed/           # Processed data
 │
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── fixtures/
+│
+├── logs/
+├── docs/                    # Documentation files
+├── iot-simulator/           # IoT simulation scripts
 ├── README.md                # This file
-├── QUICKSTART.md            # Quick start guide
 ├── .env.example             # Configuration template
+├── requirements.txt         # Project dependencies
 └── docker-compose.yml       # Docker setup
 ```
 
@@ -1183,12 +1360,12 @@ DEBUG=false
 
 ## 🎯 API Endpoints
 
-### API Endpoint Hierarchy (79 Endpoints Across 13 Routers)
+### API Endpoint Hierarchy (81+ Endpoints Across 12 Routers)
 
 ```
 RaptorX API (FastAPI)
 │
-├─ /api/access              (Access Control Management - 4 endpoints)
+├─ /api/access              (Access Control - 4 endpoints)
 │  ├─ POST   /request       → Process access request
 │  ├─ GET    /logs          → List access logs (paginated, cached)
 │  ├─ GET    /logs/{id}     → Get single log
@@ -1196,8 +1373,8 @@ RaptorX API (FastAPI)
 │
 ├─ /api/access-points       (Physical Access Points - 4 endpoints)
 │  ├─ GET    /              → List access points (paginated, cached)
-│  ├─ POST   /              → Create access point
 │  ├─ GET    /{id}          → Get point details
+│  ├─ POST   /              → Create access point
 │  └─ PUT    /{id}          → Update access point
 │
 ├─ /api/users               (User Management - 5 endpoints)
@@ -1264,8 +1441,8 @@ RaptorX API (FastAPI)
 ├─ /api/admin               (Admin Management - 7 endpoints)
 │  ├─ POST   /login         → Admin login
 │  ├─ GET    /profile       → Get admin profile
-│  ├─ PUT    /profile/username    → Update admin username
-│  ├─ PUT    /profile/password    → Update admin password
+│  ├─ PUT    /profile/username → Update admin username
+│  ├─ PUT    /profile/password → Update admin password
 │  ├─ GET    /list          → List all admins
 │  ├─ POST   /              → Create new admin
 │  └─ DELETE /{id}          → Delete admin user
@@ -1284,7 +1461,7 @@ RaptorX API (FastAPI)
 │
 ├─ /api/websocket           (Real-time Events - 3 endpoints)
 │  ├─ WS     /ws            → WebSocket connection
-│  ├─ POST   /ws/broadcast-alert    → Broadcast alert event
+│  ├─ POST   /ws/broadcast-alert → Broadcast alert event
 │  └─ GET    /ws/status     → WebSocket status
 │
 ├─ /scheduler               (Scheduler Administration - 3 endpoints)
@@ -2354,8 +2531,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 | **Backend** | ~4,500 LOC (Python) |
 | **Frontend** | ~2,800 LOC (TypeScript) |
 | **Tests** | ~1,200 LOC (pytest, Jest) |
-| **Database** | 18 tables, 5 indexes |
-| **API Endpoints** | 79 endpoints across 13 routers (+ 2 auto-generated: /docs, /openapi.json) |
+| **Database** | 19 tables (18 app + 1 system), 5 indexes |
+| **API Routers** | 12 routers (81+ endpoints) |
+| **Frontend Pages** | 13+ feature modules + onboarding wizard |
+| **Components** | 30+ reusable React components |
+| **Services** | 9 backend services + ML integration |
 | **Test Coverage** | 85%+ overall |
 | **Performance** | 250+ req/sec, <100ms latency |
 | **ML Accuracy** | 95%+ on test data |
