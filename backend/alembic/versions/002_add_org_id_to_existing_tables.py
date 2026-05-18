@@ -1,6 +1,6 @@
 """add_org_id_to_existing_tables
 
-Revision ID: 002_add_org_id_to_existing_tables
+Revision ID: 002_add_org_id
 Revises: 001_create_onboarding_schema
 Create Date: 2026-02-15 03:05:00.000000
 
@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision: str = '002_add_org_id_to_existing_tables'
+revision: str = '002_add_org_id'
 down_revision: Union[str, Sequence[str], None] = '001_create_onboarding_schema'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
