@@ -124,68 +124,68 @@ npm run dev
 ### System Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                                                                     │
-│  ┌──────────────────┐         ┌──────────────────────────────┐    │
-│  │  Users/Devices   │ HTTPS   │   React Frontend             │    │
-│  │  (Badge/Mobile)  │◄───────►│   (TypeScript + React 18.2)  │    │
-│  └──────────────────┘         └──────────┬───────────────────┘    │
-│                                          │                        │
-│                                    HTTP/WebSocket                 │
-│                                          │                        │
-│     ┌─────────────────────────────────────┼──────────────────────┐│
-│     │             FastAPI Backend (Python 3.10+)                 ││
-│     │  ┌────────────────────────────────────────────────────┐   ││
-│     │  │         API Routes (12 Routers, 75+ Endpoints)      │   ││
-│     │  │  • Access • Auth • Users • Alerts • Stats • ML      │   ││
-│     │  └─────────────────┬──────────────────────────────────┘   ││
-│     │                    │                                        ││
-│     │  ┌─────────────────┼──────────────────────────────────┐   ││
-│     │  │       Business Logic & Services                    │   ││
-│     │  ├──────────────────────────────────────────────────┤   ││
-│     │  │ • AccessDecisionEngine  (Threading)              │   ││
-│     │  │ • MLService             (Feature extraction)     │   ││
-│     │  │ • CacheService          (Redis integration)      │   ││
-│     │  │ • AlertService          (Anomaly handling)       │   ││
-│     │  │ • AuthService           (JWT + TOTP + MFA)      │   ││
-│     │  └─────────────────┬──────────────────────────────┤   ││
-│     │                    │                                 ││
-│     │  ┌─────────────────┼──────────────────────────────┐   ││
-│     │  │    ML Ensemble Model Layer                      │   ││
-│     │  ├──────────────────────────────────────────────┤   ││
-│     │  │ ┌───────────────┐      ┌───────────────┐    │   ││
-│     │  │ │  Isolation    │      │  Autoencoder  │    │   ││
-│     │  │ │  Forest (30%) │◄────►│  (70%)        │    │   ││
-│     │  │ └────────┬──────┘      └───────┬───────┘    │   ││
-│     │  │          └──────────┬──────────┘            │   ││
-│     │  │                     │                        │   ││
-│     │  │  Decision Scoring & Risk Assessment         │   ││
-│     │  │  (13 Runtime Features)                      │   ││
-│     │  └─────────────────────────────────────────────┘   ││
-│     │                    │                                ││
-│     └────────────────────┼────────────────────────────────┘│
-│                          │                                 │
-│                   DB Queries & Transactions               │
-│                          │                                 │
-│     ┌────────────────────┼────────────────────────────┐   │
-│     │           PostgreSQL Database                  │   │
-│     ├──────────────────────────────────────────────┤   │
-│     │ • Users (RBAC, MFA)    • Access Logs         │   │
-│     │ • Access Points        • Anomaly Alerts      │   │
-│     │ • Login Attempts       • Audit Trail         │   │
-│     │ • Device Certs         • 18 Tables Total     │   │
-│     └──────────────────────────────────────────────┘   │
-│                                                          │
-│     ┌────────────────────────────────────────────────┐   │
-│     │    Redis Cache Layer (TTL: 5min - 6hr)        │   │
-│     ├──────────────────────────────────────────────┤   │
-│     │ • Query Result Caching                       │   │
-│     │ • List Pagination Cache                      │   │
-│     │ • Session Management                         │   │
-│     │ • Real-time Metrics                          │   │
-│     └──────────────────────────────────────────────┘   │
-│                                                          │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                                                                      │
+│  ┌──────────────────┐         ┌──────────────────────────────┐       │
+│  │  Users/Devices   │ HTTPS   │   React Frontend             │       │
+│  │  (Badge/Mobile)  │◄───────►│   (TypeScript + React 18.2)  │       │
+│  └──────────────────┘         └──────────┬───────────────────┘       │
+│                                          │                           │
+│                                    HTTP/WebSocket                    │
+│                                          │                           │
+│     ┌────────────────────────────────────┼───────────────────────┐   │
+│     │             FastAPI Backend (Python 3.10+)                 │   │
+│     │  ┌──────────────────────────────────────────────────────┐  │   │
+│     │  │         API Routes (12 Routers, 81+ Endpoints)       │  │   │
+│     │  │  • Access • Auth • Users • Alerts • Stats • ML       │  │   │
+│     │  └──────────────────┬───────────────────────────────────┘  │   │
+│     │                     │                                      │   │
+│     │  ┌──────────────────┼────────────────────────────────────┐ │   │
+│     │  │       Business Logic & Services                       │ │   │
+│     │  ├───────────────────────────────────────────────────────┤ │   │
+│     │  │ • AccessDecisionEngine  (Threading)                   │ │   │
+│     │  │ • MLService             (Feature extraction)          │ │   │
+│     │  │ • CacheService          (Redis integration)           │ │   │
+│     │  │ • AlertService          (Anomaly handling)            │ │   │
+│     │  │ • AuthService           (JWT + TOTP + MFA)            │ │   │
+│     │  └──────────────────┬────────────────────────────────────┘ │   │
+│     │                     │                                      │   │
+│     │  ┌──────────────────┼────────────────────────────────┐     │   │
+│     │  │    ML Ensemble Model Layer                        │     │   │
+│     │  ├───────────────────────────────────────────────────┤     │   │
+│     │  │ ┌──────────────┐      ┌──────────────┐            │     │   │
+│     │  │ │  Isolation   │      │ Autoencoder  │            │     │   │
+│     │  │ │ Forest (30%) │◄────►│   (70%)      │            │     │   │
+│     │  │ └────────┬─────┘      └──────┬───────┘            │     │   │
+│     │  │          └────────┬──────────┘                    │     │   │
+│     │  │                   │                               │     │   │
+│     │  │  Decision Scoring & Risk Assessment               │     │   │
+│     │  │  (13 Runtime Features)                            │     │   │
+│     │  └───────────────────────────────────────────────────┘     │   │
+│     │                     │                                      │   │
+│     └─────────────────────┼──────────────────────────────────────┘   │
+│                           │                                          │
+│                   DB Queries & Transactions                          │
+│                           │                                          │
+│     ┌─────────────────────┼──────────────────────────────┐           │
+│     │           PostgreSQL Database                      │           │
+│     ├────────────────────────────────────────────────────┤           │
+│     │ • Users (RBAC, MFA)    • Access Logs               │           │
+│     │ • Access Points        • Anomaly Alerts            │           │
+│     │ • Login Attempts       • Audit Trail               │           │
+│     │ • Device Certs         • 18 Tables Total           │           │
+│     └────────────────────────────────────────────────────┘           │
+│                                                                      │
+│     ┌──────────────────────────────────────────────────┐             │
+│     │    Redis Cache Layer (TTL: 5min - 6hr)           │             │
+│     ├──────────────────────────────────────────────────┤             │
+│     │ • Query Result Caching                           │             │
+│     │ • List Pagination Cache                          │             │
+│     │ • Session Management                             │             │
+│     │ • Real-time Metrics                              │             │
+│     └──────────────────────────────────────────────────┘             │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Stack
@@ -205,93 +205,93 @@ npm run dev
 ### Authentication & Security Flow
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    AUTHENTICATION FLOW                        │
-├──────────────────────────────────────────────────────────────┤
-│                                                               │
-│  USER LOGIN REQUEST                                           │
-│    ├─ Username + Password                                    │
-│    ├─ Via HTTPS (TLS/SSL)                                    │
-│    └─ CORS validation ✓                                      │
-│         │                                                     │
-│         ▼                                                     │
-│  INPUT VALIDATION & SANITIZATION                             │
-│    ├─ Pydantic v2 validators                                 │
-│    ├─ Rate limiting check (5 attempts = 30min lockout)      │
-│    ├─ Brute force detection                                  │
-│    └─ SQL injection prevention ✓                             │
-│         │                                                     │
-│         ▼                                                     │
-│  PASSWORD VERIFICATION                                        │
-│    ├─ Retrieve user from DB (indexed)                        │
-│    ├─ bcrypt hash comparison (12 rounds)                     │
-│    ├─ Constant-time comparison                               │
-│    └─ Update login_attempts table                            │
-│         │                                                     │
-│         ├─ ✅ Match                                           │
-│         │    │                                                │
-│         │    ▼                                                │
-│         │  CHECK MFA STATUS                                   │
-│         │    ├─ Is MFA enabled?                              │
-│         │    ├─ Generate TOTP challenge                      │
-│         │    └─ Send OTP via secure channel                  │
-│         │         │                                           │
-│         │         ├─ Yes: Require MFA verification           │
-│         │         │       ├─ User enters 6-digit code        │
-│         │         │       ├─ Compare with TOTP algorithm     │
-│         │         │       └─ 30-second time window           │
-│         │         │            │                              │
-│         │         └─ No: Skip to token generation            │
-│         │                 │                                   │
-│         │                 ▼                                   │
-│         │  GENERATE JWT TOKENS                                │
-│         │    ├─ Access token (15 minutes)                    │
-│         │    │  ├─ Sub: user_id                              │
-│         │    │  ├─ Role: user_role                           │
-│         │    │  └─ Exp: now + 900s                           │
-│         │    │                                                │
-│         │    ├─ Refresh token (7 days)                       │
-│         │    │  ├─ Sub: user_id                              │
-│         │    │  ├─ Type: 'refresh'                           │
-│         │    │  └─ Exp: now + 604800s                        │
-│         │    │                                                │
-│         │    └─ CSRF token (43 bytes)                        │
-│         │       ├─ Cryptographically random                  │
-│         │       ├─ Stored in secure HttpOnly cookie          │
-│         │       └─ Validated on state-changing requests      │
-│         │            │                                        │
-│         │            ▼                                        │
-│         │  STORE SESSION DATA                                 │
-│         │    ├─ Cache: session:{user_id} → tokens            │
-│         │    ├─ TTL: 15 minutes                              │
-│         │    ├─ Update: last_login timestamp                 │
-│         │    ├─ Log: audit_log entry                         │
-│         │    └─ DB: users.last_login_at                      │
-│         │            │                                        │
-│         │            ▼                                        │
-│         │  RETURN SUCCESS RESPONSE                            │
-│         │    {                                                │
-│         │      "access_token": "eyJ0eX...",                  │
-│         │      "refresh_token": "eyJ0eX...",                 │
-│         │      "token_type": "bearer",                       │
-│         │      "expires_in": 900                             │
-│         │    }                                                │
-│         │                                                     │
-│         └─ ❌ No Match                                        │
-│            │                                                  │
-│            ▼                                                  │
-│         INCREMENT FAILED ATTEMPTS                             │
-│            ├─ login_attempts.failed_count++                  │
-│            ├─ Check: failed_count >= 5?                      │
-│            │   ├─ Yes: Lock account for 30 minutes           │
-│            │   │        Log: security event                  │
-│            │   │        Send: alert email                    │
-│            │   └─ No: Allow retry                            │
-│            │                                                  │
-│            ▼                                                  │
-│         RETURN ERROR (401 Unauthorized)                       │
-│                                                               │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                    AUTHENTICATION FLOW                           │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  USER LOGIN REQUEST                                              │
+│    ├─ Username + Password                                        │
+│    ├─ Via HTTPS (TLS/SSL)                                        │
+│    └─ CORS validation                                            │
+│         │                                                        │
+│         ▼                                                        │
+│  INPUT VALIDATION & SANITIZATION                                 │
+│    ├─ Pydantic v2 validators                                     │
+│    ├─ Rate limiting check (5 attempts = 30min lockout)           │
+│    ├─ Brute force detection                                      │
+│    └─ SQL injection prevention                                   │
+│         │                                                        │
+│         ▼                                                        │
+│  PASSWORD VERIFICATION                                           │
+│    ├─ Retrieve user from DB (indexed)                            │
+│    ├─ bcrypt hash comparison (12 rounds)                         │
+│    ├─ Constant-time comparison                                   │
+│    └─ Update login_attempts table                                │
+│         │                                                        │
+│         ├─  Match                                                │
+│         │    │                                                   │
+│         │    ▼                                                   │
+│         │  CHECK MFA STATUS                                      │
+│         │    ├─ Is MFA enabled?                                  │
+│         │    ├─ Generate TOTP challenge                          │
+│         │    └─ Send OTP via secure channel                      │
+│         │         │                                              │
+│         │         ├─ Yes: Require MFA verification               │
+│         │         │       ├─ User enters 6-digit code            │
+│         │         │       ├─ Compare with TOTP algorithm         │
+│         │         │       └─ 30-second time window               │
+│         │         │            │                                 │
+│         │         └─ No: Skip to token generation                │
+│         │                 │                                      │
+│         │                 ▼                                      │
+│         │  GENERATE JWT TOKENS                                   │
+│         │    ├─ Access token (15 minutes)                        │
+│         │    │  ├─ Sub: user_id                                  │
+│         │    │  ├─ Role: user_role                               │
+│         │    │  └─ Exp: now + 900s                               │
+│         │    │                                                   │
+│         │    ├─ Refresh token (7 days)                           │
+│         │    │  ├─ Sub: user_id                                  │
+│         │    │  ├─ Type: 'refresh'                               │
+│         │    │  └─ Exp: now + 604800s                            │
+│         │    │                                                   │
+│         │    └─ CSRF token (43 bytes)                            │
+│         │       ├─ Cryptographically random                      │
+│         │       ├─ Stored in secure HttpOnly cookie              │
+│         │       └─ Validated on state-changing requests          │
+│         │            │                                           │
+│         │            ▼                                           │
+│         │  STORE SESSION DATA                                    │
+│         │    ├─ Cache: session:{user_id} → tokens                │
+│         │    ├─ TTL: 15 minutes                                  │
+│         │    ├─ Update: last_login timestamp                     │
+│         │    ├─ Log: audit_log entry                             │
+│         │    └─ DB: users.last_login_at                          │
+│         │            │                                           │
+│         │            ▼                                           │
+│         │  RETURN SUCCESS RESPONSE                               │
+│         │    {                                                   │
+│         │      "access_token": "eyJ0eX...",                      │
+│         │      "refresh_token": "eyJ0eX...",                     │
+│         │      "token_type": "bearer",                           │
+│         │      "expires_in": 900                                 │
+│         │    }                                                   │
+│         │                                                        │
+│         └─  No Match                                             │
+│            │                                                     │
+│            ▼                                                     │
+│         INCREMENT FAILED ATTEMPTS                                │
+│            ├─ login_attempts.failed_count++                      │
+│            ├─ Check: failed_count >= 5?                          │
+│            │   ├─ Yes: Lock account for 30 minutes               │
+│            │   │        Log: security event                      │
+│            │   │        Send: alert email                        │
+│            │   └─ No: Allow retry                                │
+│            │                                                     │
+│            ▼                                                     │
+│         RETURN ERROR (401 Unauthorized)                          │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### ML Decision Flow
@@ -361,48 +361,48 @@ User Access Request
 ### Data Flow Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  REQUEST PROCESSING PIPELINE                                │
-├─────────────────────────────────────────────────────────────┤
+┌──────────────────────────────────────────────────────────────┐
+│  REQUEST PROCESSING PIPELINE                                 │
+├──────────────────────────────────────────────────────────────┤
 │                                                              │
-│  1. ACCESS REQUEST RECEIVED                                 │
-│     ├─ Badge ID                                             │
-│     ├─ Access Point ID                                      │
-│     ├─ Timestamp                                            │
-│     └─ Method (badge/PIN/biometric)                         │
+│  1. ACCESS REQUEST RECEIVED                                  │
+│     ├─ Badge ID                                              │
+│     ├─ Access Point ID                                       │
+│     ├─ Timestamp                                             │
+│     └─ Method (badge/PIN/biometric)                          │
 │                                                              │
-│  2. VALIDATION LAYER                                        │
-│     ├─ Input sanitization ✓                                 │
-│     ├─ Rate limiting check ✓                                │
-│     ├─ User existence verify ✓                              │
-│     └─ Access point validity ✓                              │
+│  2. VALIDATION LAYER                                         │
+│     ├─ Input sanitization                                    │
+│     ├─ Rate limiting check                                   │
+│     ├─ User existence verify                                 │
+│     └─ Access point validity                                 │
 │                                                              │
-│  3. FEATURE EXTRACTION                                      │
-│     ├─ Query AccessLog table (indexed queries)              │
-│     ├─ Calculate 13 runtime features                        │
-│     ├─ Normalize with ML scaler                             │
-│     └─ Cache features for reuse                             │
+│  3. FEATURE EXTRACTION                                       │
+│     ├─ Query AccessLog table (indexed queries)               │
+│     ├─ Calculate 13 runtime features                         │
+│     ├─ Normalize with ML scaler                              │
+│     └─ Cache features for reuse                              │
 │                                                              │
-│  4. ML DECISION ENGINE                                      │
-│     ├─ Run Isolation Forest model (30% weight)              │
-│     ├─ Run Autoencoder model (70% weight)                   │
-│     ├─ Calculate weighted ensemble score                    │
-│     └─ Determine decision tier (3-point scale)              │
+│  4. ML DECISION ENGINE                                       │
+│     ├─ Run Isolation Forest model (30% weight)               │
+│     ├─ Run Autoencoder model (70% weight)                    │
+│     ├─ Calculate weighted ensemble score                     │
+│     └─ Determine decision tier (3-point scale)               │
 │                                                              │
-│  5. RESPONSE GENERATION                                     │
-│     ├─ Create AccessLog record                              │
-│     ├─ Trigger alerts if anomaly                            │
-│     ├─ Update user statistics                               │
-│     └─ Cache decision for 5 minutes                         │
+│  5. RESPONSE GENERATION                                      │
+│     ├─ Create AccessLog record                               │
+│     ├─ Trigger alerts if anomaly                             │
+│     ├─ Update user statistics                                │
+│     └─ Cache decision for 5 minutes                          │
 │                                                              │
-│  6. RESPONSE SENT                                           │
-│     ├─ Decision (GRANTED/DELAYED/DENIED)                    │
-│     ├─ Risk score (0.0 - 1.0)                               │
-│     ├─ Model scores (IF + AE breakdown)                     │
-│     ├─ Log ID (for audit trail)                             │
-│     └─ Explanation (feature importance)                     │
+│  6. RESPONSE SENT                                            │
+│     ├─ Decision (GRANTED/DELAYED/DENIED)                     │
+│     ├─ Risk score (0.0 - 1.0)                                │
+│     ├─ Model scores (IF + AE breakdown)                      │
+│     ├─ Log ID (for audit trail)                              │
+│     └─ Explanation (feature importance)                      │
 │                                                              │
-└─────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────┘
 
 TOTAL PROCESSING TIME: 50-100ms (50-200ms with cold cache)
 ```
@@ -502,17 +502,17 @@ HTTP RESPONSE
 ### Database Schema Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┐
 │                    DATABASE TABLES (18)                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  USERS & AUTHENTICATION                                       │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  USERS & AUTHENTICATION                                      │
 │  ├─ users                    (ID, role, department, MFA)     │
 │  ├─ login_attempts           (IP, failed_count, locked_at)   │
 │  ├─ mfa_secrets              (user_id, secret, backup_codes) │
 │  └─ refresh_tokens           (user_id, token_hash)           │
-│                                                               │
-│  ACCESS CONTROL CORE                                          │
+│                                                              │
+│  ACCESS CONTROL CORE                                         │
 │  ├─ access_points            (ID, name, building, status)    │
 │  ├─ access_logs              (decision, badge_id, timestamp) │
 │  ├─ access_policies          (policy_id, rules)              │
@@ -520,79 +520,79 @@ HTTP RESPONSE
 │  ├─ audit_logs               (action, user_id, timestamp)    │
 │  ├─ device_certificates      (device_id, cert_data)          │
 │  └─ onboarding_drafts        (draft_id, user_data)           │
-│                                                               │
-│  ANOMALY DETECTION & ALERTS                                   │
+│                                                              │
+│  ANOMALY DETECTION & ALERTS                                  │
 │  └─ anomaly_alerts           (severity, status, resolved_at) │
-│                                                               │
-│  ORGANIZATIONAL STRUCTURE                                     │
+│                                                              │
+│  ORGANIZATIONAL STRUCTURE                                    │
 │  ├─ organizations            (org_id, name)                  │
 │  ├─ org_data_settings        (setting_key, setting_value)    │
 │  ├─ buildings                (name, address, zones)          │
 │  ├─ floors                   (building_id, floor_number)     │
 │  ├─ rooms                    (floor_id, room_name)           │
 │  └─ zones                    (zone_id, description)          │
-│                                                               │
-│  INDEXES (5 Strategic)                                        │
-│  ├─ idx_access_logs_user_timestamp      (Fast access log queries)│
-│  ├─ idx_access_logs_decision_ts        (Decision filtering)   │
-│  ├─ idx_anomaly_alerts_severity        (Alert filtering)      │
-│  ├─ idx_login_attempts_ip              (Brute force detection) │
-│  └─ idx_access_points_building         (Location grouping)    │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
+│                                                              │
+│  INDEXES (5 Strategic)                                       │
+│  ├─ idx_access_logs_user_timestamp      (Fast access logs)   │
+│  ├─ idx_access_logs_decision_ts         (Decision filtering) │
+│  ├─ idx_anomaly_alerts_severity         (Alert filtering)    │
+│  ├─ idx_login_attempts_ip               (Brute force detect) │
+│  └─ idx_access_points_building          (Location grouping)  │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Caching Strategy Diagram
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│              REDIS CACHING ARCHITECTURE                       │
+│              REDIS CACHING ARCHITECTURE                      │
 ├──────────────────────────────────────────────────────────────┤
-│                                                               │
+│                                                              │
 │  CACHE KEYS & TTL CONFIGURATION                              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ TTL_SHORT (5 min)        → Volatile Data            │   │
-│  │  ├─ access_logs:*        (Real-time updates)        │   │
-│  │  ├─ alerts:*             (Frequently changing)       │   │
-│  │  └─ anomaly_scores:*     (Per-request cache)         │   │
+│  ┌───────────────────────────────────────────────────────┐   │
+│  │ TTL_SHORT (5 min)        → Volatile Data              │   │
+│  │  ├─ access_logs:*        (Real-time updates)          │   │
+│  │  ├─ alerts:*             (Frequently changing)        │   │
+│  │  └─ anomaly_scores:*     (Per-request cache)          │   │
 │  │                                                       │   │
-│  │ TTL_MEDIUM (15 min)      → Relatively Static         │   │
-│  │  ├─ users:*              (RBAC + department)         │   │
-│  │  ├─ access_points:*      (Building + status)         │   │
-│  │  └─ ml_scaler            (Trained model reference)   │   │
+│  │ TTL_MEDIUM (15 min)      → Relatively Static          │   │
+│  │  ├─ users:*              (RBAC + department)          │   │
+│  │  ├─ access_points:*      (Building + status)          │   │
+│  │  └─ ml_scaler            (Trained model reference)    │   │
 │  │                                                       │   │
-│  │ TTL_LONG (1 hour)        → Stable Data              │   │
-│  │  ├─ system_config:*      (Settings)                 │   │
-│  │  └─ role_permissions:*   (RBAC mappings)            │   │
+│  │ TTL_LONG (1 hour)        → Stable Data                │   │
+│  │  ├─ system_config:*      (Settings)                   │   │
+│  │  └─ role_permissions:*   (RBAC mappings)              │   │
 │  │                                                       │   │
-│  │ TTL_VERYLONG (6 hours)   → Infrequent Changes       │   │
-│  │  └─ device_certs:*       (Device certificates)       │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                               │
+│  │ TTL_VERYLONG (6 hours)   → Infrequent Changes         │   │
+│  │  └─ device_certs:*       (Device certificates)        │   │
+│  └───────────────────────────────────────────────────────┘   │
+│                                                              │
 │  CACHE INVALIDATION STRATEGY                                 │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ Pattern-Based Invalidation                           │   │
-│  │  ├─ On CREATE:  Invalidate resource:* pattern       │   │
-│  │  ├─ On UPDATE:  Invalidate specific key + :*         │   │
-│  │  ├─ On DELETE:  Invalidate resource:{id} + :*        │   │
-│  │  └─ On WRITE:   Atomic: transaction → cache update  │   │
+│  ┌───────────────────────────────────────────────────────┐   │
+│  │ Pattern-Based Invalidation                            │   │
+│  │  ├─ On CREATE:  Invalidate resource:* pattern         │   │
+│  │  ├─ On UPDATE:  Invalidate specific key + :*          │   │
+│  │  ├─ On DELETE:  Invalidate resource:{id} + :*         │   │
+│  │  └─ On WRITE:   Atomic: transaction → cache update    │   │
 │  │                                                       │   │
-│  │ Graceful Fallback                                    │   │
-│  │  ├─ Redis unavailable? Query DB directly            │   │
-│  │  ├─ No cache hit? Query + auto-cache result         │   │
-│  │  └─ Cache error? Log + continue without cache        │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                               │
+│  │ Graceful Fallback                                     │   │
+│  │  ├─ Redis unavailable? Query DB directly              │   │
+│  │  ├─ No cache hit? Query + auto-cache result           │   │
+│  │  └─ Cache error? Log + continue without cache         │   │
+│  └───────────────────────────────────────────────────────┘   │
+│                                                              │
 │  PERFORMANCE METRICS                                         │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ Cache Hit Rate:     75%+                             │   │
-│  │ Memory Usage:       < 500MB (100K+ items)           │   │
-│  │ Hit Latency:        ~2ms (vs 150ms DB)              │   │
-│  │ Improvement:        75x faster on hits              │   │
-│  │ Eviction Policy:    LRU (Least Recently Used)        │   │
-│  │ Invalidation Time:  <1ms (pattern-based)            │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                               │
+│  ┌───────────────────────────────────────────────────────┐   │
+│  │ Cache Hit Rate:     75%+                              │   │
+│  │ Memory Usage:       < 500MB (100K+ items)             │   │
+│  │ Hit Latency:        ~2ms (vs 150ms DB)                │   │
+│  │ Improvement:        75x faster on hits                │   │
+│  │ Eviction Policy:    LRU (Least Recently Used)         │   │
+│  │ Invalidation Time:  <1ms (pattern-based)              │   │
+│  └───────────────────────────────────────────────────────┘   │
+│                                                              │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -2452,8 +2452,6 @@ npm run lint && pytest tests/
 - [ ] Advanced filtering dashboard
 - [ ] Device fingerprinting
 - [ ] Behavior pattern learning
-
-### Phase 5 (Future)
 - [ ] Multi-factor biometric authentication
 - [ ] Real-time threat intelligence
 - [ ] Distributed system support (Kubernetes)
