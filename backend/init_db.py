@@ -1,61 +1,32 @@
 #!/usr/bin/env python3
-"""Initialize database schema from SQLAlchemy models before running migrations."""
+"""Verify database connection (migrations handle schema creation)."""
 
 import os
 import sys
-from sqlalchemy import create_engine
-from app.database import Base
-from app.models import (  # Import all models to register them
-    User,
-    AccessPoint,
-    Zone,
-    Floor,
-    Building,
-    AccessRule,
-    AccessPolicy,
-    AccessLog,
-    AnomalyAlert,
-    LoginAttempt,
-    AuditLog,
-    DeviceCertificate,
-    Organization,
-    Room,
-    RefreshToken,
-    MFASecret,
-    OnboardingDraft,
-    OrgDataSetting,
-)
+from sqlalchemy import create_engine, text
 
 def init_db():
-    """Create all tables from models (only if migrations haven't run yet)."""
+    """Verify database connection is working."""
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
         print("ERROR: DATABASE_URL environment variable not set")
         sys.exit(1)
 
+    print("Verifying database connection...")
+    
     try:
         engine = create_engine(database_url)
         
-        # Check if migrations have already run
-        inspector = __import__('sqlalchemy.inspection', fromlist=['inspect']).inspect(engine)
-        tables = inspector.get_table_names()
+        # Test connection
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            result.close()
         
-        if 'alembic_version' in tables:
-            print("⏭️  Migrations already applied, skipping table creation")
-            engine.dispose()
-            return True
-        
-        print(f"Initializing database from models...")
-        print(f"Database URL: {database_url.split('@')[-1]}")
-        
-        # Create all tables
-        Base.metadata.create_all(engine)
-        print("✅ Database tables created successfully")
-        
+        print("✅ Database connection verified")
         engine.dispose()
         return True
     except Exception as e:
-        print(f"❌ Error initializing database: {e}")
+        print(f"❌ Error connecting to database: {e}")
         return False
 
 if __name__ == "__main__":
