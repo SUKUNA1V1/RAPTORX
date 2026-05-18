@@ -4,12 +4,9 @@
 import os
 import sys
 from sqlalchemy import create_engine
-from app.core.database import Base
+from app.database import Base
 from app.models import (  # Import all models to register them
     User,
-    Role,
-    Permission,
-    RolePermission,
     AccessPoint,
     Zone,
     Floor,
@@ -21,6 +18,12 @@ from app.models import (  # Import all models to register them
     LoginAttempt,
     AuditLog,
     DeviceCertificate,
+    Organization,
+    Room,
+    RefreshToken,
+    MFASecret,
+    OnboardingDraft,
+    OrgDataSetting,
 )
 
 def init_db():
