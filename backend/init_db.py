@@ -27,17 +27,26 @@ from app.models import (  # Import all models to register them
 )
 
 def init_db():
-    """Create all tables from models."""
+    """Create all tables from models (only if migrations haven't run yet)."""
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
         print("ERROR: DATABASE_URL environment variable not set")
         sys.exit(1)
 
-    print(f"Initializing database from models...")
-    print(f"Database URL: {database_url.split('@')[-1]}")
-    
     try:
         engine = create_engine(database_url)
+        
+        # Check if migrations have already run
+        inspector = __import__('sqlalchemy.inspection', fromlist=['inspect']).inspect(engine)
+        tables = inspector.get_table_names()
+        
+        if 'alembic_version' in tables:
+            print("⏭️  Migrations already applied, skipping table creation")
+            engine.dispose()
+            return True
+        
+        print(f"Initializing database from models...")
+        print(f"Database URL: {database_url.split('@')[-1]}")
         
         # Create all tables
         Base.metadata.create_all(engine)
@@ -46,7 +55,7 @@ def init_db():
         engine.dispose()
         return True
     except Exception as e:
-        print(f"❌ Error creating tables: {e}")
+        print(f"❌ Error initializing database: {e}")
         return False
 
 if __name__ == "__main__":
